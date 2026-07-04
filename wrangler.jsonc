@@ -1,0 +1,17 @@
+{
+  "name": "julian",
+  "compatibility_date": "2026-07-04",
+  "workers_dev": false,
+  "main": "worker/index.ts",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "GOOGLE_CLIENT_ID": "859657920998-ekptgf92ahqgr2ul0n8sqhfvgoltrkl3.apps.googleusercontent.com"
+  },
+  "routes": [
+    { "pattern": "julian.krmznkr.com", "custom_domain": true }
+  ]
+}
