@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit *)",
+            "command": "CMD=$(jq -r '.tool_input.command'); if echo \"$CMD\" | grep -qE '^git commit'; then cd $CLAUDE_PROJECT_DIR && pnpm run typecheck && pnpm run test:run || echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"CI failed — fix typecheck errors or failing tests before committing.\"}}'; fi",
+            "timeout": 120,
+            "statusMessage": "Running CI checks before commit..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit *)",
+            "command": "CMD=$(jq -r '.tool_input.command'); if echo \"$CMD\" | grep -qE '^git commit'; then cd $CLAUDE_PROJECT_DIR && git push 2>&1 | tail -5; fi",
+            "timeout": 60,
+            "statusMessage": "Pushing to remote..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git push*)",
+            "command": "CMD=$(jq -r '.tool_input.command'); if echo \"$CMD\" | grep -qE '^git push'; then cd $CLAUDE_PROJECT_DIR && sleep 4 && BRANCH=$(git branch --show-current) && RUN_ID=$(gh run list --branch \"$BRANCH\" --limit 1 --json databaseId -q '.[0].databaseId') && [ -n \"$RUN_ID\" ] && gh run watch \"$RUN_ID\" --exit-status --compact; fi",
+            "timeout": 600,
+            "statusMessage": "Watching GitHub Actions CI..."
+          }
+        ]
+      }
+    ]
+  }
+}

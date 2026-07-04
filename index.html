@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Julian is a calm, browser-based full-year calendar view for multi-day events."
+    />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <title>Julian</title>
+    <!-- Blocking script: apply theme, locale, and appearance preferences before
+         first paint to prevent FOUC / layout shift. Runs synchronously before
+         the module script that boots React. -->
+    <script src="/bootstrap.js"></script>
+  </head>
+  <body class="min-h-screen antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

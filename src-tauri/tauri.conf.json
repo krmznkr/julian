@@ -1,0 +1,47 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Julian",
+  "version": "0.1.5",
+  "identifier": "com.krmznkr.julian",
+  "mainBinaryName": "Julian",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://127.0.0.1:3000",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Julian",
+        "width": 1100,
+        "height": 720,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "copyright": "© 2026 krmznkr",
+    "category": "Productivity",
+    "shortDescription": "A calm full-year calendar.",
+    "longDescription": "Julian is a calm, full-year calendar view focused on all-day and multi-day events, backed by Google Calendar and Tasks.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "android": {
+      "debugApplicationIdSuffix": ".debug"
+    }
+  }
+}
