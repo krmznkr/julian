@@ -7,8 +7,8 @@ A calm, browser-based full-year calendar view focused on all-day and multi-day e
 Prerequisites: Node 24 and [pnpm](https://pnpm.io).
 
 ```bash
-git clone https://github.com/krmznkr/julian.git
-cd julian
+git clone https://github.com/krmznkr/krmznkr-monorepo.git
+cd krmznkr-monorepo/julian
 pnpm install
 pnpm dev
 ```
@@ -30,9 +30,25 @@ choose **Open** once to allow it.
 
 **Google sign-in:** unlike the browser, the desktop app can't redirect inside its own
 webview (Google blocks embedded webviews), so it opens the system browser and catches
-the redirect on `http://localhost:8124`. Add that exact URI to the OAuth client's
-**Authorized redirect URIs** in the Google Cloud Console (alongside the existing
-`http://localhost:3000/auth/callback`) for desktop login to work.
+the redirect on `http://localhost:8124`. The desktop exchange uses PKCE and does not
+embed a client secret.
+
+## Google OAuth and deployment
+
+The public Google Cloud project is `krmznkr-julian`. `VITE_GOOGLE_CLIENT_ID` is
+public by design. `GOOGLE_CLIENT_SECRET` is confidential and exists only in the
+personal 1Password vault and the Cloudflare Worker secret store; never put it in
+an `.env` file or give it a `VITE_` prefix.
+
+Production uses `https://julian.krmznkr.com/auth/callback`. Local browser builds
+use their own origin plus `/auth/callback`; the configured development callbacks
+are `http://localhost:5173/auth/callback` and
+`http://localhost:3000/auth/callback`.
+
+```bash
+pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
+./scripts/deploy-web.sh
+```
 
 ## Tech Stack
 

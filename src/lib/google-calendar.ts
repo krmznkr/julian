@@ -5,7 +5,6 @@ import { resolveSelectedCalendarIds } from "@/lib/calendar-selection";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 // In the browser we redirect to our own /auth/callback route on whatever origin
 // the app is served from (localhost in dev, julian.krmznkr.com in prod). The
 // desktop app can't use an embedded-webview redirect (Google blocks it), so it
@@ -15,9 +14,8 @@ const REDIRECT_URI =
     ? `${location.origin}/auth/callback`
     : "http://localhost:3000/auth/callback";
 const OAUTH_LOOPBACK_PORT = 8124;
-// Same-origin Worker endpoints that run the token exchange server-side so the
-// Google client secret never ships in the web bundle. Web only — the desktop
-// build talks to Google directly with its bundled secret.
+// Same-origin Worker endpoints run the confidential web token exchange. The
+// desktop build is a public PKCE client and therefore never embeds a secret.
 const OAUTH_PROXY_BASE = "/api/oauth";
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
@@ -60,15 +58,14 @@ async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem(STORAGE_KEYS.refreshToken);
   if (!refreshToken) return null;
 
-  // Desktop holds the secret and calls Google directly; web delegates to the
-  // Worker proxy so the secret stays server-side.
+  // Desktop is a public PKCE client and calls Google directly; web delegates
+  // to the Worker proxy so the confidential web-client secret stays server-side.
   const response = isTauri()
     ? await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams([
           ["client_id", GOOGLE_CLIENT_ID],
-          ["client_secret", GOOGLE_CLIENT_SECRET],
           ["refresh_token", refreshToken],
           ["grant_type", "refresh_token"],
         ]),
@@ -162,12 +159,6 @@ export async function startGoogleAuth(): Promise<void> {
   if (!GOOGLE_CLIENT_ID) {
     throw new Error("Missing VITE_GOOGLE_CLIENT_ID. Set it in .env and rebuild.");
   }
-  // The secret is only needed by the desktop build, which exchanges tokens
-  // directly. On web the Worker proxy holds it, so its absence here is expected.
-  if (isTauri() && !GOOGLE_CLIENT_SECRET) {
-    throw new Error("Missing VITE_GOOGLE_CLIENT_SECRET for the desktop build.");
-  }
-
   const codeVerifier = generateRandomString();
   const codeChallenge = await sha256(codeVerifier);
 
@@ -190,15 +181,14 @@ export async function handleAuthCallback(
     throw new Error("No code verifier found. Please try logging in again.");
   }
 
-  // Desktop exchanges directly with Google (it has the secret); web posts the
-  // code to the Worker proxy, which adds the secret server-side.
+  // Desktop exchanges directly as a public PKCE client; web posts the code to
+  // the Worker proxy, which adds the confidential web-client secret server-side.
   const response = isTauri()
     ? await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams([
           ["client_id", GOOGLE_CLIENT_ID],
-          ["client_secret", GOOGLE_CLIENT_SECRET],
           ["code", code],
           ["code_verifier", codeVerifier],
           ["grant_type", "authorization_code"],

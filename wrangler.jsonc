@@ -9,7 +9,7 @@
     "binding": "ASSETS"
   },
   "vars": {
-    "GOOGLE_CLIENT_ID": "859657920998-ekptgf92ahqgr2ul0n8sqhfvgoltrkl3.apps.googleusercontent.com"
+    "GOOGLE_CLIENT_ID": "151900009012-fevbjvlejmju4lva9brr5lmufp5q4g0s.apps.googleusercontent.com"
   },
   "routes": [
     { "pattern": "julian.krmznkr.com", "custom_domain": true }
