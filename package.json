@@ -27,7 +27,7 @@
   "dependencies": {
     "@fabianlars/tauri-plugin-oauth": "^2.0.0",
     "@tanstack/react-router": "1.169.0",
-    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-opener": "^2.5.4",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
