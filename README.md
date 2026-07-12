@@ -7,8 +7,8 @@ A calm, browser-based full-year calendar view focused on all-day and multi-day e
 Prerequisites: Node 24 and [pnpm](https://pnpm.io).
 
 ```bash
-git clone https://github.com/krmznkr/krmznkr-monorepo.git
-cd krmznkr-monorepo/julian
+git clone https://github.com/krmznkr/julian.git
+cd julian
 pnpm install
 pnpm dev
 ```
@@ -44,6 +44,11 @@ Production uses `https://julian.krmznkr.com/auth/callback`. Local browser builds
 use their own origin plus `/auth/callback`; the configured development callbacks
 are `http://localhost:5173/auth/callback` and
 `http://localhost:3000/auth/callback`.
+
+Pushes to `main` deploy automatically: the Deploy GitHub Actions workflow
+builds, verifies no client secret leaked into `dist/`, and publishes the
+Worker with wrangler using the `CLOUDFLARE_API_TOKEN` repository secret.
+For manual deploys:
 
 ```bash
 pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
