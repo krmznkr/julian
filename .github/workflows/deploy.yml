@@ -34,7 +34,7 @@ jobs:
             echo "ERROR: a client secret was found in dist/ — aborting deploy." >&2
             exit 1
           fi
-      - uses: cloudflare/wrangler-action@v3
+      - uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 93527c9983d1c08638cb9c1de99f0450
