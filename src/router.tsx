@@ -1,4 +1,5 @@
 import { createRootRoute, createRoute, createRouter, redirect } from "@tanstack/react-router";
+import { LandingPage } from "@/routes/landing-page";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import type { ComponentType } from "react";
 import { parseYearViewSearch, type YearViewSearch } from "@/lib/year-view-url";
@@ -52,14 +53,7 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  beforeLoad: () => {
-    const today = todayYearRoute();
-    throw redirect({
-      to: "/year/$year",
-      params: { year: today.year },
-      search: { month: today.month, day: today.day },
-    });
-  },
+  component: LandingPage,
 });
 
 const yearRoute = createRoute({
