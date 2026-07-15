@@ -25,7 +25,11 @@ jobs:
           node-version: 24.15.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The client ID is a public OAuth identifier; the confidential secret
+      # lives only in the Worker secret store.
       - run: pnpm build
+        env:
+          VITE_GOOGLE_CLIENT_ID: 151900009012-fevbjvlejmju4lva9brr5lmufp5q4g0s.apps.googleusercontent.com
       # The Google client secret lives only in the Worker secret store; it must
       # never appear in the static bundle.
       - name: Verify no client secret in dist
