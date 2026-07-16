@@ -1,4 +1,0 @@
-# Julian is a private portfolio showcase, shared by direct link only.
-# It should not be crawled or indexed by search engines or AI scrapers.
-User-agent: *
-Disallow: /
