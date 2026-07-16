@@ -15,9 +15,7 @@ export function GoogleLoginButton({ onAuthChange }: { onAuthChange?: () => void 
     setIsLoading(true);
     setError(null);
     try {
-      // In the browser this redirects away and never returns. In the desktop
-      // app it resolves once the loopback OAuth exchange completes, so refresh
-      // the connected state in place.
+      // Redirects away to Google and returns via /auth/callback.
       await startGoogleAuth();
       const authed = await isAuthenticated();
       setIsAuth(authed);

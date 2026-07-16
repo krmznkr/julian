@@ -206,8 +206,7 @@ export function EventChipTooltip({
               target="_blank"
               rel="noreferrer"
               onClick={(e) => {
-                // The desktop webview won't open target=_blank externally; route
-                // through the opener helper (still a new tab in the browser).
+                // Route through the opener helper (opens a new browser tab).
                 e.preventDefault();
                 if (event.htmlLink) void openExternal(event.htmlLink);
               }}

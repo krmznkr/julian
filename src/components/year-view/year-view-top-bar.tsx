@@ -49,8 +49,7 @@ export default function YearViewTopBar() {
 
   const handleConnect = useCallback(async () => {
     try {
-      // In the browser this redirects away and never returns; in the desktop
-      // app it resolves once the loopback OAuth exchange completes.
+      // Redirects away to Google and returns via /auth/callback.
       await startGoogleAuth();
       const authed = await isAuthenticated();
       setIsConnected(authed);

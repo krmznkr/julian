@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { LandingDemo } from "@/components/landing/demo-calendar";
 
 const GITHUB_URL = "https://github.com/krmznkr/julian";
 
@@ -18,7 +19,7 @@ const FEATURES = [
   },
   {
     title: "Google Calendar",
-    body: "Optional sign-in pulls your calendars and tasks. Without it, Julian runs entirely on local sample data.",
+    body: "Optional sign-in pulls your real calendars and tasks into the same year view you see above — read them, and add or edit events in place.",
   },
   {
     title: "Yours to run",
@@ -48,7 +49,7 @@ export function LandingPage() {
         </a>
       </header>
 
-      <section className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-6 py-20 text-center">
+      <section className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-6 pt-16 pb-12 text-center">
         <p className="mb-6 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
           Open source · MIT
         </p>
@@ -79,6 +80,13 @@ export function LandingPage() {
           >
             View source
           </a>
+        </div>
+
+        <div className="mt-14 w-full max-w-4xl text-left">
+          <LandingDemo />
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            A sample year, playing itself out — hover any highlight to explore. No sign-in needed.
+          </p>
         </div>
       </section>
 
