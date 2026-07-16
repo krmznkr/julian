@@ -37,6 +37,13 @@ pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
 ./scripts/deploy-web.sh
 ```
 
+## Security
+
+The deployment is hardened in code: bot filtering, per-IP rate limiting, an
+OAuth-proxy origin lock, response security headers (CSP/HSTS/…), and search
+de-indexing. Design, tuning, and verification steps are documented in
+[`docs/security.md`](docs/security.md).
+
 ## Tech Stack
 
 - **Frontend:** Vite + React 19 + TanStack Router

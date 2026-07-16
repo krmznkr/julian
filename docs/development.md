@@ -21,3 +21,8 @@ Julian is now a single browser-only Vite app.
 ## Data
 
 The app uses local sample calendar data from `src/lib/local-calendar-data.ts`. Calendar visibility is persisted in browser localStorage.
+
+## Security
+
+Production hardening (bot filtering, rate limiting, OAuth origin lock, security
+headers, de-indexing) is documented in [`security.md`](security.md).
