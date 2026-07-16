@@ -11,11 +11,50 @@
 //   - The OAuth proxy only answers same-site browser requests (Origin allowlist)
 //     and rejects oversized bodies, so drive-by bots can't spam Google through it.
 
+// The native Workers rate-limiting binding: limit({ key }) -> { success }.
+interface RateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
+}
+
 interface Env {
   ASSETS: Fetcher;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
+  SITE_RATELIMIT: RateLimiter;
+  OAUTH_RATELIMIT: RateLimiter;
 }
+
+// Aggressive SEO/scraper/AI bots and generic scripting clients that add load
+// and ignore robots.txt. Matched case-insensitively as substrings of the UA.
+// Well-behaved browsers and social link-preview bots (LinkedIn/Slack/etc.) are
+// intentionally NOT here, so sharing the link from a resume still works.
+const BLOCKED_USER_AGENTS = [
+  "ahrefsbot",
+  "semrushbot",
+  "mj12bot",
+  "dotbot",
+  "petalbot",
+  "bytespider",
+  "dataforseobot",
+  "blexbot",
+  "barkrowler",
+  "zoominfobot",
+  "serpstatbot",
+  "megaindex",
+  "seekbot",
+  "gigabot",
+  "python-requests",
+  "scrapy",
+  "go-http-client",
+  "libwww-perl",
+  "java/",
+  "curl/",
+  "wget/",
+  "masscan",
+  "zgrab",
+  "nikto",
+  "sqlmap",
+];
 
 const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
@@ -160,13 +199,49 @@ function rejectDisallowedOAuthRequest(request: Request): Response | null {
   return null;
 }
 
+// Best-effort client identity for bot filtering / rate limiting. Cloudflare
+// always sets CF-Connecting-IP at the edge; fall back keeps things working
+// under `wrangler dev` where the header may be absent.
+function clientIp(request: Request): string {
+  return request.headers.get("CF-Connecting-IP") ?? "0.0.0.0";
+}
+
+// Blocks obvious non-human scrapers by User-Agent. A missing UA is treated as a
+// bot too — real browsers always send one. Returns a 403 Response or null.
+function rejectBadBot(request: Request): Response | null {
+  const ua = (request.headers.get("User-Agent") ?? "").toLowerCase();
+  if (ua === "") {
+    return withSecurityHeaders(new Response("Forbidden", { status: 403 }));
+  }
+  if (BLOCKED_USER_AGENTS.some((bot) => ua.includes(bot))) {
+    return withSecurityHeaders(new Response("Forbidden", { status: 403 }));
+  }
+  return null;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    // 1. Drop known scrapers/scripting clients before doing any real work.
+    const botRejection = rejectBadBot(request);
+    if (botRejection) return botRejection;
+
+    // 2. Whole-site rate limit per client IP (volumetric abuse protection).
+    const ip = clientIp(request);
+    const { success: withinSiteLimit } = await env.SITE_RATELIMIT.limit({ key: ip });
+    if (!withinSiteLimit) {
+      return withSecurityHeaders(new Response("Too Many Requests", { status: 429 }));
+    }
+
     if (url.pathname.startsWith("/api/oauth/")) {
       const rejected = rejectDisallowedOAuthRequest(request);
       if (rejected) return rejected;
+      // 3. Extra, much tighter rate limit on the credential-exchange endpoint.
+      const { success: withinOAuthLimit } = await env.OAUTH_RATELIMIT.limit({ key: ip });
+      if (!withinOAuthLimit) {
+        return json({ error: "rate_limited", error_description: "Too many requests" }, 429);
+      }
       if (!env.GOOGLE_CLIENT_SECRET) {
         return json(
           { error: "server_misconfigured", error_description: "GOOGLE_CLIENT_SECRET is not set" },
