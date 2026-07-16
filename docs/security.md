@@ -212,3 +212,8 @@ done
 - **Stronger option (not enabled):** Cloudflare Access (free ≤50 users) would put
   an email-OTP wall in front of the site — maximum privacy, but adds friction for
   recruiters. Deliberately avoided for this showcase.
+
+## Open items
+
+The actionable checklist of remaining tasks, post-change verification steps, and
+gotchas lives in [`follow-ups.md`](follow-ups.md).
