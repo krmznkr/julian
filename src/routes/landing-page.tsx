@@ -21,8 +21,8 @@ const FEATURES = [
     body: "Optional sign-in pulls your calendars and tasks. Without it, Julian runs entirely on local sample data.",
   },
   {
-    title: "Desktop app",
-    body: "A thin Tauri shell wraps the same build into a native macOS app, with PKCE sign-in and no embedded secrets.",
+    title: "Yours to run",
+    body: "Open source under MIT and backend-free — a static bundle plus a tiny Worker, with no client secrets ever shipped to the browser.",
   },
 ];
 

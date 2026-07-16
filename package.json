@@ -7,9 +7,6 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "quality:oxlint": "oxlint --config .oxlintrc.json --react-plugin --react-perf-plugin --jsx-a11y-plugin --vitest-plugin --deny-warnings .",
     "quality:oxfmt": "oxfmt --check .",
@@ -25,10 +22,7 @@
     "clean:artifacts": "rm -rf dist coverage tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@fabianlars/tauri-plugin-oauth": "^2.0.0",
     "@tanstack/react-router": "1.169.0",
-    "@tauri-apps/api": "^2.11.1",
-    "@tauri-apps/plugin-opener": "^2.5.4",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "1.1.1",
@@ -41,7 +35,6 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.3.2",
-    "@tauri-apps/cli": "^2.11.2",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
     "@types/node": "25.6.0",

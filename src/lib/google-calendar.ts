@@ -1,21 +1,16 @@
 // Google Calendar OAuth & API integration (frontend-only, no backend required)
 // Uses PKCE flow for security without a backend
-import { isTauri } from "@tauri-apps/api/core";
 import { resolveSelectedCalendarIds } from "@/lib/calendar-selection";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-// In the browser we redirect to our own /auth/callback route on whatever origin
-// the app is served from (localhost in dev, julian.krmznkr.com in prod). The
-// desktop app can't use an embedded-webview redirect (Google blocks it), so it
-// opens the system browser and captures the redirect on a fixed loopback port.
+// We redirect to our own /auth/callback route on whatever origin the app is
+// served from (localhost in dev, julian.krmznkr.com in prod).
 const REDIRECT_URI =
   typeof location !== "undefined"
     ? `${location.origin}/auth/callback`
     : "http://localhost:3000/auth/callback";
-const OAUTH_LOOPBACK_PORT = 8124;
-// Same-origin Worker endpoints run the confidential web token exchange. The
-// desktop build is a public PKCE client and therefore never embeds a secret.
+// Same-origin Worker endpoints run the confidential web token exchange.
 const OAUTH_PROXY_BASE = "/api/oauth";
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
@@ -58,23 +53,13 @@ async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem(STORAGE_KEYS.refreshToken);
   if (!refreshToken) return null;
 
-  // Desktop is a public PKCE client and calls Google directly; web delegates
-  // to the Worker proxy so the confidential web-client secret stays server-side.
-  const response = isTauri()
-    ? await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams([
-          ["client_id", GOOGLE_CLIENT_ID],
-          ["refresh_token", refreshToken],
-          ["grant_type", "refresh_token"],
-        ]),
-      })
-    : await fetch(`${OAUTH_PROXY_BASE}/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
+  // Web delegates to the Worker proxy so the confidential web-client secret
+  // stays server-side.
+  const response = await fetch(`${OAUTH_PROXY_BASE}/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
 
   if (!response.ok) {
     clearStoredToken();
@@ -129,32 +114,6 @@ function buildAuthUrl(codeChallenge: string, redirectUri: string): string {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 }
 
-// Desktop flow: open Google's consent screen in the system browser and capture
-// the redirect on a local loopback server. Resolves once the token is stored.
-async function startTauriAuth(codeChallenge: string): Promise<void> {
-  const { start, cancel, onUrl } = await import("@fabianlars/tauri-plugin-oauth");
-  const { openUrl } = await import("@tauri-apps/plugin-opener");
-
-  const port = await start({ ports: [OAUTH_LOOPBACK_PORT] });
-  const redirectUri = `http://localhost:${port}`;
-
-  const codePromise = new Promise<string>((resolve, reject) => {
-    onUrl((url) => {
-      const code = new URL(url).searchParams.get("code");
-      if (code) resolve(code);
-      else reject(new Error("No authorization code in redirect"));
-    }).catch(reject);
-  });
-
-  try {
-    await openUrl(buildAuthUrl(codeChallenge, redirectUri));
-    const code = await codePromise;
-    await handleAuthCallback(code, redirectUri);
-  } finally {
-    await cancel(port).catch(() => undefined);
-  }
-}
-
 export async function startGoogleAuth(): Promise<void> {
   if (!GOOGLE_CLIENT_ID) {
     throw new Error("Missing VITE_GOOGLE_CLIENT_ID. Set it in .env and rebuild.");
@@ -163,11 +122,6 @@ export async function startGoogleAuth(): Promise<void> {
   const codeChallenge = await sha256(codeVerifier);
 
   localStorage.setItem(STORAGE_KEYS.codeVerifier, codeVerifier);
-
-  if (isTauri()) {
-    await startTauriAuth(codeChallenge);
-    return;
-  }
 
   location.assign(buildAuthUrl(codeChallenge, REDIRECT_URI));
 }
@@ -181,25 +135,13 @@ export async function handleAuthCallback(
     throw new Error("No code verifier found. Please try logging in again.");
   }
 
-  // Desktop exchanges directly as a public PKCE client; web posts the code to
-  // the Worker proxy, which adds the confidential web-client secret server-side.
-  const response = isTauri()
-    ? await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams([
-          ["client_id", GOOGLE_CLIENT_ID],
-          ["code", code],
-          ["code_verifier", codeVerifier],
-          ["grant_type", "authorization_code"],
-          ["redirect_uri", redirectUri],
-        ]),
-      })
-    : await fetch(`${OAUTH_PROXY_BASE}/token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, code_verifier: codeVerifier, redirect_uri: redirectUri }),
-      });
+  // Web posts the code to the Worker proxy, which adds the confidential
+  // web-client secret server-side.
+  const response = await fetch(`${OAUTH_PROXY_BASE}/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, code_verifier: codeVerifier, redirect_uri: redirectUri }),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();

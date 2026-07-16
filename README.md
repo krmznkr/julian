@@ -15,24 +15,6 @@ pnpm dev
 
 Open the URL printed by Vite, usually `http://127.0.0.1:5173`.
 
-## Desktop App (macOS)
-
-Julian can run as a native desktop app via a thin [Tauri](https://tauri.app) shell
-(`src-tauri/`) around the same Vite build — no separate backend.
-
-```bash
-pnpm tauri:dev     # run the desktop app in development
-pnpm tauri:build   # produce Julian.app + a .dmg in src-tauri/target/release/bundle
-```
-
-The unsigned build trips macOS Gatekeeper on first launch — right-click the app and
-choose **Open** once to allow it.
-
-**Google sign-in:** unlike the browser, the desktop app can't redirect inside its own
-webview (Google blocks embedded webviews), so it opens the system browser and catches
-the redirect on `http://localhost:8124`. The desktop exchange uses PKCE and does not
-embed a client secret.
-
 ## Google OAuth and deployment
 
 The public Google Cloud project is `krmznkr-julian`. `VITE_GOOGLE_CLIENT_ID` is
