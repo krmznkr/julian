@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "public/bootstrap.js",
+    "src/routes/*.tsx",
+    "src/test/setup-dom.ts"
+  ],
+  "ignorePatterns": ["index.html", ".github/**"],
+  "ignoreDependencies": ["pino-pretty"]
+}
