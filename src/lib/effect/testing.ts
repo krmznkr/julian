@@ -21,6 +21,9 @@ import { googleTasksLayer } from "@/lib/effect/google-tasks";
 export interface RecordedRequest {
   readonly url: string;
   readonly method: string;
+  // Lowercased header names -> value, so tests can assert on what actually goes
+  // on the wire (e.g. that no header shows up which would break CORS preflight).
+  readonly headers: Readonly<Record<string, string>>;
 }
 
 export interface FetchStub {
@@ -48,8 +51,13 @@ export const makeFetchStub = (
       const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       const method =
         init?.method ?? (typeof input === "object" && "method" in input ? input.method : "GET");
+      const headers = Object.fromEntries(
+        new Headers(
+          init?.headers ?? (typeof input === "object" && "headers" in input ? input.headers : {}),
+        ).entries(),
+      );
 
-      Effect.runSync(Ref.update(requests, (seen) => [...seen, { url, method }]));
+      Effect.runSync(Ref.update(requests, (seen) => [...seen, { url, method, headers }]));
 
       const index = Effect.runSync(Ref.getAndUpdate(cursor, (n) => n + 1));
       const entry = responses[Math.min(index, responses.length - 1)];

@@ -9,12 +9,26 @@
 // errors. That means it is correct on either side of `filterStatusOk`. Both
 // call sites nonetheless go through this helper and apply the retry to the raw
 // client first, so the behaviour is identical and reviewable in one place.
-import { Schedule } from "effect";
+import { Effect, Schedule } from "effect";
 import { HttpClient, HttpClientError } from "effect/unstable/http";
 
 // Exponential with jitter: jitter matters because several tabs waking from
 // sleep would otherwise retry in lockstep against the same quota.
 const transientBackoff = Schedule.exponential("250 millis").pipe(Schedule.jittered);
+
+// Effect's HttpClient propagates the current span by default, adding `b3` and
+// `traceparent` request headers. Both are non-safelisted, so in the browser they
+// join the CORS preflight's `Access-Control-Request-Headers`. Google's calendar
+// API only allows `authorization` there and answers any other name with a bare
+// 403 that carries no `Access-Control-Allow-Origin` — the browser then blocks
+// the real request and every call fails as an opaque transport error. Nothing
+// collects these traces client-side anyway, so turn propagation off.
+const withoutTracePropagation = <E, R>(
+  client: HttpClient.HttpClient.With<E, R>,
+): HttpClient.HttpClient.With<E, R> =>
+  client.pipe(
+    HttpClient.transformResponse(Effect.provideService(HttpClient.TracerPropagationEnabled, false)),
+  );
 
 // A client that retries transient failures, then fails on any non-2xx status.
 export const okClientWithRetry = <E, R>(
@@ -30,4 +44,6 @@ export const retryingClient = <E, R>(
   client: HttpClient.HttpClient.With<E, R>,
   times: number,
 ): HttpClient.HttpClient.With<E, R> =>
-  client.pipe(HttpClient.retryTransient({ schedule: transientBackoff, times }));
+  withoutTracePropagation(client).pipe(
+    HttpClient.retryTransient({ schedule: transientBackoff, times }),
+  );
