@@ -275,6 +275,33 @@ describe("loadCalendarYear", () => {
   );
 });
 
+describe("outgoing request headers", () => {
+  // Regression: Effect's HttpClient propagates the active span by default, which
+  // adds `b3` and `traceparent`. Neither is CORS-safelisted, so the browser
+  // lists them in the preflight's `Access-Control-Request-Headers`; Google only
+  // allows `authorization` and answers anything else with a 403 that has no
+  // `Access-Control-Allow-Origin`, blocking every call from the real origin.
+  it.effect("sends no trace-propagation headers to Google", () =>
+    Effect.gen(function* () {
+      const env = yield* withEnv({
+        storage: validToken,
+        responses: [() => TestEnv.jsonResponse({ items: [{ id: "c1", summary: "C" }] })],
+      });
+
+      yield* Effect.flatMap(GoogleCalendarApi, (calendar) => calendar.listCalendars).pipe(
+        Effect.provide(env.layer),
+      );
+
+      const [request] = yield* Ref.get(env.fetch.requests);
+      expect(request).toBeDefined();
+      // Auth still goes out; only the tracing headers are gone.
+      expect(request?.headers["authorization"]).toBe("Bearer token");
+      expect(request?.headers).not.toHaveProperty("b3");
+      expect(request?.headers).not.toHaveProperty("traceparent");
+    }),
+  );
+});
+
 describe("GoogleCalendarApi.createEvent", () => {
   it.effect("rejects a malformed date locally without calling Google", () =>
     Effect.gen(function* () {
