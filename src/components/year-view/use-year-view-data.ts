@@ -3,12 +3,6 @@ import type { YearViewInitialData } from "@/components/year-view/types";
 import type { YearViewDataSource } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 
-const EMPTY_YEAR_DATA: {
-  calendars: CalendarSummary[];
-  selectedCalendarIds: string[];
-  events: CalendarEvent[];
-} = { calendars: [], selectedCalendarIds: [], events: [] };
-
 export function useYearViewData({
   year,
   initialYear,
@@ -41,17 +35,23 @@ export function useYearViewData({
       setIsRefreshing(true);
       setError(null);
 
-      // A failed load still hydrates — with nothing. The sidebar then shows the
-      // error plus the Connect button rather than an indefinite spinner.
+      // A failed first load still hydrates — with nothing — so the sidebar
+      // shows the error plus the Connect button rather than an indefinite
+      // spinner. A failed refresh or post-mutation reconcile keeps whatever is
+      // already on screen: a dropped request should not blank the year or
+      // discard the visitor's calendar selection.
       const data = await source.load(targetYear).catch((err: unknown) => {
         console.error("Failed to load year data:", err);
         setError(err instanceof Error ? err.message : "Failed to load calendar data.");
-        return EMPTY_YEAR_DATA;
+        return null;
       });
 
-      setCalendars([...data.calendars]);
-      setSelectedCalendarIds([...data.selectedCalendarIds]);
-      setEvents([...data.events]);
+      if (data != null) {
+        setCalendars([...data.calendars]);
+        setSelectedCalendarIds([...data.selectedCalendarIds]);
+        setEvents([...data.events]);
+      }
+
       setHasHydratedData(true);
       setLoading(false);
       setIsRefreshing(false);
