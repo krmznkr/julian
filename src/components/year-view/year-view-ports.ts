@@ -41,3 +41,13 @@ export type YearViewEventApi = {
   ) => Promise<void>;
   readonly deleteEvent: (calendarId: string, eventId: string) => Promise<void>;
 };
+
+/**
+ * Where the collapsed-sidebar preference is remembered. The landing page keeps
+ * it in memory: the scripted tour toggles the sidebar, and that must not leak
+ * into the visitor's signed-in app.
+ */
+export type YearViewPreferences = {
+  readonly getSidebarCollapsed: () => boolean;
+  readonly setSidebarCollapsed: (collapsed: boolean) => void;
+};

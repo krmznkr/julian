@@ -88,6 +88,19 @@ export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): Dem
     const query = (selector: string) =>
       rootRef.current?.querySelector(selector) ?? document.querySelector(selector);
 
+    // The shell renders the sidebar twice — a mobile drawer and a desktop
+    // column — so a plain `querySelector` can resolve to the off-screen copy.
+    // Dispatching to it would still work, but the cursor would fly to nowhere.
+    const queryVisible = (selector: string) => {
+      const scope: ParentNode = rootRef.current ?? document;
+      return (
+        [...scope.querySelectorAll(selector)].find((element) => {
+          const rect = element.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0;
+        }) ?? null
+      );
+    };
+
     const focusGrid = () => {
       const grid = query("[data-year-grid-root]");
       if (grid instanceof HTMLElement) grid.focus({ preventScroll: true });
@@ -113,7 +126,7 @@ export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): Dem
         await typeInto(input, text, { signal });
       },
       clickOn: async (selector) => {
-        const target = query(selector);
+        const target = queryVisible(selector);
         if (!target) return;
         setCursor(centerOf(target));
         // Let the cursor visibly travel before it lands.
@@ -123,6 +136,9 @@ export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): Dem
         await sleep(400, signal);
       },
       submitDialog: async () => {
+        // Checked here as well as in the caller: a visitor who interrupts
+        // mid-quick-add must not have an event created after they took over.
+        if (signal.aborted) return;
         const form = query("[data-slot='dialog-content'] form");
         if (!(form instanceof HTMLFormElement)) return;
         setKeys(["return"]);

@@ -21,15 +21,12 @@ import type { YearViewInitialData } from "@/components/year-view/types";
 import type {
   YearViewDataSource,
   YearViewEventApi,
+  YearViewPreferences,
   YearViewRouterPort,
 } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent } from "@/domain";
 import { getDefaultWritableCalendar, isWritableCalendar } from "@/lib/google-calendar";
 import { useI18n } from "@/i18n/context";
-import {
-  getStoredSidebarCollapsedPreference,
-  storeSidebarCollapsedPreference,
-} from "@/lib/year-view-preferences";
 import { nextThemeMode } from "@/lib/theme";
 
 function isTextInputTarget(target: EventTarget | null) {
@@ -49,6 +46,7 @@ export default function YearViewCore({
   router,
   dataSource,
   eventApi,
+  preferences,
   banner,
 }: {
   initialYear: number;
@@ -56,6 +54,7 @@ export default function YearViewCore({
   router: YearViewRouterPort;
   dataSource: YearViewDataSource;
   eventApi: YearViewEventApi;
+  preferences: YearViewPreferences;
   /** Strip rendered between the top bar and the grid. Used by the landing page. */
   banner?: ReactNode;
 }) {
@@ -246,8 +245,8 @@ export default function YearViewCore({
   const handleToggleSidebar = useCallback(() => {
     const next = !sidebarCollapsed;
     setSidebarCollapsed(next);
-    storeSidebarCollapsedPreference(next);
-  }, [setSidebarCollapsed, sidebarCollapsed]);
+    preferences.setSidebarCollapsed(next);
+  }, [preferences, setSidebarCollapsed, sidebarCollapsed]);
 
   const handleOpenMobileSidebar = useCallback(() => {
     setMobileSidebarOpen(true);
@@ -268,11 +267,11 @@ export default function YearViewCore({
   }, [navigateYearView, scrollToMonth]);
 
   useEffect(() => {
-    const collapsed = getStoredSidebarCollapsedPreference();
+    const collapsed = preferences.getSidebarCollapsed();
     yearViewDispatch({ type: "SET_SIDEBAR_COLLAPSED", payload: collapsed });
     // eslint-disable-next-line functional/immutable-data
     hasLoadedSidebarPreferenceRef.current = true;
-  }, [yearViewDispatch]);
+  }, [preferences, yearViewDispatch]);
 
   const {
     displayEventMap,

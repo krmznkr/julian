@@ -27,11 +27,12 @@ describe("buildDemoYear", () => {
 
   it("drops nothing to normalization — every seed survives as an event", () => {
     // `normalizeEvent` rejects single-day timed events. If a seed is written
-    // that way it silently disappears from the demo, so this guards the fixture.
+    // that way it silently disappears from the demo, so this asserts the exact
+    // count: adding a seed should fail here until the number is updated.
     const { events } = buildDemoYear(YEAR, TODAY);
     const ids = new Set(events.map((event) => event.id));
     expect(ids.size).toBe(events.length);
-    expect(events.length).toBeGreaterThan(30);
+    expect(events).toHaveLength(39);
   });
 
   it("only exposes writable calendars plus the read-only ones the app models", () => {

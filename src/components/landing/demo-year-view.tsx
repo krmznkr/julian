@@ -10,6 +10,7 @@ import type {
   YearViewDataSource,
   YearViewEventApi,
   YearViewLoadResult,
+  YearViewPreferences,
   YearViewRouterPort,
 } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent } from "@/domain";
@@ -30,17 +31,23 @@ function useDemoStore(year: number) {
   const seed = useMemo(() => buildDemoYear(year, today), [today, year]);
   const eventsRef = useRef<CalendarEvent[]>(seed.events);
   const nextIdRef = useRef(0);
+  // Held here rather than recomputed from the seed on every load, so a calendar
+  // the visitor unchecks stays unchecked across a refresh or a year change.
+  const selectionRef = useRef<string[]>(seed.calendars.map((calendar) => calendar.id));
 
   const dataSource = useMemo<YearViewDataSource>(
     () => ({
       load: (targetYear): Promise<YearViewLoadResult> =>
         Promise.resolve({
           calendars: seed.calendars,
-          selectedCalendarIds: seed.calendars.map((calendar) => calendar.id),
+          selectedCalendarIds: selectionRef.current,
           events: targetYear === year ? eventsRef.current : buildDemoYear(targetYear, today).events,
         }),
-      // Nothing is written to disk from the landing page.
-      persistSelection: () => {},
+      // Remembered for this visit only; nothing is written to disk.
+      persistSelection: (_availableIds, selectedIds) => {
+        // eslint-disable-next-line functional/immutable-data
+        selectionRef.current = [...selectedIds];
+      },
     }),
     [seed, today, year],
   );
@@ -99,13 +106,34 @@ function useDemoStore(year: number) {
     [],
   );
 
-  return { dataSource, eventApi, seed, today };
+  const collapsedRef = useRef(false);
+  const preferences = useMemo<YearViewPreferences>(
+    () => ({
+      getSidebarCollapsed: () => collapsedRef.current,
+      setSidebarCollapsed: (collapsed) => {
+        // eslint-disable-next-line functional/immutable-data
+        collapsedRef.current = collapsed;
+      },
+    }),
+    [],
+  );
+
+  const initialData = useMemo(
+    () => ({
+      calendars: seed.calendars,
+      selectedCalendarIds: selectionRef.current,
+      events: seed.events,
+    }),
+    [seed],
+  );
+
+  return { dataSource, eventApi, preferences, initialData, today };
 }
 
 export function DemoYearView({ banner }: { banner?: ReactNode }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const year = useMemo(() => new Date().getFullYear(), []);
-  const { dataSource, eventApi, seed, today } = useDemoStore(year);
+  const { dataSource, eventApi, preferences, initialData, today } = useDemoStore(year);
 
   const [search, setSearch] = useState<YearViewSearch>(() => todaySearch(today));
   const [displayYear, setDisplayYear] = useState(year);
@@ -117,15 +145,6 @@ export function DemoYearView({ banner }: { banner?: ReactNode }) {
 
   const router = useMemo<YearViewRouterPort>(() => ({ search, navigate }), [navigate, search]);
 
-  const initialData = useMemo(
-    () => ({
-      calendars: seed.calendars,
-      selectedCalendarIds: seed.calendars.map((calendar) => calendar.id),
-      events: seed.events,
-    }),
-    [seed],
-  );
-
   const player = useDemoPlayer(containerRef);
 
   return (
@@ -136,6 +155,7 @@ export function DemoYearView({ banner }: { banner?: ReactNode }) {
         router={router}
         dataSource={dataSource}
         eventApi={eventApi}
+        preferences={preferences}
         banner={banner}
       />
       <DemoHud {...player} />

@@ -6,9 +6,14 @@ import type { YearViewInitialData } from "@/components/year-view/types";
 import type {
   YearViewDataSource,
   YearViewEventApi,
+  YearViewPreferences,
   YearViewRouterPort,
 } from "@/components/year-view/year-view-ports";
 import { saveSelectedCalendarIdsSync } from "@/lib/calendar-selection";
+import {
+  getStoredSidebarCollapsedPreference,
+  storeSidebarCollapsedPreference,
+} from "@/lib/year-view-preferences";
 import {
   createEvent,
   deleteEvent,
@@ -21,6 +26,11 @@ import { useNavigate, useSearch } from "@/lib/router";
 const EMPTY_YEAR = { calendars: [], selectedCalendarIds: [], events: [] } as const;
 
 const googleEventApi: YearViewEventApi = { createEvent, updateEvent, deleteEvent };
+
+const storedPreferences: YearViewPreferences = {
+  getSidebarCollapsed: getStoredSidebarCollapsedPreference,
+  setSidebarCollapsed: storeSidebarCollapsedPreference,
+};
 
 const googleDataSource: YearViewDataSource = {
   // No dummy data: until Google Calendar is connected the view is empty and the
@@ -63,6 +73,7 @@ export default function YearView({
       router={router}
       dataSource={googleDataSource}
       eventApi={googleEventApi}
+      preferences={storedPreferences}
     />
   );
 }
