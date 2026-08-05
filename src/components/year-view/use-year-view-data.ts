@@ -1,19 +1,13 @@
 import { useCallback, useEffect } from "react";
 import type { YearViewInitialData } from "@/components/year-view/types";
-import { loadGoogleYearData, isAuthenticated } from "@/lib/google-calendar";
-import { saveSelectedCalendarIdsSync } from "@/lib/calendar-selection";
+import type { YearViewDataSource } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
-
-const EMPTY_YEAR_DATA: {
-  calendars: CalendarSummary[];
-  selectedCalendarIds: string[];
-  events: CalendarEvent[];
-} = { calendars: [], selectedCalendarIds: [], events: [] };
 
 export function useYearViewData({
   year,
   initialYear,
   initialData,
+  source,
   calendars,
   setEvents,
   setLoading,
@@ -26,6 +20,7 @@ export function useYearViewData({
   year: number;
   initialYear: number;
   initialData: YearViewInitialData | null;
+  source: YearViewDataSource;
   calendars: CalendarSummary[];
   setEvents: (events: CalendarEvent[] | ((prev: CalendarEvent[]) => CalendarEvent[])) => void;
   setLoading: (loading: boolean) => void;
@@ -40,36 +35,25 @@ export function useYearViewData({
       setIsRefreshing(true);
       setError(null);
 
-      try {
-        const googleAuth = await isAuthenticated();
+      // A failed first load still hydrates — with nothing — so the sidebar
+      // shows the error plus the Connect button rather than an indefinite
+      // spinner. A failed refresh or post-mutation reconcile keeps whatever is
+      // already on screen: a dropped request should not blank the year or
+      // discard the visitor's calendar selection.
+      const data = await source.load(targetYear).catch((err: unknown) => {
+        console.error("Failed to load year data:", err);
+        setError(err instanceof Error ? err.message : "Failed to load calendar data.");
+        return null;
+      });
 
-        // No dummy data: until Google Calendar is connected the view is empty
-        // and the sidebar just offers the Connect button.
-        const data = googleAuth
-          ? await (async () => {
-              try {
-                return await loadGoogleYearData(targetYear);
-              } catch (err) {
-                console.error("Failed to load Google Calendar data:", err);
-                setError(
-                  err instanceof Error ? err.message : "Failed to load Google Calendar data.",
-                );
-                return EMPTY_YEAR_DATA;
-              }
-            })()
-          : EMPTY_YEAR_DATA;
-
-        setCalendars(data.calendars);
-        setSelectedCalendarIds(data.selectedCalendarIds);
-        setEvents(data.events);
-        setHasHydratedData(true);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error loading data:", err);
-        setError(err instanceof Error ? err.message : "Unknown error loading data");
-        setLoading(false);
+      if (data != null) {
+        setCalendars([...data.calendars]);
+        setSelectedCalendarIds([...data.selectedCalendarIds]);
+        setEvents([...data.events]);
       }
 
+      setHasHydratedData(true);
+      setLoading(false);
       setIsRefreshing(false);
     },
     [
@@ -80,6 +64,7 @@ export function useYearViewData({
       setIsRefreshing,
       setLoading,
       setSelectedCalendarIds,
+      source,
     ],
   );
 
@@ -90,13 +75,13 @@ export function useYearViewData({
 
   const updateSelectedCalendars = useCallback(
     (nextSelection: string[]) => {
-      saveSelectedCalendarIdsSync(
+      source.persistSelection(
         calendars.map((calendar) => calendar.id),
         nextSelection,
       );
       setSelectedCalendarIds(nextSelection);
     },
-    [calendars, setSelectedCalendarIds],
+    [calendars, setSelectedCalendarIds, source],
   );
 
   const handleReloadCalendars = useCallback(() => {

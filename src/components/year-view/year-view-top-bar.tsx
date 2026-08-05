@@ -153,10 +153,13 @@ export default function YearViewTopBar() {
       className="sticky top-0 z-30 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
       style={{ paddingTop: "var(--titlebar-height)" }}
     >
-      <div className="grid h-16 w-full grid-cols-[minmax(200px,260px)_1fr_minmax(240px,320px)] items-center gap-4 px-7">
+      {/* Below md the three-column grid's minimum widths (~528px) overflow every
+          phone, so the bar wraps instead: identity and status on the first row,
+          navigation on the second. */}
+      <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 md:grid md:h-16 md:grid-cols-[minmax(200px,260px)_1fr_minmax(240px,320px)] md:gap-4 md:px-7 md:py-0">
         <TopBarLogo sidebarCollapsed={sidebarCollapsed} onToggleSidebar={onToggleSidebar} />
 
-        <div className="flex items-center justify-center gap-2">
+        <div className="order-last flex w-full min-w-0 items-center justify-center gap-2 md:order-none md:w-auto">
           <YearNavigator
             year={year}
             onYearChange={onYearChange}
@@ -174,13 +177,15 @@ export default function YearViewTopBar() {
           />
         </div>
 
-        <TopBarTrailing
-          syncBadge={syncBadge}
-          commandPaletteOpen={commandPaletteOpen}
-          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-          keyboardHelpOpen={keyboardHelpOpen}
-          onToggleKeyboardHelp={() => setKeyboardHelpOpen((open) => !open)}
-        />
+        <div className="ml-auto md:ml-0">
+          <TopBarTrailing
+            syncBadge={syncBadge}
+            commandPaletteOpen={commandPaletteOpen}
+            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+            keyboardHelpOpen={keyboardHelpOpen}
+            onToggleKeyboardHelp={() => setKeyboardHelpOpen((open) => !open)}
+          />
+        </div>
       </div>
 
       <YearViewCommandPalette
