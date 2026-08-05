@@ -1,4 +1,4 @@
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { CalendarDays, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import AppLogo from "@/components/app-logo";
 import ThemeToggle from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ export function YearNavigator({
         </svg>
       </Button>
 
-      <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3.5 py-2">
+      <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2 py-2 md:px-3.5">
         <Input
           type="number"
           value={year}
@@ -79,7 +79,7 @@ export function YearNavigator({
           max={MAX_YEAR}
           onChange={onYearChange}
           onKeyDown={onYearKeyDown}
-          className="h-7 w-20 border-0 bg-transparent px-0 text-center text-lg font-semibold tabular-nums focus-visible:ring-0"
+          className="h-7 w-14 border-0 bg-transparent px-0 text-center text-lg font-semibold tabular-nums [appearance:textfield] focus-visible:ring-0 md:w-20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           inputMode="numeric"
           name="year"
           aria-label="Year"
@@ -154,13 +154,13 @@ export function TopBarActions({
       </div>
 
       <select
-        className="h-9 rounded-lg border border-border/60 bg-background px-2.5 text-xs md:hidden"
+        className="h-9 rounded-lg border border-border/60 bg-background px-2 text-xs md:hidden"
         aria-label="Jump to month"
         onChange={onMonthSelect}
         defaultValue=""
       >
         <option value="" disabled>
-          Select all
+          Month
         </option>
         {monthNames.map((label, index) => (
           <option key={label} value={index}>
@@ -169,8 +169,16 @@ export function TopBarActions({
         ))}
       </select>
 
-      <Button variant="ghost" size="sm" className="md:hidden" onClick={onOpenMobileSidebar}>
-        Calendars
+      <Button
+        variant="ghost"
+        size="sm"
+        className="px-2 md:hidden"
+        aria-label="Open calendars"
+        onClick={onOpenMobileSidebar}
+      >
+        {/* Below ~380px the word is the difference between fitting and not. */}
+        <CalendarDays className="size-4 min-[380px]:hidden" aria-hidden="true" />
+        <span className="hidden min-[380px]:inline">Calendars</span>
       </Button>
     </>
   );

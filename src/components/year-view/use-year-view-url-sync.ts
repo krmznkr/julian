@@ -1,22 +1,17 @@
-import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useRef } from "react";
 import { clampCell } from "@/components/year-view/year-grid-keyboard";
 import { MAX_YEAR, MIN_YEAR } from "@/components/year-view/constants";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";
-import {
-  buildYearViewSearch,
-  cellFromYearViewSearch,
-  focusSignature,
-  type YearViewSearch,
-} from "@/lib/year-view-url";
+import type { YearViewRouterPort } from "@/components/year-view/year-view-ports";
+import { buildYearViewSearch, cellFromYearViewSearch, focusSignature } from "@/lib/year-view-url";
 
 export type YearViewUrlFocus = {
   cell: KeyboardCell;
   detailsOpen: boolean;
 };
 
-export function useYearViewUrlSync(year: number, search: YearViewSearch) {
-  const navigate = useNavigate();
+export function useYearViewUrlSync(year: number, router: YearViewRouterPort) {
+  const { search, navigate } = router;
   const lastWrittenSignatureRef = useRef<string | null>(null);
 
   const urlFocus = useMemo((): YearViewUrlFocus | null => {
@@ -45,8 +40,7 @@ export function useYearViewUrlSync(year: number, search: YearViewSearch) {
       lastWrittenSignatureRef.current = signature;
 
       navigate({
-        to: "/year/$year",
-        params: { year: String(targetYear) },
+        year: targetYear,
         search: searchParams,
         replace: options?.replace ?? true,
       });

@@ -7,6 +7,7 @@ import { RootErrorBoundary, RootLayout } from "@/routes/root-layout";
 import { AuthCallbackPage } from "@/routes/auth-callback-page";
 import { LabPage } from "@/routes/lab-page";
 import { dynamic } from "@/lib/router";
+import { hasStoredGoogleSession } from "@/lib/session";
 import { NotFoundScreen } from "@/features/shell/not-found-screen";
 import { RouteErrorScreen } from "@/features/shell/route-error-screen";
 
@@ -53,6 +54,19 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
+  // Someone who has already connected a calendar has nothing to learn from the
+  // pitch. Gate on the synchronous credential check rather than the async
+  // `isAuthenticated()` so the landing page never flashes before the redirect.
+  beforeLoad: () => {
+    if (!hasStoredGoogleSession()) return;
+    const today = todayYearRoute();
+    throw redirect({
+      to: "/year/$year",
+      params: { year: today.year },
+      search: { month: today.month, day: today.day },
+      replace: true,
+    });
+  },
   component: LandingPage,
 });
 

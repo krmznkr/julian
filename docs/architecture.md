@@ -153,19 +153,22 @@ flowchart TD
   providers["CoreProviders<br/>theme + i18n"]
   router["TanStack Router"]
   routes["Landing · Year · OAuth callback · Lab"]
-  year["YearView"]
+  live["YearView<br/>live container"]
+  demo["DemoYearView<br/>landing container"]
+  core["YearViewCore"]
   state["useYearViewState<br/>data reducer + UI reducer"]
-  data["useYearViewData<br/>authentication + Google loading"]
+  data["useYearViewData<br/>loads through the data source port"]
   derived["derived data<br/>filtering + month segments"]
   grid["YearGrid<br/>virtualization + keyboard model"]
   columns["MonthColumn × 12"]
   layers["day cells · timed tracks<br/>multi-day segments · popovers"]
 
   main --> providers --> router --> routes
-  routes --> year
-  year --> state
-  year --> data
-  year --> derived
+  routes --> live --> core
+  routes --> demo --> core
+  core --> state
+  core --> data
+  core --> derived
   state --> grid
   data --> state
   derived --> grid --> columns --> layers
@@ -176,14 +179,45 @@ composite event keys, year clipping, month segmentation, and greedy lane
 assignment. Components consume those results rather than duplicating calendar
 math.
 
+### Year-view ports
+
+`YearViewCore` holds the entire year view but no opinion about where its data
+and its focus live. Three ports in
+`src/components/year-view/year-view-ports.ts` supply that, so the same component
+serves both the signed-in app and the landing page:
+
+| Port | Live container (`year-view.tsx`) | Demo container (`landing/demo-year-view.tsx`) |
+| --- | --- | --- |
+| `YearViewRouterPort` | TanStack Router search params | local `useState` |
+| `YearViewDataSource` | Google Calendar + stored calendar selection | generated fixture year, in memory |
+| `YearViewEventApi` | Google create/update/delete | in-memory store |
+
+The landing page therefore demonstrates the product by running it, not by
+reimplementing it — a lookalike would drift from the real view on every change.
+
+### Landing demo
+
+`src/components/landing/` scripts a tour over that demo container. The year
+grid registers its keydown handler on `window` and does not check `isTrusted`,
+so `demo-input.ts` dispatches real `KeyboardEvent`s and the application's own
+logic — including its guards — handles them. `use-demo-player.ts` stops the tour
+on the first trusted keystroke, click, or when the demo scrolls out of view, and
+does not autoplay for coarse pointers, narrow viewports, or
+`prefers-reduced-motion`. Nothing the tour does is persisted.
+
 ### Route behavior
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Public landing page |
+| `/` | Public landing page; redirects to the year view when a Google session is already stored |
 | `/year/$year` | Lazy-loaded year view; the current year redirects to a URL containing today's month/day |
 | `/auth/callback` | Validates OAuth state and exchanges the single-use code |
 | `/lab` | Component/design experimentation |
+
+The `/` guard reads `localStorage` synchronously via `src/lib/session.ts` rather
+than awaiting `isAuthenticated()`, so a returning visitor never sees the pitch
+flash before the redirect. The year view still performs the full authenticated
+check once it mounts.
 
 Search parameters hold the focused month/day so the selected date is linkable.
 The Worker serves `index.html` for unknown asset paths, allowing client-side
@@ -260,7 +294,9 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 | Edge routing, OAuth allowlist, security headers | `worker/index.ts`, `wrangler.jsonc`, `public/_headers` |
 | Route structure and URL contract | `src/router.tsx`, `src/lib/year-view-url.ts` |
 | Calendar math and event segmentation | `src/domain/` |
-| Year-view state and orchestration | `src/components/use-year-view-state.ts`, `src/components/year-view.tsx` |
+| Year-view state and orchestration | `src/components/use-year-view-state.ts`, `src/components/year-view-core.tsx` |
+| Where the year view gets data, focus, and writes | `src/components/year-view/year-view-ports.ts`, `src/components/year-view.tsx` |
+| Landing page and its scripted demo | `src/routes/landing-page.tsx`, `src/components/landing/` |
 | Month rendering and virtualization | `src/components/year-view/` |
 | Build chunking and deployment | `vite.config.ts`, `.github/workflows/deploy.yml` |
 
