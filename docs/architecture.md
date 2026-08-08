@@ -141,9 +141,12 @@ flowchart LR
 
 Calendar/event fetch failures are isolated per calendar, and task-list failures
 are isolated per list. A partial year can therefore render even when one Google
-resource fails. Creating, renaming, and deleting events call the Calendar API
-directly, then update the reducer-backed view state. Google Tasks are read-only
-in Julian.
+resource fails. Each isolated failure is recorded in the load result's
+`failures`, carried through the data port into view state, and reported by the
+sidebar's sync badge — so a partially loaded year is visibly partial rather than
+looking like an empty one. Creating, renaming, and deleting events call the
+Calendar API directly, then update the reducer-backed view state. Google Tasks
+are read-only in Julian.
 
 ## Frontend composition
 
@@ -298,7 +301,7 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 | Edge routing, OAuth allowlist, security headers  | `worker/index.ts`, `wrangler.jsonc`, `public/_headers`                        |
 | Route structure and URL contract                 | `src/router.tsx`, `src/lib/year-view-url.ts`                                  |
 | Calendar math and event segmentation             | `src/domain/`                                                                 |
-| Year-view state and orchestration                | `src/components/use-year-view-state.ts`, `src/components/year-view-core.tsx`  |
+| Year-view state and orchestration                | `src/components/year-view-reducer.ts`, `src/components/year-view-core.tsx`   |
 | Where the year view gets data, focus, and writes | `src/components/year-view/year-view-ports.ts`, `src/components/year-view.tsx` |
 | Landing page and its scripted demo               | `src/routes/landing-page.tsx`, `src/components/landing/`                      |
 | Month rendering and virtualization               | `src/components/year-view/`                                                   |
