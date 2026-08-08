@@ -36,7 +36,6 @@ export function useYearViewUrlSync(year: number, router: YearViewRouterPort) {
         detailsOpen: next.detailsOpen,
       });
       const signature = focusSignature({ cell, detailsOpen: next.detailsOpen });
-      // eslint-disable-next-line functional/immutable-data
       lastWrittenSignatureRef.current = signature;
 
       navigate({
@@ -55,7 +54,6 @@ export function useYearViewUrlSync(year: number, router: YearViewRouterPort) {
   }, []);
 
   const markUrlFocusApplied = useCallback((focus: YearViewUrlFocus) => {
-    // eslint-disable-next-line functional/immutable-data
     lastWrittenSignatureRef.current = focusSignature(focus);
   }, []);
 

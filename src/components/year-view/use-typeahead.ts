@@ -40,10 +40,8 @@ export function useTypeahead({ showPreview, announce }: TypeaheadDeps) {
   const clear = useCallback(() => {
     if (timeoutRef.current !== null) {
       window.clearTimeout(timeoutRef.current);
-      // eslint-disable-next-line functional/immutable-data
       timeoutRef.current = null;
     }
-    // eslint-disable-next-line functional/immutable-data
     bufferRef.current = "";
   }, []);
 
@@ -51,7 +49,6 @@ export function useTypeahead({ showPreview, announce }: TypeaheadDeps) {
 
   const restartTimer = useCallback((onElapsed: () => void, delayMs: number) => {
     if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
-    // eslint-disable-next-line functional/immutable-data
     timeoutRef.current = window.setTimeout(onElapsed, delayMs);
   }, []);
 
@@ -71,7 +68,6 @@ export function useTypeahead({ showPreview, announce }: TypeaheadDeps) {
       if (result.commitDay !== null) {
         const value = result.commitDay;
         spec.onCommit(value, keepDialog);
-        // eslint-disable-next-line functional/immutable-data
         bufferRef.current = "";
         showPreview(spec.toPreviewCell(value), FEEDBACK_MS);
         announce(spec.toLabel(value));
@@ -80,7 +76,6 @@ export function useTypeahead({ showPreview, announce }: TypeaheadDeps) {
 
       if (result.pendingDay !== null) {
         const value = result.pendingDay;
-        // eslint-disable-next-line functional/immutable-data
         bufferRef.current = result.nextBuffer;
         showPreview(spec.toPreviewCell(value), COMMIT_DELAY_MS);
         announce(spec.toLabel(value));

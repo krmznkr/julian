@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useState, type RefObject } from "react";
 import type { DayEventItem } from "@/components/year-view/use-month-column";
 
 export type DayPanelAnchorRect = {
@@ -7,6 +7,9 @@ export type DayPanelAnchorRect = {
   width: number;
   height: number;
 };
+
+/** Shared so a day with no events keeps the same array identity across renders. */
+const NO_ITEMS: DayEventItem[] = [];
 
 /** Positions the keyboard-driven day detail panel — no pointer/hover behavior. */
 export function useMonthDayPanel(
@@ -17,10 +20,9 @@ export function useMonthDayPanel(
   rowHeight: number,
 ) {
   const [anchorRect, setAnchorRect] = useState<DayPanelAnchorRect | null>(null);
-  const popoverElRef = useRef<HTMLElement | null>(null);
 
   const open = openDay !== null;
-  const items = openDay !== null ? (dayEvents.get(openDay) ?? []) : [];
+  const items = (openDay !== null ? dayEvents.get(openDay) : undefined) ?? NO_ITEMS;
   const label = openDay !== null ? `${monthName} ${openDay}` : "";
 
   useEffect(() => {
@@ -39,11 +41,6 @@ export function useMonthDayPanel(
     });
   }, [layerRef, openDay, rowHeight]);
 
-  const setPopoverEl = (node: HTMLElement | null) => {
-    // eslint-disable-next-line functional/immutable-data
-    popoverElRef.current = node;
-  };
-
   return useMemo(
     () => ({
       open,
@@ -51,7 +48,6 @@ export function useMonthDayPanel(
       label,
       anchorRect,
       anchorEl: layerRef.current,
-      setPopoverEl,
     }),
     [anchorRect, items, label, layerRef, open],
   );

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { formatDateRange, formatTimeRange } from "@/components/year-helpers";
 import type { DayPanelAnchorRect } from "@/components/year-view/use-month-day-panel";
@@ -126,6 +126,9 @@ const DayPanelList = memo(function DayPanelList({
         <ul
           className="space-y-0.5"
           role="listbox"
+          // Focusable so `aria-activedescendant` has an owner; the grid keeps
+          // real focus and drives selection from there.
+          tabIndex={-1}
           aria-label={`Events for ${label}`}
           aria-activedescendant={activeKey ? `day-panel-event-${activeKey}` : undefined}
         >
@@ -169,7 +172,6 @@ export function DayHoverPopover({
   anchorEl,
   anchorRect,
   onSelect,
-  setPopoverEl,
 }: {
   open: boolean;
   label: string;
@@ -178,17 +180,9 @@ export function DayHoverPopover({
   anchorEl: HTMLElement | null;
   anchorRect: DayPanelAnchorRect | null;
   onSelect: (key: string) => void;
-  setPopoverEl: (node: HTMLElement | null) => void;
 }) {
   const itemsByKey = useMemo(() => new Map(items.map((item) => [item.key, item])), [items]);
   const activeItem = activeKey ? itemsByKey.get(activeKey) : items[0];
-
-  const contentRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      setPopoverEl(node);
-    },
-    [setPopoverEl],
-  );
 
   useEffect(() => {
     if (!open || !activeKey) return;
@@ -203,7 +197,6 @@ export function DayHoverPopover({
 
   return createPortal(
     <div
-      ref={contentRef}
       role="dialog"
       aria-modal="true"
       aria-label={`${label} events`}

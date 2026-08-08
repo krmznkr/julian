@@ -106,7 +106,6 @@ export function useYearGridKeyboard({
   const clearDateChangePreview = useCallback(() => {
     if (dateChangePreviewTimeoutRef.current !== null) {
       window.clearTimeout(dateChangePreviewTimeoutRef.current);
-      // eslint-disable-next-line functional/immutable-data
       dateChangePreviewTimeoutRef.current = null;
     }
     setDateChangePreview(null);
@@ -116,7 +115,6 @@ export function useYearGridKeyboard({
     (cell: KeyboardCell, duration = DATE_CHANGE_FEEDBACK_MS) => {
       clearDateChangePreview();
       setDateChangePreview(cell);
-      // eslint-disable-next-line functional/immutable-data
       dateChangePreviewTimeoutRef.current = window.setTimeout(clearDateChangePreview, duration);
     },
     [clearDateChangePreview],
@@ -154,7 +152,6 @@ export function useYearGridKeyboard({
   }, [focusGrid]);
 
   const rememberLocalFocus = useCallback((cell: KeyboardCell, detailsOpen: boolean) => {
-    // eslint-disable-next-line functional/immutable-data
     localFocusSignatureRef.current = focusSignature({ cell, detailsOpen });
   }, []);
 

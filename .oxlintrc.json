@@ -6,6 +6,21 @@
     "jsx-a11y/click-events-have-key-events": "off",
     "jsx-a11y/label-has-associated-control": "off",
     "jsx-a11y/no-autofocus": "off",
+
+    // The year grid, the day panel and the mobile drawer are composite widgets
+    // built on divs. The suggested native tags (<dialog>, <select>, <option>,
+    // <section>, <output>) are not drop-in replacements: they bring their own
+    // focus and interaction behaviour that these widgets deliberately own.
+    "jsx-a11y/prefer-tag-over-role": "off",
+    // Those same widgets manage a roving tabindex themselves, so being
+    // programmatically focusable is the point rather than a mistake.
+    "jsx-a11y/no-noninteractive-tabindex": "off",
+    // ul + role="listbox" with li + role="option" is the standard ARIA pattern.
+    "jsx-a11y/no-noninteractive-element-to-interactive-role": "off",
+    // The grid is role="application": it owns the keyboard outright and
+    // delegates clicks by hit-testing data attributes on its descendants.
+    "jsx-a11y/no-noninteractive-element-interactions": "off",
+
     "vitest/no-standalone-expect": [
       "warn",
       {

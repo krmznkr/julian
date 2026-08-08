@@ -75,12 +75,7 @@ function MonthSegmentsLayer({
         showTodayLine={_showTodayLine}
         todayRowTop={_todayRowTop}
       />
-      <SegmentGrid
-        month={month}
-        multiDayLanes={multiDayLanes}
-        hasSingleStrip={hasSingleStrip}
-        bars={bars}
-      />
+      <SegmentGrid multiDayLanes={multiDayLanes} hasSingleStrip={hasSingleStrip} bars={bars} />
       <DayHoverPopover
         open={panel.open}
         label={panel.label}
@@ -89,7 +84,6 @@ function MonthSegmentsLayer({
         anchorEl={panel.anchorEl}
         anchorRect={panel.anchorRect}
         onSelect={onDialogActiveKeyChange}
-        setPopoverEl={panel.setPopoverEl}
       />
     </div>
   );

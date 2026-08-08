@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 export interface EventChipProps {
   segment: EventSegment;
   event: CalendarEvent;
-  month: number;
   calendars: ReadonlyArray<CalendarSummary>;
   onClick: (event?: ReactMouseEvent<HTMLButtonElement>) => void;
   overrideStartDay?: number;

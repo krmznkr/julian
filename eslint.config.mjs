@@ -20,7 +20,11 @@ export default [
       "functional/no-let": "error",
       "functional/no-loop-statements": "error",
       "functional/no-classes": "error",
-      "functional/immutable-data": "error",
+      // Writing `ref.current` is the only way React exposes a mutable box, so
+      // flagging it produced suppressions rather than better code — 18 of them,
+      // which drowned out the cases where the rule was saying something real.
+      // Everything else, including object and array mutation, stays an error.
+      "functional/immutable-data": ["error", { ignoreAccessorPattern: ["**.current"] }],
     },
   },
   {

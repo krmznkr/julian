@@ -43,7 +43,6 @@ export default function YearGridHeader({
             <div
               key={`header-${month.month}`}
               ref={(node) => {
-                // eslint-disable-next-line functional/immutable-data
                 monthHeaderRefs.current[month.month] = node;
               }}
               className={cn(
