@@ -81,16 +81,14 @@ export const loadCalendarYear = Effect.fn("CalendarYear.load")(function* (year: 
         [] as ReadonlyArray<CalendarEvent>,
         calendarApi.listEvents(calendar.id, startDate, endDate).pipe(
           Effect.map((events) =>
-            events.map(
-              (event): CalendarEvent => ({
-                ...event,
-                description: event.description ?? null,
-                htmlLink: event.htmlLink ?? null,
-                calendarId: calendar.id,
-                calendarColor: calendar.backgroundColor ?? null,
-                calendarSummary: calendar.summary,
-              }),
-            ),
+            events.map((event): CalendarEvent => ({
+              ...event,
+              description: event.description ?? null,
+              htmlLink: event.htmlLink ?? null,
+              calendarId: calendar.id,
+              calendarColor: calendar.backgroundColor ?? null,
+              calendarSummary: calendar.summary,
+            })),
           ),
         ),
       ),
