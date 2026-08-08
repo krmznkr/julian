@@ -8,7 +8,7 @@ import {
 import type { CalendarSummary } from "@/domain";
 
 type YearViewSharedDataContextValue = {
-  calendars: CalendarSummary[];
+  calendars: ReadonlyArray<CalendarSummary>;
   monthNames: string[];
 };
 
@@ -52,8 +52,8 @@ type YearViewContextValue = {
   isRefreshing: boolean;
   monthNames: string[];
   todayLongLabel: string;
-  calendars: CalendarSummary[];
-  selectedCalendarIds: string[];
+  calendars: ReadonlyArray<CalendarSummary>;
+  selectedCalendarIds: ReadonlyArray<string>;
   keyboardHelpOpen: boolean;
   setKeyboardHelpOpen: Dispatch<SetStateAction<boolean>>;
   commandPaletteOpen: boolean;

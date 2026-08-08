@@ -45,10 +45,6 @@ export function buildYearViewSearch(focus: {
   };
 }
 
-export function yearViewSearchSignature(search: YearViewSearch) {
-  return `${search.month ?? ""}:${search.day ?? ""}:${search.details ? 1 : 0}`;
-}
-
 export function focusSignature(focus: { cell: KeyboardCell; detailsOpen: boolean }) {
   return `${focus.cell.month}:${focus.cell.day}:${focus.detailsOpen ? 1 : 0}`;
 }

@@ -92,7 +92,6 @@ export function assignTimedEventLanes(
     const resolvedLane = lane === -1 ? laneEnds.length : lane;
 
     if (lane === -1) {
-      // eslint-disable-next-line functional/immutable-data
       laneEnds = [...laneEnds, range.endPct];
     } else {
       laneEnds = laneEnds.map((end, i) => (i === lane ? range.endPct : end));
@@ -104,23 +103,4 @@ export function assignTimedEventLanes(
 
   const laneCount = Math.max(1, laneEnds.length);
   return new Map(Array.from(lanes, ([key, lane]) => [key, { lane, laneCount }]));
-}
-
-export function layoutTimedEventsForDay(
-  events: Array<{ key: string; event: CalendarEvent }>,
-  year: number,
-  month: number,
-  day: number,
-): TimedEventLaneLayout[] {
-  const ranges = events.flatMap(({ key, event }) => {
-    const range = getTimedEventDayRange(event, year, month, day);
-    return range ? [{ key, range }] : [];
-  });
-
-  const lanes = assignTimedEventLanes(ranges);
-
-  return ranges.map(({ key, range }) => {
-    const { lane, laneCount } = lanes.get(key) ?? { lane: 0, laneCount: 1 };
-    return { key, ...range, lane, laneCount };
-  });
 }

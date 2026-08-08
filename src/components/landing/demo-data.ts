@@ -4,8 +4,13 @@
 // shaped exactly like data that came back from Google — including the rule that
 // single-day timed events are dropped. Dates are anchored to *today* so the
 // demo always looks like a live account rather than a screenshot from 2023.
-import { normalizeEvent, type CalendarEvent, type CalendarSummary } from "@/domain";
-import { TASKS_CALENDAR_ID } from "@/lib/google-calendar";
+import {
+  TASKS_CALENDAR_COLOR,
+  TASKS_CALENDAR_ID,
+  normalizeEvent,
+  type CalendarEvent,
+  type CalendarSummary,
+} from "@/domain";
 
 const PERSONAL = "demo-personal";
 const WORK = "demo-work";
@@ -53,7 +58,7 @@ const DEMO_CALENDARS: CalendarSummary[] = [
   {
     id: TASKS_CALENDAR_ID,
     summary: "Tasks",
-    backgroundColor: "#8b5cf6",
+    backgroundColor: TASKS_CALENDAR_COLOR,
     foregroundColor: "#ffffff",
     accessRole: "reader",
   },

@@ -10,12 +10,12 @@ import {
 } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export function isMacPlatform() {
+function isMacPlatform() {
   if (typeof navigator === "undefined") return false;
   return /Mac|iPhone|iPod|iPad/.test(navigator.platform);
 }
 
-export function modKeyLabel() {
+function modKeyLabel() {
   return isMacPlatform() ? "⌘" : "Ctrl";
 }
 

@@ -1,95 +1,56 @@
-import { useEffect, useRef, type MutableRefObject } from "react";
-import {
-  FALLBACK_MONTH_WIDTH,
-  MONTH_GAP_PX,
-} from "@/components/year-view/use-year-grid-virtualization";
+import { useCallback, useEffect, type RefObject } from "react";
+import { scrollMonthIntoView, useRafViewportListener } from "@/components/year-view/month-scroll";
 import type { YearViewSearch } from "@/lib/year-view-url";
 
+/** How far from an edge we still consider the grid "scrolled", in px. */
+const EDGE_TOLERANCE_PX = 4;
+/** How long a `?day=` deep link stays highlighted before fading out. */
+const JUMP_HIGHLIGHT_MS = 3500;
+
+/**
+ * The scrolling half of the year view: where the viewport is, where it should
+ * go, and what it should highlight when arriving from a deep link.
+ */
 export function useYearViewViewport({
   scrollRef,
   monthHeaderRefs,
-  setScrollEdges,
-  monthsLength,
+  onScrollEdgesChange,
   search,
   year,
   setJumpDayHighlight,
 }: {
-  scrollRef: MutableRefObject<HTMLDivElement | null>;
-  monthHeaderRefs: MutableRefObject<Array<HTMLDivElement | null>>;
-  setScrollEdges: (edges: { left: boolean; right: boolean }) => void;
-  monthsLength: number;
+  scrollRef: RefObject<HTMLDivElement | null>;
+  monthHeaderRefs: RefObject<Array<HTMLDivElement | null>>;
+  onScrollEdgesChange: (edges: { left: boolean; right: boolean }) => void;
   search: YearViewSearch;
+  /** Re-scrolls when the year changes so a deep link keeps its month centred. */
   year: number;
   setJumpDayHighlight: (value: number | null) => void;
 }) {
-  const scrollEdgesRef = useRef<{ left: boolean; right: boolean } | null>(null);
-  const edgeFrameRef = useRef<number | undefined>(undefined);
+  const scrollToMonth = useCallback(
+    (targetMonth: number) => {
+      const container = scrollRef.current;
+      if (!container) return;
+      scrollMonthIntoView(container, monthHeaderRefs.current[targetMonth], targetMonth);
+    },
+    [monthHeaderRefs, scrollRef],
+  );
 
-  const scrollToMonth = (targetMonth: number) => {
+  // Drives the fade-out shadows on either side of the grid.
+  const updateEdges = useCallback(() => {
     const container = scrollRef.current;
     if (!container) return;
-    const target = monthHeaderRefs.current[targetMonth];
-    if (target) {
-      // Center the month column in the viewport rather than pinning it left.
-      const left = target.offsetLeft - (container.clientWidth - target.offsetWidth) / 2;
-      container.scrollTo({
-        left: Math.max(0, left),
-        behavior: "smooth",
-      });
-      return;
-    }
-    const rootStyle = getComputedStyle(document.documentElement);
-    const widthVar = rootStyle.getPropertyValue("--month-col-width").trim();
-    const parsed = Number.parseFloat(widthVar.replace("px", ""));
-    const monthWidth = Number.isFinite(parsed) && parsed > 0 ? parsed : FALLBACK_MONTH_WIDTH;
-    const left =
-      targetMonth * (monthWidth + MONTH_GAP_PX) - (container.clientWidth - monthWidth) / 2;
-    container.scrollTo({
-      left: Math.max(0, left),
-      behavior: "smooth",
+    onScrollEdgesChange({
+      left: container.scrollLeft > EDGE_TOLERANCE_PX,
+      right:
+        container.scrollLeft + container.clientWidth < container.scrollWidth - EDGE_TOLERANCE_PX,
     });
-  };
+  }, [onScrollEdgesChange, scrollRef]);
 
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
+  useRafViewportListener(scrollRef, updateEdges);
 
-    const updateEdges = () => {
-      const left = container.scrollLeft > 4;
-      const right = container.scrollLeft + container.clientWidth < container.scrollWidth - 4;
-      const current = scrollEdgesRef.current;
-      if (current?.left === left && current.right === right) return;
-      const next = { left, right };
-      // eslint-disable-next-line functional/immutable-data
-      scrollEdgesRef.current = next;
-      setScrollEdges(next);
-    };
-
-    const scheduleEdgeUpdate = () => {
-      if (edgeFrameRef.current !== undefined) return;
-      // eslint-disable-next-line functional/immutable-data
-      edgeFrameRef.current = window.requestAnimationFrame(() => {
-        // eslint-disable-next-line functional/immutable-data
-        edgeFrameRef.current = undefined;
-        updateEdges();
-      });
-    };
-
-    updateEdges();
-    container.addEventListener("scroll", scheduleEdgeUpdate, { passive: true });
-    window.addEventListener("resize", scheduleEdgeUpdate);
-
-    return () => {
-      if (edgeFrameRef.current !== undefined) {
-        window.cancelAnimationFrame(edgeFrameRef.current);
-        // eslint-disable-next-line functional/immutable-data
-        edgeFrameRef.current = undefined;
-      }
-      container.removeEventListener("scroll", scheduleEdgeUpdate);
-      window.removeEventListener("resize", scheduleEdgeUpdate);
-    };
-  }, [monthsLength, scrollRef, setScrollEdges]);
-
+  // A trackpad swipe left at scrollLeft 0 would trigger the browser's
+  // back-navigation gesture, silently leaving the app mid-scroll.
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -97,56 +58,27 @@ export function useYearViewViewport({
     const handleWheel = (event: WheelEvent) => {
       const isLeftIntent = event.deltaX < 0 || (event.shiftKey && event.deltaY < 0);
       if (!isLeftIntent || container.scrollLeft > 0) return;
-      if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) {
-        event.preventDefault();
-      }
+      if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) event.preventDefault();
     };
 
     container.addEventListener("wheel", handleWheel, { passive: false });
-    return () => {
-      container.removeEventListener("wheel", handleWheel);
-    };
+    return () => container.removeEventListener("wheel", handleWheel);
   }, [scrollRef]);
 
+  // Deep links: `?month=` scrolls, `?day=` briefly highlights the row.
+  const { month, day } = search;
+
   useEffect(() => {
-    const monthValue = search.month;
-    const dayValue = search.day;
-    if (monthValue == null && dayValue == null) return;
+    if (month == null || month < 1 || month > 12) return;
+    scrollToMonth(month - 1);
+  }, [month, scrollToMonth, year]);
 
-    const monthIndex =
-      monthValue != null && monthValue >= 1 && monthValue <= 12 ? monthValue - 1 : null;
-
-    if (monthIndex != null) {
-      const container = scrollRef.current;
-      if (container) {
-        const target = monthHeaderRefs.current[monthIndex];
-        if (target) {
-          const left = target.offsetLeft - (container.clientWidth - target.offsetWidth) / 2;
-          container.scrollTo({
-            left: Math.max(0, left),
-            behavior: "smooth",
-          });
-        } else {
-          const rootStyle = getComputedStyle(document.documentElement);
-          const widthVar = rootStyle.getPropertyValue("--month-col-width").trim();
-          const parsed = Number.parseFloat(widthVar.replace("px", ""));
-          const monthWidth = Number.isFinite(parsed) && parsed > 0 ? parsed : FALLBACK_MONTH_WIDTH;
-          const left =
-            monthIndex * (monthWidth + MONTH_GAP_PX) - (container.clientWidth - monthWidth) / 2;
-          container.scrollTo({
-            left: Math.max(0, left),
-            behavior: "smooth",
-          });
-        }
-      }
-    }
-
-    if (dayValue != null && dayValue >= 1 && dayValue <= 31) {
-      setJumpDayHighlight(dayValue);
-      const timer = window.setTimeout(() => setJumpDayHighlight(null), 3500);
-      return () => window.clearTimeout(timer);
-    }
-  }, [monthHeaderRefs, scrollRef, search, year, setJumpDayHighlight]);
+  useEffect(() => {
+    if (day == null || day < 1 || day > 31) return;
+    setJumpDayHighlight(day);
+    const timer = window.setTimeout(() => setJumpDayHighlight(null), JUMP_HIGHLIGHT_MS);
+    return () => window.clearTimeout(timer);
+  }, [day, setJumpDayHighlight]);
 
   return { scrollToMonth };
 }

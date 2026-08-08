@@ -5,16 +5,6 @@ import { GoogleLoginButton } from "@/components/google-login-button";
 import type { CalendarSummary } from "@/domain";
 import { cn } from "@/lib/utils";
 
-export function SidebarHeader({
-  sidebarCollapsed: _sidebarCollapsed,
-  onToggleSidebar: _onToggleSidebar,
-}: {
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
-}) {
-  return null;
-}
-
 export function SyncStatusBadge({
   syncBadge,
 }: {
@@ -77,7 +67,6 @@ export function SidebarError({ error, onRetry }: { error: string | null; onRetry
 export function SidebarCalendarSection({
   calendars,
   selectedCalendarIds,
-  calendarLoading,
   loading,
   isRefreshing,
   onResync,
@@ -86,13 +75,12 @@ export function SidebarCalendarSection({
   unresolvedSelectedCalendarIds,
   onGoogleAuthChange,
 }: {
-  calendars: CalendarSummary[];
-  selectedCalendarIds: string[];
-  calendarLoading: boolean;
+  calendars: ReadonlyArray<CalendarSummary>;
+  selectedCalendarIds: ReadonlyArray<string>;
   loading: boolean;
   isRefreshing: boolean;
   onResync: () => void;
-  onChangeCalendars: (nextSelection: string[]) => void;
+  onChangeCalendars: (nextSelection: ReadonlyArray<string>) => void;
   visibleEventsCount: number;
   unresolvedSelectedCalendarIds: string[];
   onGoogleAuthChange?: () => void;
@@ -117,11 +105,11 @@ export function SidebarCalendarSection({
               size="icon-sm"
               className="size-7 text-muted-foreground/80"
               aria-label="Reload calendars"
-              disabled={calendarLoading || loading || isRefreshing}
+              disabled={loading || isRefreshing}
               onClick={onResync}
             >
               <RefreshCw
-                className={cn("size-3.5", (calendarLoading || isRefreshing) && "animate-spin")}
+                className={cn("size-3.5", isRefreshing && "animate-spin")}
                 aria-hidden="true"
               />
             </Button>
@@ -142,7 +130,6 @@ export function SidebarCalendarSection({
               calendars={calendars}
               selectedCalendarIds={selectedCalendarIds}
               onChange={onChangeCalendars}
-              disabled={calendarLoading}
             />
 
             <div className="space-y-2 px-1">
@@ -182,25 +169,15 @@ export function SidebarCalendarSection({
                     variant="outline"
                     size="sm"
                     className="h-7 w-full border-amber-500/50 text-xs text-amber-900 hover:bg-amber-500/20 dark:text-amber-200"
-                    disabled={calendarLoading || loading || isRefreshing}
+                    disabled={loading || isRefreshing}
                     onClick={onResync}
                   >
                     <RefreshCw
-                      className={cn(
-                        "mr-1.5 size-3.5",
-                        (calendarLoading || isRefreshing) && "animate-spin",
-                      )}
+                      className={cn("mr-1.5 size-3.5", isRefreshing && "animate-spin")}
                       aria-hidden="true"
                     />
                     Reload calendars
                   </Button>
-                </div>
-              )}
-
-              {calendarLoading && (
-                <div className="flex items-center gap-2">
-                  <div className="size-1.5 rounded-full bg-muted-foreground/40 animate-pulse" />
-                  <p className="text-xs text-muted-foreground/70">Loading calendars...</p>
                 </div>
               )}
 

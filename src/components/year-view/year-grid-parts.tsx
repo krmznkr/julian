@@ -11,7 +11,7 @@ type VirtualizationResult = ReturnType<typeof useYearGridVirtualization>;
 export type YearGridProps = {
   months: MonthSegments[];
   events: Map<string, CalendarEvent>;
-  calendars: CalendarSummary[];
+  calendars: ReadonlyArray<CalendarSummary>;
   year: number;
   scrollRef: MutableRefObject<HTMLDivElement | null>;
   monthHeaderRefs: MutableRefObject<Array<HTMLDivElement | null>>;

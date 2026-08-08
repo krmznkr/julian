@@ -1,4 +1,4 @@
-import { Link as RouterLink, useLocation } from "@tanstack/react-router";
+import { Link as RouterLink } from "@tanstack/react-router";
 import {
   type AnchorHTMLAttributes,
   type ComponentType,
@@ -6,7 +6,6 @@ import {
   type PropsWithChildren,
   type ReactNode,
   Suspense,
-  useMemo,
 } from "react";
 
 type LinkProps = PropsWithChildren<
@@ -52,22 +51,6 @@ export function dynamic<TProps extends object>(
       </Suspense>
     );
   };
-}
-
-export function useSearchParams() {
-  const location = useLocation();
-  return useMemo(() => {
-    const rawSearch = location.search;
-    if (typeof rawSearch === "string") {
-      return new URLSearchParams(rawSearch);
-    }
-
-    const params = new URLSearchParams();
-    if (rawSearch.month != null) params.set("month", String(rawSearch.month));
-    if (rawSearch.day != null) params.set("day", String(rawSearch.day));
-    if (rawSearch.details) params.set("details", "1");
-    return params;
-  }, [location.search]);
 }
 
 export { useNavigate, useSearch } from "@tanstack/react-router";

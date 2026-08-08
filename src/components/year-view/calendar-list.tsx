@@ -24,8 +24,8 @@ export function CalendarList({
   onChange,
   disabled,
 }: {
-  calendars: CalendarSummary[];
-  selectedCalendarIds: string[];
+  calendars: ReadonlyArray<CalendarSummary>;
+  selectedCalendarIds: ReadonlyArray<string>;
   onChange: (selected: string[]) => void;
   disabled?: boolean;
 }) {

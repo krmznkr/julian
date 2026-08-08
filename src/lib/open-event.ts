@@ -1,4 +1,4 @@
-import { TASKS_CALENDAR_ID } from "@/lib/google-calendar";
+import { TASKS_CALENDAR_ID } from "@/domain";
 import { openExternal } from "@/lib/open-external";
 import type { CalendarEvent } from "@/domain";
 

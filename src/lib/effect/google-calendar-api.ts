@@ -8,7 +8,7 @@ import { Context, Effect, Layer, Option, Stream } from "effect";
 import { HttpClientRequest } from "effect/unstable/http";
 import { GoogleApiError, type GoogleApiFailure } from "@/lib/effect/errors";
 import * as S from "@/lib/effect/schemas";
-import type { CalendarEvent, CalendarSummary } from "@/domain";
+import { toUtcDateOnly, type CalendarEvent, type CalendarSummary } from "@/domain";
 import { GoogleHttp } from "@/lib/effect/google-http";
 
 const CALENDAR_BASE = "https://www.googleapis.com/calendar/v3";
@@ -77,13 +77,6 @@ const parseIsoDate = (
   const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
   if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
   return { year, month, day };
-};
-
-export const toUtcDateOnly = (date: Date): string => {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 };
 
 export const googleCalendarApiLayer: Layer.Layer<GoogleCalendarApi, never, GoogleHttp> =

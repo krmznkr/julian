@@ -10,7 +10,7 @@ export interface EventChipProps {
   segment: EventSegment;
   event: CalendarEvent;
   month: number;
-  calendars: CalendarSummary[];
+  calendars: ReadonlyArray<CalendarSummary>;
   onClick: (event?: ReactMouseEvent<HTMLButtonElement>) => void;
   overrideStartDay?: number;
   overrideEndDay?: number;
@@ -28,7 +28,7 @@ export interface EventChipProps {
 
 // Multi-day bars and single-day all-day chips are hollow outlines so the day
 // timeline stays visible underneath.
-export function getOutlineEventClassName(compact = false) {
+function getOutlineEventClassName(compact = false) {
   return cn(
     "border-2 border-[var(--event-accent-color)] bg-transparent text-foreground transition hover:bg-background/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
     compact

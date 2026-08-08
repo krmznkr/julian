@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { scrollMonthIntoView } from "@/components/year-view/month-scroll";
 import { YEAR_GRID_HEADER_HEIGHT } from "@/components/year-view/day-hour-ruler";
 import type { YearViewUrlFocus } from "@/components/year-view/use-year-view-url-sync";
 import { getOrderedDayEvents } from "@/components/year-view/use-month-column";
@@ -263,11 +264,7 @@ export function useYearGridKeyboard({
     const container = scrollRef.current;
     if (!container) return;
 
-    const monthHeader = monthHeaderRefs.current[activeCell.month];
-    if (monthHeader) {
-      const left = monthHeader.offsetLeft - (container.clientWidth - monthHeader.offsetWidth) / 2;
-      container.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
-    }
+    scrollMonthIntoView(container, monthHeaderRefs.current[activeCell.month], activeCell.month);
 
     const rowTop = (activeCell.day - 1) * rowHeight;
     const headerHeight = YEAR_GRID_HEADER_HEIGHT;

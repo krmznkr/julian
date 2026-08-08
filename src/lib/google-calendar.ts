@@ -10,26 +10,7 @@ import { runPromise, type AppServices } from "@/lib/effect/runtime";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 import { GoogleAuth, GoogleAuthShape } from "@/lib/effect/google-auth";
 import { GoogleCalendarApi, GoogleCalendarApiShape } from "@/lib/effect/google-calendar-api";
-import { TASKS_CALENDAR_ID as TASKS_CALENDAR, loadCalendarYear } from "@/lib/effect/calendar-year";
-
-export const TASKS_CALENDAR_ID = TASKS_CALENDAR;
-
-const WRITABLE_ROLES = new Set(["owner", "writer"]);
-
-// Pure helpers — no Effect execution needed.
-export function isWritableCalendar(
-  calendar: Pick<CalendarSummary, "id" | "accessRole"> | undefined | null,
-): boolean {
-  if (!calendar) return false;
-  if (calendar.id === TASKS_CALENDAR_ID) return false;
-  return calendar.accessRole == null || WRITABLE_ROLES.has(calendar.accessRole);
-}
-
-export function getDefaultWritableCalendar(calendars: CalendarSummary[]): CalendarSummary | null {
-  const primary = calendars.find((calendar) => calendar.primary && isWritableCalendar(calendar));
-  if (primary) return primary;
-  return calendars.find((calendar) => isWritableCalendar(calendar)) ?? null;
-}
+import { loadCalendarYear } from "@/lib/effect/calendar-year";
 
 // Run on the app runtime, then normalize to an `Error` that preserves the
 // tagged error's metadata so consumers can still branch on auth failures.

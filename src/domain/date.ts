@@ -61,3 +61,17 @@ export function startOfYear(year: number) {
 export function startOfNextYear(year: number) {
   return new Date(year + 1, 0, 1, 0, 0, 0, 0);
 }
+
+/**
+ * Format a `Date` as a `YYYY-MM-DD` date-only string in UTC.
+ *
+ * Google's all-day boundaries are date-only and timezone-free, so they must be
+ * read and written in UTC; using local getters here would shift the date by a
+ * day either side of midnight for anyone west of Greenwich.
+ */
+export function toUtcDateOnly(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}

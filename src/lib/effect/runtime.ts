@@ -46,7 +46,7 @@ const ApiLayer = Layer.mergeAll(
 // exposed because consumer effects resolve them directly: `AppConfig` and
 // `KeyValueStore` for the year aggregation and stored preferences, `Navigation`
 // for `openExternal`.
-export const AppLayer = ApiLayer.pipe(
+const AppLayer = ApiLayer.pipe(
   Layer.provideMerge(Layer.mergeAll(appConfigLayer, keyValueStoreLayer, navigationLayer)),
 );
 
@@ -54,7 +54,7 @@ export type AppServices = Layer.Success<typeof AppLayer>;
 
 // A single long-lived runtime. `ManagedRuntime` memoizes layer construction so
 // services (the HTTP client, the token store) are built once.
-export const appRuntime = ManagedRuntime.make(AppLayer);
+const appRuntime = ManagedRuntime.make(AppLayer);
 
 // Run an Effect on the app runtime and return a Promise. On failure this
 // rejects with the *original* error value (the squashed `Cause`) rather than a

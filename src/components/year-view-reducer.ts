@@ -1,282 +1,158 @@
+/**
+ * The year view's state, as a single reducer.
+ *
+ * Actions name *what happened*, not which field to poke. That matters most for
+ * loading: one `LOAD_SUCCEEDED` replaces the six separate setter calls the view
+ * used to fire per refresh, so the "hydrated but still refreshing" and "failed
+ * but keep what's on screen" rules live here instead of being re-derived at
+ * every call site.
+ */
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 
-// ============================================================================
-// Domain State (events, calendars, loading)
-// ============================================================================
-
-export type YearDataState = {
-  year: number;
-  calendars: CalendarSummary[];
-  selectedCalendarIds: string[];
-  events: CalendarEvent[];
-  loading: boolean;
-  hasHydratedData: boolean;
-  isRefreshing: boolean;
-  busy: boolean;
-  calendarLoading: boolean;
-  error: string | null;
+export type YearViewState = {
+  readonly year: number;
+  readonly calendars: ReadonlyArray<CalendarSummary>;
+  readonly selectedCalendarIds: ReadonlyArray<string>;
+  readonly events: ReadonlyArray<CalendarEvent>;
+  /** True until the first load settles, successfully or not. Drives the skeleton. */
+  readonly loading: boolean;
+  /** True once a load has settled. A failed first load still counts. */
+  readonly hasHydratedData: boolean;
+  /** True while any load is in flight, including refreshes over existing data. */
+  readonly isRefreshing: boolean;
+  readonly error: string | null;
+  readonly scrollEdges: { readonly left: boolean; readonly right: boolean };
+  readonly sidebarCollapsed: boolean;
+  readonly mobileSidebarOpen: boolean;
 };
 
-export type YearDataAction =
-  | { type: "SET_YEAR"; payload: number }
-  | { type: "INCREMENT_YEAR" }
-  | { type: "DECREMENT_YEAR" }
-  | { type: "SET_CALENDARS"; payload: CalendarSummary[] }
-  | { type: "SET_SELECTED_CALENDAR_IDS"; payload: string[] }
+export type YearViewAction =
+  | { readonly type: "YEAR_CHANGED"; readonly year: number }
+  | { readonly type: "LOAD_STARTED" }
   | {
-      type: "SET_CALENDARS_AND_SELECTION";
-      payload: { calendars: CalendarSummary[]; selectedCalendarIds: string[] };
+      readonly type: "LOAD_SUCCEEDED";
+      readonly calendars: ReadonlyArray<CalendarSummary>;
+      readonly selectedCalendarIds: ReadonlyArray<string>;
+      readonly events: ReadonlyArray<CalendarEvent>;
     }
-  | { type: "TOGGLE_CALENDAR"; payload: string }
-  | { type: "SET_EVENTS"; payload: CalendarEvent[] }
-  | { type: "SET_EVENTS_FUNCTIONAL"; payload: (prev: CalendarEvent[]) => CalendarEvent[] }
-  | { type: "UPSERT_EVENT"; payload: CalendarEvent }
-  | { type: "REMOVE_EVENT"; payload: string }
-  | { type: "START_LOADING" }
-  | { type: "STOP_LOADING" }
-  | { type: "SET_HAS_HYDRATED_DATA"; payload: boolean }
-  | { type: "START_REFRESHING" }
-  | { type: "STOP_REFRESHING" }
-  | { type: "SET_BUSY"; payload: boolean }
-  | { type: "START_CALENDAR_LOADING" }
-  | { type: "STOP_CALENDAR_LOADING" }
-  | { type: "SET_ERROR"; payload: string | null }
-  | { type: "CLEAR_ERROR" }
+  | { readonly type: "LOAD_FAILED"; readonly message: string }
+  | { readonly type: "ERROR_DISMISSED" }
   | {
-      type: "LOAD_INITIAL_DATA";
-      payload: {
-        calendars: CalendarSummary[];
-        selectedCalendarIds: string[];
-        events: CalendarEvent[];
-      };
+      readonly type: "CALENDAR_SELECTION_CHANGED";
+      readonly selectedCalendarIds: ReadonlyArray<string>;
     }
-  | { type: "REFRESH_COMPLETE"; payload: { events: CalendarEvent[]; error: string | null } };
+  | { readonly type: "EVENT_CREATED"; readonly event: CalendarEvent }
+  | {
+      readonly type: "EVENT_UPDATED";
+      readonly id: string;
+      readonly changes: Partial<CalendarEvent>;
+    }
+  | { readonly type: "EVENT_DELETED"; readonly id: string }
+  | {
+      readonly type: "SCROLL_EDGES_CHANGED";
+      readonly edges: { readonly left: boolean; readonly right: boolean };
+    }
+  | { readonly type: "SIDEBAR_COLLAPSED_CHANGED"; readonly collapsed: boolean }
+  | { readonly type: "MOBILE_SIDEBAR_OPEN_CHANGED"; readonly open: boolean };
 
-export function createDataInitialState(overrides?: Partial<YearDataState>): YearDataState {
+export type YearViewInit = {
+  readonly year: number;
+  readonly calendars?: ReadonlyArray<CalendarSummary>;
+  readonly selectedCalendarIds?: ReadonlyArray<string>;
+  readonly events?: ReadonlyArray<CalendarEvent>;
+};
+
+/**
+ * Seeded from the route year plus, on the landing page, a fixture year. Having
+ * fixture data means the first paint is already hydrated and must not show a
+ * skeleton.
+ */
+export function createInitialState(init: YearViewInit): YearViewState {
+  const hydrated = init.calendars != null;
   return {
-    year: new Date().getFullYear(),
-    calendars: [],
-    selectedCalendarIds: [],
-    events: [],
-    loading: true,
-    hasHydratedData: false,
+    year: init.year,
+    calendars: init.calendars ?? [],
+    selectedCalendarIds: init.selectedCalendarIds ?? [],
+    events: init.events ?? [],
+    loading: !hydrated,
+    hasHydratedData: hydrated,
     isRefreshing: false,
-    busy: false,
-    calendarLoading: false,
     error: null,
-    ...overrides,
-  };
-}
-
-export function yearDataReducer(state: YearDataState, action: YearDataAction): YearDataState {
-  switch (action.type) {
-    case "SET_YEAR":
-      return { ...state, year: action.payload };
-    case "INCREMENT_YEAR":
-      return { ...state, year: state.year + 1 };
-    case "DECREMENT_YEAR":
-      return { ...state, year: state.year - 1 };
-    case "SET_CALENDARS":
-      return { ...state, calendars: action.payload };
-    case "SET_SELECTED_CALENDAR_IDS":
-      return { ...state, selectedCalendarIds: action.payload };
-    case "SET_CALENDARS_AND_SELECTION":
-      return {
-        ...state,
-        calendars: action.payload.calendars,
-        selectedCalendarIds: action.payload.selectedCalendarIds,
-      };
-    case "TOGGLE_CALENDAR": {
-      const calendarId = action.payload;
-      const isSelected = state.selectedCalendarIds.includes(calendarId);
-      return {
-        ...state,
-        selectedCalendarIds: isSelected
-          ? state.selectedCalendarIds.filter((id) => id !== calendarId)
-          : [...state.selectedCalendarIds, calendarId],
-      };
-    }
-    case "SET_EVENTS":
-      return { ...state, events: action.payload };
-    case "SET_EVENTS_FUNCTIONAL":
-      return { ...state, events: action.payload(state.events) };
-    case "UPSERT_EVENT": {
-      const newEvent = action.payload;
-      const existingIndex = state.events.findIndex((e) => e.id === newEvent.id);
-      if (existingIndex >= 0) {
-        return {
-          ...state,
-          events: state.events.map((e, i) => (i === existingIndex ? newEvent : e)),
-        };
-      }
-      return { ...state, events: [...state.events, newEvent] };
-    }
-    case "REMOVE_EVENT":
-      return { ...state, events: state.events.filter((e) => e.id !== action.payload) };
-    case "START_LOADING":
-      return { ...state, loading: true, error: null };
-    case "STOP_LOADING":
-      return { ...state, loading: false };
-    case "SET_HAS_HYDRATED_DATA":
-      return { ...state, hasHydratedData: action.payload };
-    case "START_REFRESHING":
-      return { ...state, isRefreshing: true };
-    case "STOP_REFRESHING":
-      return { ...state, isRefreshing: false };
-    case "SET_BUSY":
-      return { ...state, busy: action.payload };
-    case "START_CALENDAR_LOADING":
-      return { ...state, calendarLoading: true };
-    case "STOP_CALENDAR_LOADING":
-      return { ...state, calendarLoading: false };
-    case "SET_ERROR":
-      return { ...state, error: action.payload, loading: false };
-    case "CLEAR_ERROR":
-      return { ...state, error: null };
-    case "LOAD_INITIAL_DATA":
-      return {
-        ...state,
-        calendars: action.payload.calendars,
-        selectedCalendarIds: action.payload.selectedCalendarIds,
-        events: action.payload.events,
-        loading: false,
-        hasHydratedData: true,
-        error: null,
-      };
-    case "REFRESH_COMPLETE":
-      return {
-        ...state,
-        events: action.payload.events,
-        isRefreshing: false,
-        error: action.payload.error,
-      };
-    default:
-      return state;
-  }
-}
-
-// ============================================================================
-// UI Chrome State (view presentation, not domain data)
-// ============================================================================
-
-export type YearUiState = {
-  eventRangePreviews: Record<string, { start: string; endExclusive: string }>;
-  scrollEdges: { left: boolean; right: boolean };
-  sidebarCollapsed: boolean;
-  mobileSidebarOpen: boolean;
-  liveMessage: string;
-  userMenuOpen: boolean;
-};
-
-export type YearUiAction =
-  | {
-      type: "SET_EVENT_RANGE_PREVIEW";
-      payload: { eventId: string; start: string; endExclusive: string };
-    }
-  | { type: "CLEAR_EVENT_RANGE_PREVIEW"; payload: string }
-  | { type: "CLEAR_ALL_EVENT_RANGE_PREVIEWS" }
-  | {
-      type: "SET_EVENT_RANGE_PREVIEWS";
-      payload: Record<string, { start: string; endExclusive: string }>;
-    }
-  | {
-      type: "SET_EVENT_RANGE_PREVIEWS_FUNCTIONAL";
-      payload: (
-        prev: Record<string, { start: string; endExclusive: string }>,
-      ) => Record<string, { start: string; endExclusive: string }>;
-    }
-  | { type: "SET_SCROLL_EDGES"; payload: { left: boolean; right: boolean } }
-  | { type: "TOGGLE_SIDEBAR" }
-  | { type: "SET_SIDEBAR_COLLAPSED"; payload: boolean }
-  | { type: "TOGGLE_MOBILE_SIDEBAR" }
-  | { type: "SET_MOBILE_SIDEBAR_OPEN"; payload: boolean }
-  | { type: "SET_LIVE_MESSAGE"; payload: string }
-  | { type: "CLEAR_LIVE_MESSAGE" }
-  | { type: "TOGGLE_USER_MENU" }
-  | { type: "SET_USER_MENU_OPEN"; payload: boolean };
-
-export function createUiInitialState(overrides?: Partial<YearUiState>): YearUiState {
-  return {
-    eventRangePreviews: {},
     scrollEdges: { left: false, right: false },
     sidebarCollapsed: false,
     mobileSidebarOpen: false,
-    liveMessage: "",
-    userMenuOpen: false,
-    ...overrides,
-  };
-}
-
-export function yearUiReducer(state: YearUiState, action: YearUiAction): YearUiState {
-  switch (action.type) {
-    case "SET_EVENT_RANGE_PREVIEW":
-      return {
-        ...state,
-        eventRangePreviews: {
-          ...state.eventRangePreviews,
-          [action.payload.eventId]: {
-            start: action.payload.start,
-            endExclusive: action.payload.endExclusive,
-          },
-        },
-      };
-    case "CLEAR_EVENT_RANGE_PREVIEW": {
-      const { [action.payload]: _, ...rest } = state.eventRangePreviews;
-      return { ...state, eventRangePreviews: rest };
-    }
-    case "CLEAR_ALL_EVENT_RANGE_PREVIEWS":
-      return { ...state, eventRangePreviews: {} };
-    case "SET_EVENT_RANGE_PREVIEWS":
-      return { ...state, eventRangePreviews: action.payload };
-    case "SET_EVENT_RANGE_PREVIEWS_FUNCTIONAL":
-      return { ...state, eventRangePreviews: action.payload(state.eventRangePreviews) };
-    case "SET_SCROLL_EDGES":
-      if (
-        state.scrollEdges.left === action.payload.left &&
-        state.scrollEdges.right === action.payload.right
-      ) {
-        return state;
-      }
-      return { ...state, scrollEdges: action.payload };
-    case "TOGGLE_SIDEBAR":
-      return { ...state, sidebarCollapsed: !state.sidebarCollapsed };
-    case "SET_SIDEBAR_COLLAPSED":
-      return { ...state, sidebarCollapsed: action.payload };
-    case "TOGGLE_MOBILE_SIDEBAR":
-      return { ...state, mobileSidebarOpen: !state.mobileSidebarOpen };
-    case "SET_MOBILE_SIDEBAR_OPEN":
-      return { ...state, mobileSidebarOpen: action.payload };
-    case "SET_LIVE_MESSAGE":
-      return { ...state, liveMessage: action.payload };
-    case "CLEAR_LIVE_MESSAGE":
-      return { ...state, liveMessage: "" };
-    case "TOGGLE_USER_MENU":
-      return { ...state, userMenuOpen: !state.userMenuOpen };
-    case "SET_USER_MENU_OPEN":
-      return { ...state, userMenuOpen: action.payload };
-    default:
-      return state;
-  }
-}
-
-// ============================================================================
-// Combined (backward-compatible)
-// ============================================================================
-
-export type YearViewState = YearDataState & YearUiState;
-export type YearViewAction = YearDataAction | YearUiAction;
-
-export function createInitialState(overrides?: Partial<YearViewState>): YearViewState {
-  return {
-    ...createDataInitialState(overrides),
-    ...createUiInitialState(overrides),
   };
 }
 
 export function yearViewReducer(state: YearViewState, action: YearViewAction): YearViewState {
-  const dataResult = yearDataReducer(state, action as YearDataAction);
-  const uiResult = yearUiReducer(state, action as YearUiAction);
-  if (dataResult !== state) return { ...uiResult, ...dataResult };
-  if (uiResult !== state) return { ...dataResult, ...uiResult };
-  return state;
+  switch (action.type) {
+    case "YEAR_CHANGED":
+      return state.year === action.year ? state : { ...state, year: action.year };
+
+    case "LOAD_STARTED":
+      return { ...state, isRefreshing: true, error: null };
+
+    case "LOAD_SUCCEEDED":
+      return {
+        ...state,
+        calendars: action.calendars,
+        selectedCalendarIds: action.selectedCalendarIds,
+        events: action.events,
+        loading: false,
+        hasHydratedData: true,
+        isRefreshing: false,
+        error: null,
+      };
+
+    // Deliberately keeps calendars, events and the visitor's calendar selection.
+    // A dropped refresh must not blank the year; a failed *first* load still
+    // hydrates, so the sidebar shows the error and a Connect button rather than
+    // an indefinite spinner.
+    case "LOAD_FAILED":
+      return {
+        ...state,
+        loading: false,
+        hasHydratedData: true,
+        isRefreshing: false,
+        error: action.message,
+      };
+
+    case "ERROR_DISMISSED":
+      return state.error === null ? state : { ...state, error: null };
+
+    case "CALENDAR_SELECTION_CHANGED":
+      return { ...state, selectedCalendarIds: action.selectedCalendarIds };
+
+    case "EVENT_CREATED":
+      return { ...state, events: [...state.events, action.event] };
+
+    case "EVENT_UPDATED":
+      return {
+        ...state,
+        events: state.events.map((event) =>
+          event.id === action.id ? { ...event, ...action.changes } : event,
+        ),
+      };
+
+    case "EVENT_DELETED":
+      return { ...state, events: state.events.filter((event) => event.id !== action.id) };
+
+    // Compared before storing: the scroll listener fires on every frame and a
+    // fresh object would re-render the grid each time.
+    case "SCROLL_EDGES_CHANGED":
+      return state.scrollEdges.left === action.edges.left &&
+        state.scrollEdges.right === action.edges.right
+        ? state
+        : { ...state, scrollEdges: action.edges };
+
+    case "SIDEBAR_COLLAPSED_CHANGED":
+      return state.sidebarCollapsed === action.collapsed
+        ? state
+        : { ...state, sidebarCollapsed: action.collapsed };
+
+    case "MOBILE_SIDEBAR_OPEN_CHANGED":
+      return state.mobileSidebarOpen === action.open
+        ? state
+        : { ...state, mobileSidebarOpen: action.open };
+  }
 }
