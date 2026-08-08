@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
-import { scrollMonthIntoView } from "@/components/year-view/month-scroll";
-import { YEAR_GRID_HEADER_HEIGHT } from "@/components/year-view/day-hour-ruler";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { YearViewUrlFocus } from "@/components/year-view/use-year-view-url-sync";
 import { getOrderedDayEvents } from "@/components/year-view/use-month-column";
+import { useKeepCellInView } from "@/components/year-view/use-keep-cell-in-view";
+import { useTypeahead, type TypeaheadSpec } from "@/components/year-view/use-typeahead";
 import {
   clampCell,
   firstDayOfMonth,
@@ -11,7 +11,6 @@ import {
   applyArrowMoveStep,
   daysInMonth,
   digitFromKeyboardCode,
-  resolveDayTypeaheadInput,
   resolveArrowMoveStep,
   shouldHandleGridKeys,
   type KeyboardCell,
@@ -21,8 +20,7 @@ import { focusSignature } from "@/lib/year-view-url";
 import { openDayInGoogleCalendar, openEventInGoogle } from "@/lib/open-event";
 import type { CalendarEvent, MonthSegments } from "@/domain";
 
-const DAY_TYPEAHEAD_COMMIT_DELAY_MS = 650;
-const DAY_TYPEAHEAD_FEEDBACK_MS = 450;
+/** How long the destination cell stays highlighted after a jump. */
 const DATE_CHANGE_FEEDBACK_MS = 700;
 
 type UseYearGridKeyboardArgs = {
@@ -30,8 +28,8 @@ type UseYearGridKeyboardArgs = {
   months: MonthSegments[];
   monthNames: string[];
   events: Map<string, CalendarEvent>;
-  scrollRef: MutableRefObject<HTMLDivElement | null>;
-  monthHeaderRefs: MutableRefObject<Array<HTMLDivElement | null>>;
+  scrollRef: RefObject<HTMLDivElement | null>;
+  monthHeaderRefs: RefObject<Array<HTMLDivElement | null>>;
   rowHeight: number;
   focusTodaySignal: number;
   todayCell: KeyboardCell;
@@ -51,6 +49,15 @@ type UseYearGridKeyboardArgs = {
   onYearNavigate: (year: number, cell: KeyboardCell, detailsOpen: boolean) => void;
 };
 
+/**
+ * All keyboard interaction inside the year grid.
+ *
+ * `handleKeyDown` is a chain of small, named intent handlers rather than one
+ * cascade of `if`s. Each returns true once it has claimed the event, and the
+ * order they appear in *is* the precedence: the typeaheads must see digits
+ * before the letter shortcuts do, and the day-details dialog must claim arrow
+ * keys before they move the cursor.
+ */
 export function useYearGridKeyboard({
   year,
   months,
@@ -83,17 +90,18 @@ export function useYearGridKeyboard({
   const [dialogActiveKey, setDialogActiveKey] = useState<string | undefined>();
   const [announcement, setAnnouncement] = useState("");
   const [dateChangePreview, setDateChangePreview] = useState<KeyboardCell | null>(null);
+
   const localFocusSignatureRef = useRef<string>(
     focusSignature({
       cell: urlFocus?.cell ?? todayCell,
       detailsOpen: urlFocus?.detailsOpen ?? false,
     }),
   );
-  const dayTypeaheadBufferRef = useRef("");
-  const dayTypeaheadTimeoutRef = useRef<number | null>(null);
-  const monthTypeaheadBufferRef = useRef("");
-  const monthTypeaheadTimeoutRef = useRef<number | null>(null);
   const dateChangePreviewTimeoutRef = useRef<number | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // Feedback
+  // ---------------------------------------------------------------------------
 
   const clearDateChangePreview = useCallback(() => {
     if (dateChangePreviewTimeoutRef.current !== null) {
@@ -109,47 +117,12 @@ export function useYearGridKeyboard({
       clearDateChangePreview();
       setDateChangePreview(cell);
       // eslint-disable-next-line functional/immutable-data
-      dateChangePreviewTimeoutRef.current = window.setTimeout(() => {
-        clearDateChangePreview();
-      }, duration);
+      dateChangePreviewTimeoutRef.current = window.setTimeout(clearDateChangePreview, duration);
     },
     [clearDateChangePreview],
   );
 
-  const clearDayTypeahead = useCallback(() => {
-    if (dayTypeaheadTimeoutRef.current !== null) {
-      window.clearTimeout(dayTypeaheadTimeoutRef.current);
-      // eslint-disable-next-line functional/immutable-data
-      dayTypeaheadTimeoutRef.current = null;
-    }
-    // eslint-disable-next-line functional/immutable-data
-    dayTypeaheadBufferRef.current = "";
-  }, []);
-
-  const clearMonthTypeahead = useCallback(() => {
-    if (monthTypeaheadTimeoutRef.current !== null) {
-      window.clearTimeout(monthTypeaheadTimeoutRef.current);
-      // eslint-disable-next-line functional/immutable-data
-      monthTypeaheadTimeoutRef.current = null;
-    }
-    // eslint-disable-next-line functional/immutable-data
-    monthTypeaheadBufferRef.current = "";
-  }, []);
-
-  const rememberLocalFocus = useCallback((cell: KeyboardCell, detailsOpen: boolean) => {
-    // eslint-disable-next-line functional/immutable-data
-    localFocusSignatureRef.current = focusSignature({ cell, detailsOpen });
-  }, []);
-
-  const dialogItems = useMemo(() => {
-    if (!dialogCell) return [];
-    const month = months.find((entry) => entry.month === dialogCell.month);
-    if (!month) return [];
-    return getOrderedDayEvents(month, events, dialogCell.day);
-  }, [dialogCell, events, months]);
-
-  const activeEvent =
-    dialogItems.find((item) => item.key === dialogActiveKey) ?? dialogItems[0] ?? null;
+  useEffect(() => clearDateChangePreview, [clearDateChangePreview]);
 
   const announceCell = useCallback(
     (cell: KeyboardCell, panelOpen: boolean) => {
@@ -161,9 +134,11 @@ export function useYearGridKeyboard({
     [monthNames],
   );
 
-  const announceEvent = useCallback((title: string) => {
-    setAnnouncement(title);
-  }, []);
+  const announceEvent = useCallback((title: string) => setAnnouncement(title), []);
+
+  // ---------------------------------------------------------------------------
+  // Focus and URL
+  // ---------------------------------------------------------------------------
 
   const focusGrid = useCallback(() => {
     scrollRef.current?.focus({ preventScroll: true });
@@ -174,6 +149,15 @@ export function useYearGridKeyboard({
     return () => onRegisterFocusGrid(null);
   }, [focusGrid, onRegisterFocusGrid]);
 
+  useEffect(() => {
+    focusGrid();
+  }, [focusGrid]);
+
+  const rememberLocalFocus = useCallback((cell: KeyboardCell, detailsOpen: boolean) => {
+    // eslint-disable-next-line functional/immutable-data
+    localFocusSignatureRef.current = focusSignature({ cell, detailsOpen });
+  }, []);
+
   const syncUrl = useCallback(
     (cell: KeyboardCell, detailsOpen: boolean, replace = true) => {
       rememberLocalFocus(cell, detailsOpen);
@@ -182,11 +166,12 @@ export function useYearGridKeyboard({
     [onUrlFocusChange, rememberLocalFocus],
   );
 
+  // Adopt focus arriving from the URL, unless it is the echo of a move we just
+  // made ourselves — otherwise the two would trade updates forever.
   useEffect(() => {
     if (!urlFocus || !shouldApplyUrlFocus(urlFocus)) return;
 
-    const incomingSignature = focusSignature(urlFocus);
-    if (incomingSignature === localFocusSignatureRef.current) {
+    if (focusSignature(urlFocus) === localFocusSignatureRef.current) {
       markUrlFocusApplied(urlFocus);
       return;
     }
@@ -196,6 +181,22 @@ export function useYearGridKeyboard({
     rememberLocalFocus(urlFocus.cell, urlFocus.detailsOpen);
     markUrlFocusApplied(urlFocus);
   }, [markUrlFocusApplied, rememberLocalFocus, shouldApplyUrlFocus, urlFocus]);
+
+  useKeepCellInView({ cell: activeCell, scrollRef, monthHeaderRefs, rowHeight });
+
+  // ---------------------------------------------------------------------------
+  // Day details dialog
+  // ---------------------------------------------------------------------------
+
+  const dialogItems = useMemo(() => {
+    if (!dialogCell) return [];
+    const month = months.find((entry) => entry.month === dialogCell.month);
+    if (!month) return [];
+    return getOrderedDayEvents(month, events, dialogCell.day);
+  }, [dialogCell, events, months]);
+
+  const activeEvent =
+    dialogItems.find((item) => item.key === dialogActiveKey) ?? dialogItems[0] ?? null;
 
   const closeDialog = useCallback(() => {
     setDialogCell(null);
@@ -216,37 +217,19 @@ export function useYearGridKeyboard({
   );
 
   const openDayDetails = useCallback(
-    (cell: KeyboardCell) => {
-      openDialog(clampCell(cell, year));
-    },
+    (cell: KeyboardCell) => openDialog(clampCell(cell, year)),
     [openDialog, year],
   );
 
   const toggleDialog = useCallback(
     (cell: KeyboardCell) => {
-      if (dialogCell?.month === cell.month && dialogCell.day === cell.day) {
-        closeDialog();
-        return;
-      }
-      openDialog(cell);
+      if (dialogCell?.month === cell.month && dialogCell.day === cell.day) closeDialog();
+      else openDialog(cell);
     },
     [closeDialog, dialogCell, openDialog],
   );
 
-  useEffect(() => {
-    if (focusTodaySignal === 0) return;
-    setActiveCell(todayCell);
-    setDialogCell(null);
-    setDialogActiveKey(undefined);
-    rememberLocalFocus(todayCell, false);
-    onHelpOpenChange(false);
-    showDateChangePreview(todayCell);
-  }, [focusTodaySignal, onHelpOpenChange, rememberLocalFocus, showDateChangePreview, todayCell]);
-
-  useEffect(() => {
-    focusGrid();
-  }, [focusGrid]);
-
+  // Opening a day selects its first event, so Enter and E have a target.
   useEffect(() => {
     if (!dialogCell) {
       setDialogActiveKey(undefined);
@@ -254,132 +237,9 @@ export function useYearGridKeyboard({
     }
     const nextKey = dialogItems[0]?.key;
     setDialogActiveKey(nextKey);
-    if (nextKey) {
-      const item = dialogItems.find((entry) => entry.key === nextKey);
-      if (item) announceEvent(item.event.title);
-    }
+    const item = dialogItems.find((entry) => entry.key === nextKey);
+    if (item) announceEvent(item.event.title);
   }, [announceEvent, dialogCell, dialogItems]);
-
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    scrollMonthIntoView(container, monthHeaderRefs.current[activeCell.month], activeCell.month);
-
-    const rowTop = (activeCell.day - 1) * rowHeight;
-    const headerHeight = YEAR_GRID_HEADER_HEIGHT;
-    if (rowTop < container.scrollTop + headerHeight) {
-      container.scrollTo({ top: Math.max(0, rowTop - headerHeight), behavior: "smooth" });
-    } else if (rowTop + rowHeight > container.scrollTop + container.clientHeight) {
-      container.scrollTo({
-        top: rowTop + rowHeight - container.clientHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [activeCell, monthHeaderRefs, rowHeight, scrollRef]);
-
-  const moveActiveCell = useCallback(
-    (move: (cell: KeyboardCell) => KeyboardCell, keepDialog = false) => {
-      const next = clampCell(move(activeCell), year);
-      setActiveCell(next);
-      announceCell(next, keepDialog);
-      showDateChangePreview(next);
-      if (keepDialog) {
-        setDialogCell(next);
-        syncUrl(next, true);
-      } else {
-        setDialogCell(null);
-        setDialogActiveKey(undefined);
-        syncUrl(next, false);
-      }
-    },
-    [activeCell, announceCell, showDateChangePreview, syncUrl, year],
-  );
-
-  const jumpToDay = useCallback(
-    (day: number, keepDialog = false) => {
-      moveActiveCell(() => ({ month: activeCell.month, day }), keepDialog);
-    },
-    [activeCell.month, moveActiveCell],
-  );
-
-  const schedulePendingDayJump = useCallback(
-    (day: number, keepDialog: boolean) => {
-      if (dayTypeaheadTimeoutRef.current !== null) {
-        window.clearTimeout(dayTypeaheadTimeoutRef.current);
-      }
-      showDateChangePreview({ month: activeCell.month, day }, DAY_TYPEAHEAD_COMMIT_DELAY_MS);
-      setAnnouncement(`Day ${day}`);
-      // eslint-disable-next-line functional/immutable-data
-      dayTypeaheadTimeoutRef.current = window.setTimeout(() => {
-        clearDayTypeahead();
-        jumpToDay(day, keepDialog);
-      }, DAY_TYPEAHEAD_COMMIT_DELAY_MS);
-    },
-    [activeCell.month, clearDayTypeahead, jumpToDay, showDateChangePreview],
-  );
-
-  const showCommittedDayFeedback = useCallback(
-    (day: number) => {
-      if (dayTypeaheadTimeoutRef.current !== null) {
-        window.clearTimeout(dayTypeaheadTimeoutRef.current);
-      }
-      // eslint-disable-next-line functional/immutable-data
-      dayTypeaheadBufferRef.current = "";
-      showDateChangePreview({ month: activeCell.month, day }, DAY_TYPEAHEAD_FEEDBACK_MS);
-      setAnnouncement(`Day ${day}`);
-      // eslint-disable-next-line functional/immutable-data
-      dayTypeaheadTimeoutRef.current = window.setTimeout(() => {
-        clearDayTypeahead();
-      }, DAY_TYPEAHEAD_FEEDBACK_MS);
-    },
-    [activeCell.month, clearDayTypeahead, showDateChangePreview],
-  );
-
-  // Shift+number jumps to a month (1–12), keeping the active day clamped into
-  // the destination month. Mirrors the day typeahead's commit/pending flow.
-  const jumpToMonth = useCallback(
-    (month: number, keepDialog: boolean) => {
-      moveActiveCell((cell) => ({ month: month - 1, day: cell.day }), keepDialog);
-    },
-    [moveActiveCell],
-  );
-
-  const schedulePendingMonthJump = useCallback(
-    (month: number, keepDialog: boolean) => {
-      if (monthTypeaheadTimeoutRef.current !== null) {
-        window.clearTimeout(monthTypeaheadTimeoutRef.current);
-      }
-      showDateChangePreview(
-        { month: month - 1, day: activeCell.day },
-        DAY_TYPEAHEAD_COMMIT_DELAY_MS,
-      );
-      setAnnouncement(monthNames[month - 1] ?? `Month ${month}`);
-      // eslint-disable-next-line functional/immutable-data
-      monthTypeaheadTimeoutRef.current = window.setTimeout(() => {
-        clearMonthTypeahead();
-        jumpToMonth(month, keepDialog);
-      }, DAY_TYPEAHEAD_COMMIT_DELAY_MS);
-    },
-    [activeCell.day, clearMonthTypeahead, jumpToMonth, monthNames, showDateChangePreview],
-  );
-
-  const showCommittedMonthFeedback = useCallback(
-    (month: number) => {
-      if (monthTypeaheadTimeoutRef.current !== null) {
-        window.clearTimeout(monthTypeaheadTimeoutRef.current);
-      }
-      // eslint-disable-next-line functional/immutable-data
-      monthTypeaheadBufferRef.current = "";
-      showDateChangePreview({ month: month - 1, day: activeCell.day }, DAY_TYPEAHEAD_FEEDBACK_MS);
-      setAnnouncement(monthNames[month - 1] ?? `Month ${month}`);
-      // eslint-disable-next-line functional/immutable-data
-      monthTypeaheadTimeoutRef.current = window.setTimeout(() => {
-        clearMonthTypeahead();
-      }, DAY_TYPEAHEAD_FEEDBACK_MS);
-    },
-    [activeCell.day, clearMonthTypeahead, monthNames, showDateChangePreview],
-  );
 
   const cycleDialogEvent = useCallback(
     (delta: number) => {
@@ -396,13 +256,81 @@ export function useYearGridKeyboard({
     [announceEvent, dialogItems],
   );
 
+  useEffect(() => {
+    if (focusTodaySignal === 0) return;
+    setActiveCell(todayCell);
+    setDialogCell(null);
+    setDialogActiveKey(undefined);
+    rememberLocalFocus(todayCell, false);
+    onHelpOpenChange(false);
+    showDateChangePreview(todayCell);
+  }, [focusTodaySignal, onHelpOpenChange, rememberLocalFocus, showDateChangePreview, todayCell]);
+
+  // ---------------------------------------------------------------------------
+  // Movement
+  // ---------------------------------------------------------------------------
+
+  const moveActiveCell = useCallback(
+    (move: (cell: KeyboardCell) => KeyboardCell, keepDialog = false) => {
+      const next = clampCell(move(activeCell), year);
+      setActiveCell(next);
+      announceCell(next, keepDialog);
+      showDateChangePreview(next);
+      if (keepDialog) {
+        setDialogCell(next);
+      } else {
+        setDialogCell(null);
+        setDialogActiveKey(undefined);
+      }
+      syncUrl(next, keepDialog);
+    },
+    [activeCell, announceCell, showDateChangePreview, syncUrl, year],
+  );
+
+  const dayTypeahead = useTypeahead({
+    showPreview: showDateChangePreview,
+    announce: setAnnouncement,
+  });
+  const monthTypeahead = useTypeahead({
+    showPreview: showDateChangePreview,
+    announce: setAnnouncement,
+  });
+
+  const daySpec = useMemo<TypeaheadSpec>(
+    () => ({
+      max: daysInMonth(year, activeCell.month),
+      toPreviewCell: (day) => ({ month: activeCell.month, day }),
+      toLabel: (day) => `Day ${day}`,
+      onCommit: (day, keepDialog) =>
+        moveActiveCell(() => ({ month: activeCell.month, day }), keepDialog),
+    }),
+    [activeCell.month, moveActiveCell, year],
+  );
+
+  const monthSpec = useMemo<TypeaheadSpec>(
+    () => ({
+      max: 12,
+      toPreviewCell: (month) => ({ month: month - 1, day: activeCell.day }),
+      toLabel: (month) => monthNames[month - 1] ?? `Month ${month}`,
+      onCommit: (month, keepDialog) =>
+        moveActiveCell((cell) => ({ month: month - 1, day: cell.day }), keepDialog),
+    }),
+    [activeCell.day, monthNames, moveActiveCell],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Key dispatch
+  // ---------------------------------------------------------------------------
+
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
 
       const dayPanelOpen = dialogCell !== null;
+      const claim = () => event.preventDefault();
 
-      // Delete the selected event from day details with Cmd/Ctrl + Backspace/Delete.
+      // Cmd/Ctrl + Backspace deletes the selected event. Checked before the
+      // modifier bail-out below, which is the only reason a chord gets here.
       if (
         (event.metaKey || event.ctrlKey) &&
         (event.key === "Backspace" || event.key === "Delete")
@@ -413,91 +341,54 @@ export function useYearGridKeyboard({
           canModifyEvent(activeEvent.event) &&
           shouldHandleGridKeys(event.target, dayPanelOpen)
         ) {
-          event.preventDefault();
+          claim();
           onRequestDeleteEvent(activeEvent.event);
         }
         return;
       }
 
       if (event.ctrlKey || event.metaKey) return;
+      // An open overlay owns the keyboard.
       if (helpOpen || commandPaletteOpen || mutationDialogOpen) return;
-
-      const arrowStep = resolveArrowMoveStep(event);
 
       if (event.key === "?" || (event.key === "/" && event.shiftKey)) {
         if (!shouldHandleGridKeys(event.target, dayPanelOpen)) return;
-        event.preventDefault();
+        claim();
         onHelpOpenChange((open) => !open);
         return;
       }
 
       if (!shouldHandleGridKeys(event.target, dayPanelOpen)) return;
 
-      // Shift+number navigates to a month (1–12). Read the digit from the
-      // physical key code so Shift+1 (which reports key "!") still resolves to
-      // "1". Months share the day typeahead parser with a max of 12.
+      // Shift+digit picks a month. The digit comes from the physical key code
+      // because Shift+1 reports its key as "!".
       const monthDigit = event.shiftKey && !event.altKey ? digitFromKeyboardCode(event.code) : null;
-      const monthTypeahead = monthDigit
-        ? resolveDayTypeaheadInput({
-            buffer: monthTypeaheadBufferRef.current,
-            key: monthDigit,
-            maxDay: 12,
-          })
-        : null;
-      if (monthTypeahead) {
-        event.preventDefault();
-        if (monthTypeahead.commitDay !== null) {
-          jumpToMonth(monthTypeahead.commitDay, dayPanelOpen);
-          showCommittedMonthFeedback(monthTypeahead.commitDay);
-        }
-
-        if (monthTypeahead.pendingDay !== null) {
-          // eslint-disable-next-line functional/immutable-data
-          monthTypeaheadBufferRef.current = monthTypeahead.nextBuffer;
-          schedulePendingMonthJump(monthTypeahead.pendingDay, dayPanelOpen);
-        } else if (monthTypeahead.commitDay === null) {
-          clearMonthTypeahead();
-        }
+      if (monthDigit !== null && monthTypeahead.handleKey(monthDigit, dayPanelOpen, monthSpec)) {
+        claim();
         return;
       }
 
-      const dayTypeahead =
-        event.altKey || event.shiftKey
-          ? null
-          : resolveDayTypeaheadInput({
-              buffer: dayTypeaheadBufferRef.current,
-              key: event.key,
-              maxDay: daysInMonth(year, activeCell.month),
-            });
-      if (dayTypeahead) {
-        event.preventDefault();
-        if (dayTypeahead.commitDay !== null) {
-          jumpToDay(dayTypeahead.commitDay, dayPanelOpen);
-          showCommittedDayFeedback(dayTypeahead.commitDay);
-        }
-
-        if (dayTypeahead.pendingDay !== null) {
-          // eslint-disable-next-line functional/immutable-data
-          dayTypeaheadBufferRef.current = dayTypeahead.nextBuffer;
-          schedulePendingDayJump(dayTypeahead.pendingDay, dayPanelOpen);
-        } else if (dayTypeahead.commitDay === null) {
-          clearDayTypeahead();
-        }
+      // A plain digit picks a day in the current month.
+      if (
+        !event.altKey &&
+        !event.shiftKey &&
+        dayTypeahead.handleKey(event.key, dayPanelOpen, daySpec)
+      ) {
+        claim();
         return;
       }
 
-      clearDayTypeahead();
-      clearMonthTypeahead();
+      // Any other key ends a half-typed number rather than letting it commit
+      // later on top of wherever the visitor has since moved.
+      dayTypeahead.clear();
+      monthTypeahead.clear();
 
-      // N quick-adds an event on the active day (works whether or not the day
-      // panel is open).
       if (event.key.toLowerCase() === "n" && !event.altKey) {
-        event.preventDefault();
+        claim();
         onRequestCreateEvent(activeCell);
         return;
       }
 
-      // E edits the selected event when day details are open.
       if (
         event.key.toLowerCase() === "e" &&
         !event.altKey &&
@@ -505,40 +396,43 @@ export function useYearGridKeyboard({
         activeEvent &&
         canModifyEvent(activeEvent.event)
       ) {
-        event.preventDefault();
+        claim();
         onRequestEditEvent(activeEvent.event);
         return;
       }
 
       if (event.key === "Escape") {
-        if (dayPanelOpen) {
-          event.preventDefault();
-          closeDialog();
-        }
+        if (!dayPanelOpen) return;
+        claim();
+        closeDialog();
         return;
       }
 
+      const arrowStep = resolveArrowMoveStep(event);
+
+      // While a day is open, the arrows and brackets walk its events instead of
+      // moving the cursor off the day.
       if (dayPanelOpen && (event.key === "[" || event.key === "]")) {
-        event.preventDefault();
+        claim();
         cycleDialogEvent(event.key === "[" ? -1 : 1);
         return;
       }
 
       if (dayPanelOpen && dialogItems.length > 0 && arrowStep && !event.shiftKey && !event.altKey) {
         if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-          event.preventDefault();
+          claim();
           cycleDialogEvent(-1);
           return;
         }
         if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-          event.preventDefault();
+          claim();
           cycleDialogEvent(1);
           return;
         }
       }
 
       if (arrowStep) {
-        event.preventDefault();
+        claim();
 
         if (arrowStep.yearDelta !== 0) {
           const nextYear = Math.min(MAX_YEAR, Math.max(MIN_YEAR, year + arrowStep.yearDelta));
@@ -546,9 +440,8 @@ export function useYearGridKeyboard({
           rememberLocalFocus(nextCell, dayPanelOpen);
           setActiveCell(nextCell);
           showDateChangePreview(nextCell);
-          if (dayPanelOpen) {
-            setDialogCell(nextCell);
-          } else {
+          if (dayPanelOpen) setDialogCell(nextCell);
+          else {
             setDialogCell(null);
             setDialogActiveKey(undefined);
           }
@@ -561,44 +454,28 @@ export function useYearGridKeyboard({
         return;
       }
 
-      if (event.key === "Home") {
-        event.preventDefault();
-        moveActiveCell(() => firstDayOfMonth(activeCell), dayPanelOpen);
-        return;
-      }
-      if (event.key === "End") {
-        event.preventDefault();
-        moveActiveCell(() => lastDayOfMonth(activeCell, year), dayPanelOpen);
-        return;
-      }
-      if (event.key === "PageUp") {
-        event.preventDefault();
-        moveActiveCell((cell) => moveCellByDays(cell, -7, year), dayPanelOpen);
-        return;
-      }
-      if (event.key === "PageDown") {
-        event.preventDefault();
-        moveActiveCell((cell) => moveCellByDays(cell, 7, year), dayPanelOpen);
+      const jump = JUMP_KEYS[event.key];
+      if (jump) {
+        claim();
+        moveActiveCell((cell) => jump(cell, year), dayPanelOpen);
         return;
       }
 
       if (event.key === " " || event.code === "Space") {
-        event.preventDefault();
+        claim();
         toggleDialog(activeCell);
         return;
       }
 
       if (event.key === "Enter") {
-        event.preventDefault();
+        claim();
         if (dayPanelOpen) {
           if (activeEvent) openEventInGoogle(activeEvent.event);
-          return;
-        }
-        if (event.shiftKey) {
+        } else if (event.shiftKey) {
           openDayInGoogleCalendar(year, activeCell.month, activeCell.day);
-          return;
+        } else {
+          openDialog(activeCell);
         }
-        openDialog(activeCell);
       }
     },
     [
@@ -607,29 +484,25 @@ export function useYearGridKeyboard({
       announceCell,
       canModifyEvent,
       closeDialog,
-      clearDayTypeahead,
-      clearMonthTypeahead,
       commandPaletteOpen,
       cycleDialogEvent,
+      daySpec,
+      dayTypeahead,
       dialogCell,
       dialogItems.length,
       helpOpen,
-      jumpToDay,
-      jumpToMonth,
+      monthSpec,
+      monthTypeahead,
       moveActiveCell,
       mutationDialogOpen,
       onHelpOpenChange,
       onRequestCreateEvent,
-      onRequestEditEvent,
       onRequestDeleteEvent,
+      onRequestEditEvent,
       onYearNavigate,
       openDialog,
       rememberLocalFocus,
-      schedulePendingDayJump,
-      schedulePendingMonthJump,
       showDateChangePreview,
-      showCommittedDayFeedback,
-      showCommittedMonthFeedback,
       toggleDialog,
       year,
     ],
@@ -639,15 +512,6 @@ export function useYearGridKeyboard({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
-
-  useEffect(
-    () => () => {
-      clearDayTypeahead();
-      clearMonthTypeahead();
-      clearDateChangePreview();
-    },
-    [clearDateChangePreview, clearDayTypeahead, clearMonthTypeahead],
-  );
 
   return {
     activeCell,
@@ -661,3 +525,12 @@ export function useYearGridKeyboard({
     openDayDetails,
   };
 }
+
+/** Single-press jumps that do not depend on any state beyond the cell and year. */
+const JUMP_KEYS: Record<string, ((cell: KeyboardCell, year: number) => KeyboardCell) | undefined> =
+  {
+    Home: (cell) => firstDayOfMonth(cell),
+    End: (cell, year) => lastDayOfMonth(cell, year),
+    PageUp: (cell, year) => moveCellByDays(cell, -7, year),
+    PageDown: (cell, year) => moveCellByDays(cell, 7, year),
+  };
