@@ -1,0 +1,50 @@
+name: Keep auto-merge PRs current
+
+# The `main` ruleset requires branches to be up to date before merging
+# (`strict_required_status_checks_policy`). Every merge therefore leaves all
+# other open PRs BEHIND, and GitHub's auto-merge will not update them itself —
+# so a queue of green, auto-merge-enabled Dependabot PRs would sit indefinitely
+# waiting for something to move them. This is that something.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-update-prs
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update every open PR that is already set to auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # Only touch PRs that have auto-merge enabled: those have already been
+          # opted in, so updating them cannot merge anything a human did not ask
+          # for. A DIRTY branch has a real conflict and needs a person.
+          prs=$(gh pr list --repo "$REPO" --state open \
+            --json number,autoMergeRequest,mergeStateStatus \
+            --jq '.[] | select(.autoMergeRequest != null and .mergeStateStatus == "BEHIND") | .number')
+
+          if [ -z "$prs" ]; then
+            echo "No auto-merge PRs are behind main."
+            exit 0
+          fi
+
+          for pr in $prs; do
+            echo "Updating PR #$pr"
+            # A failure here is not fatal: the next push to main retries, and a
+            # branch that cannot be updated needs a human anyway.
+            gh pr update-branch "$pr" --repo "$REPO" || echo "Could not update #$pr; leaving it for review."
+          done
