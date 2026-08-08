@@ -30,6 +30,7 @@ export function useYearViewData({
           calendars: data.calendars,
           selectedCalendarIds: data.selectedCalendarIds,
           events: data.events,
+          failures: data.failures,
         });
       } catch (err) {
         console.error("Failed to load year data:", err);

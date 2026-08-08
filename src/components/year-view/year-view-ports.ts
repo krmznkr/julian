@@ -13,10 +13,21 @@ export type YearViewRouterPort = {
   readonly navigate: (target: { year: number; search: YearViewSearch; replace: boolean }) => void;
 };
 
+export type YearSourceFailure = {
+  readonly source: string;
+  readonly message: string;
+};
+
 export type YearViewLoadResult = {
   readonly calendars: ReadonlyArray<CalendarSummary>;
   readonly selectedCalendarIds: ReadonlyArray<string>;
   readonly events: ReadonlyArray<CalendarEvent>;
+  /**
+   * Calendars or task lists that could not be loaded while the rest succeeded.
+   * Empty means the year is complete — which is what lets the sidebar say "we
+   * could not load these" instead of implying you have no events.
+   */
+  readonly failures: ReadonlyArray<YearSourceFailure>;
 };
 
 /** Where the year view gets its calendars and events, and where hidden calendars are remembered. */

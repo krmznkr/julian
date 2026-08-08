@@ -133,6 +133,7 @@ export default function YearViewCore({
   } = useYearViewDerivedData({
     calendars,
     events,
+    failures: state.failures,
     formatDate,
     isRefreshing,
     selectedCalendarIds,
