@@ -42,14 +42,6 @@ export function moveCellByMonths(cell: KeyboardCell, delta: number, year: number
   };
 }
 
-export function moveCellByMonthsClamped(
-  cell: KeyboardCell,
-  delta: number,
-  year: number,
-): KeyboardCell {
-  return moveCellByMonths(cell, delta, year);
-}
-
 export type ArrowMoveStep = {
   verticalDays: number;
   horizontalMonths: number;

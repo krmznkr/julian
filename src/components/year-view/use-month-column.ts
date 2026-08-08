@@ -5,8 +5,7 @@ import {
   getTimedEventDayPlacement,
   type TimedEventPlacement,
 } from "@/components/year-view/day-timeline-placement";
-import { isCalendarEditable } from "@/components/year-view/utils";
-import { parseEventBoundary } from "@/domain";
+import { isWritableCalendar, parseEventBoundary } from "@/domain";
 import type { CalendarEvent, CalendarSummary, EventSegment, MonthSegments } from "@/domain";
 
 export type RenderedBar = {
@@ -34,7 +33,7 @@ export type DayEventItem = {
 
 // Event length in ms, used to order longest → shortest. All-day single events
 // (~1 day) naturally sort ahead of timed ones (hours); multi-day spans lead.
-export function eventDurationMs(event: CalendarEvent): number {
+function eventDurationMs(event: CalendarEvent): number {
   const start = parseEventBoundary(event.start, event.allDay);
   const end = parseEventBoundary(event.end, event.allDay);
   const ms = end.getTime() - start.getTime();
@@ -52,7 +51,7 @@ export function orderByDurationDesc<T extends { event: CalendarEvent }>(items: T
 export function useRenderedSegments(
   month: MonthSegments,
   events: Map<string, CalendarEvent>,
-  calendars: CalendarSummary[],
+  calendars: ReadonlyArray<CalendarSummary>,
   year: number,
 ) {
   const calendarById = useMemo(
@@ -79,7 +78,7 @@ export function useRenderedSegments(
       .filter(({ segment }) => segment.endDay > segment.startDay)
       .map(({ segment, event }) => {
         const calendar = calendarById.get(event.calendarId);
-        const canEdit = (calendar ? isCalendarEditable(calendar) : false) && event.allDay;
+        const canEdit = (calendar ? isWritableCalendar(calendar) : false) && event.allDay;
         return {
           segment,
           event,

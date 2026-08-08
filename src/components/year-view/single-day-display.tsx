@@ -8,7 +8,7 @@ import type { DaySquare } from "@/components/year-view/use-month-column";
  * timed events show here as hollow outline chips — partial timed events are no
  * longer painted onto the cell background; they remain in the day detail card.
  */
-export function isCellVisibleSquare(square: DaySquare): boolean {
+function isCellVisibleSquare(square: DaySquare): boolean {
   if (square.allDay) return true;
   return isFullDayTimedPlacement(square.timedPlacement);
 }

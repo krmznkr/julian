@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
+import {
+  createInitialState,
+  yearViewReducer,
+  type YearViewAction,
+  type YearViewState,
+} from "@/components/year-view-reducer";
 import { useYearViewData } from "@/components/year-view/use-year-view-data";
 import type { YearViewDataSource } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
@@ -16,15 +22,20 @@ const event: CalendarEvent = {
   calendarId: "cal-1",
 };
 
-function setup(source: YearViewDataSource) {
-  const setters = {
-    setEvents: vi.fn(),
-    setLoading: vi.fn(),
-    setIsRefreshing: vi.fn(),
-    setError: vi.fn(),
-    setHasHydratedData: vi.fn(),
-    setCalendars: vi.fn(),
-    setSelectedCalendarIds: vi.fn(),
+/**
+ * Feeds the hook's dispatches through the real reducer so assertions are about
+ * observable state, not about which setter happened to be called.
+ */
+function setup(source: YearViewDataSource, seed?: Partial<YearViewState>) {
+  const actions: YearViewAction[] = [];
+  const state = {
+    current: { ...createInitialState({ year: 2026 }), ...seed },
+  };
+
+  const dispatch = (action: YearViewAction) => {
+    actions.push(action);
+
+    state.current = yearViewReducer(state.current, action);
   };
 
   const view = renderHook(() =>
@@ -34,11 +45,11 @@ function setup(source: YearViewDataSource) {
       initialData: null,
       source,
       calendars: [calendar],
-      ...setters,
+      dispatch,
     }),
   );
 
-  return { ...view, ...setters };
+  return { ...view, actions, state };
 }
 
 describe("useYearViewData", () => {
@@ -53,11 +64,12 @@ describe("useYearViewData", () => {
       persistSelection: vi.fn(),
     };
 
-    const { setCalendars, setEvents, setHasHydratedData } = setup(source);
+    const { state } = setup(source);
 
-    await waitFor(() => expect(setHasHydratedData).toHaveBeenCalledWith(true));
-    expect(setCalendars).toHaveBeenCalledWith([calendar]);
-    expect(setEvents).toHaveBeenCalledWith([event]);
+    await waitFor(() => expect(state.current.hasHydratedData).toBe(true));
+    expect(state.current.calendars).toEqual([calendar]);
+    expect(state.current.events).toEqual([event]);
+    expect(state.current.error).toBeNull();
   });
 
   it("keeps whatever is on screen when a load fails", async () => {
@@ -69,16 +81,19 @@ describe("useYearViewData", () => {
       persistSelection: vi.fn(),
     };
 
-    const { setCalendars, setEvents, setSelectedCalendarIds, setError, setHasHydratedData } =
-      setup(source);
+    const { state } = setup(source, {
+      calendars: [calendar],
+      selectedCalendarIds: ["cal-1"],
+      events: [event],
+    });
 
-    await waitFor(() => expect(setError).toHaveBeenCalledWith("network down"));
-    expect(setCalendars).not.toHaveBeenCalled();
-    expect(setEvents).not.toHaveBeenCalled();
-    expect(setSelectedCalendarIds).not.toHaveBeenCalled();
+    await waitFor(() => expect(state.current.error).toBe("network down"));
+    expect(state.current.calendars).toEqual([calendar]);
+    expect(state.current.events).toEqual([event]);
+    expect(state.current.selectedCalendarIds).toEqual(["cal-1"]);
     // Still hydrated, so a first-load failure shows the error rather than
     // spinning forever.
-    expect(setHasHydratedData).toHaveBeenCalledWith(true);
+    expect(state.current.hasHydratedData).toBe(true);
   });
 
   it("stops the refreshing indicator whether the load succeeds or fails", async () => {
@@ -87,10 +102,10 @@ describe("useYearViewData", () => {
       persistSelection: vi.fn(),
     };
 
-    const { setIsRefreshing, setLoading } = setup(source);
+    const { state } = setup(source);
 
-    await waitFor(() => expect(setIsRefreshing).toHaveBeenCalledWith(false));
-    expect(setLoading).toHaveBeenCalledWith(false);
+    await waitFor(() => expect(state.current.isRefreshing).toBe(false));
+    expect(state.current.loading).toBe(false);
   });
 
   it("routes calendar selection changes through the source", () => {
@@ -101,10 +116,10 @@ describe("useYearViewData", () => {
       persistSelection,
     };
 
-    const { result, setSelectedCalendarIds } = setup(source);
+    const { result, state } = setup(source);
 
     result.current.updateSelectedCalendars([]);
     expect(persistSelection).toHaveBeenCalledWith(["cal-1"], []);
-    expect(setSelectedCalendarIds).toHaveBeenCalledWith([]);
+    expect(state.current.selectedCalendarIds).toEqual([]);
   });
 });

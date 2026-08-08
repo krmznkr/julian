@@ -17,12 +17,12 @@ const readSidebarCollapsed = Effect.gen(function* () {
   });
 });
 
-export const storeSidebarCollapsed = Effect.fn("YearViewPreferences.storeSidebarCollapsed")(
-  function* (collapsed: boolean) {
-    const store = yield* KeyValueStore;
-    yield* store.set(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed ? "true" : "false");
-  },
-);
+const storeSidebarCollapsed = Effect.fn("YearViewPreferences.storeSidebarCollapsed")(function* (
+  collapsed: boolean,
+) {
+  const store = yield* KeyValueStore;
+  yield* store.set(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed ? "true" : "false");
+});
 
 export function getStoredSidebarCollapsedPreference(): boolean {
   return Effect.runSync(readSidebarCollapsed.pipe(Effect.provide(keyValueStoreLayer)));

@@ -9,13 +9,16 @@
 import { Effect } from "effect";
 import { resolveSelectedCalendarIds } from "@/lib/calendar-selection";
 import type { AppError, GoogleApiFailure } from "@/lib/effect/errors";
-import type { CalendarEvent, CalendarSummary } from "@/domain";
+import {
+  toUtcDateOnly,
+  TASKS_CALENDAR_COLOR,
+  TASKS_CALENDAR_ID,
+  type CalendarEvent,
+  type CalendarSummary,
+} from "@/domain";
 import { GoogleCalendarApi } from "@/lib/effect/google-calendar-api";
 import { GoogleTasks, type GoogleTasksShape } from "@/lib/effect/google-tasks";
 import { AppConfig } from "@/lib/effect/config";
-
-export const TASKS_CALENDAR_ID = "__google_tasks__";
-const TASKS_CALENDAR_COLOR = "#8b5cf6";
 
 export interface YearData {
   readonly calendars: ReadonlyArray<CalendarSummary>;
@@ -160,10 +163,3 @@ const loadTaskEvents = (
       })
       .filter((event) => Number(event.start.slice(0, 4)) === year);
   });
-
-const toUtcDateOnly = (date: Date): string => {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};

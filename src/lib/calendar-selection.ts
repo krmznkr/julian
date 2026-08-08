@@ -39,7 +39,7 @@ export const resolveSelectedCalendarIds = Effect.fn("CalendarSelection.resolveSe
   return availableIds.filter((id) => !hidden.has(id));
 });
 
-export const saveSelectedCalendarIds = Effect.fn("CalendarSelection.saveSelected")(function* (
+const saveSelectedCalendarIds = Effect.fn("CalendarSelection.saveSelected")(function* (
   availableIds: ReadonlyArray<string>,
   selectedIds: ReadonlyArray<string>,
 ) {

@@ -1,9 +1,9 @@
 import type { CalendarEvent, CalendarSummary, EventSegment } from "@/domain";
 
 export type YearViewInitialData = {
-  calendars: CalendarSummary[];
-  selectedCalendarIds: string[];
-  events: CalendarEvent[];
+  readonly calendars: ReadonlyArray<CalendarSummary>;
+  readonly selectedCalendarIds: ReadonlyArray<string>;
+  readonly events: ReadonlyArray<CalendarEvent>;
 };
 
 export type EventPopoverProps = {

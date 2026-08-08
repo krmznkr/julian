@@ -10,11 +10,11 @@ export function useYearViewDerivedData({
   selectedCalendarIds,
   year,
 }: {
-  calendars: CalendarSummary[];
-  events: CalendarEvent[];
+  calendars: ReadonlyArray<CalendarSummary>;
+  events: ReadonlyArray<CalendarEvent>;
   formatDate: (date: Date, options?: Intl.DateTimeFormatOptions) => string;
   isRefreshing: boolean;
-  selectedCalendarIds: string[];
+  selectedCalendarIds: ReadonlyArray<string>;
   year: number;
 }) {
   const monthNames = useMemo(

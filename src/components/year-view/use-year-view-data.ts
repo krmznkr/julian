@@ -1,7 +1,8 @@
 import { useCallback, useEffect } from "react";
+import type { YearViewAction } from "@/components/year-view-reducer";
 import type { YearViewInitialData } from "@/components/year-view/types";
 import type { YearViewDataSource } from "@/components/year-view/year-view-ports";
-import type { CalendarEvent, CalendarSummary } from "@/domain";
+import type { CalendarSummary } from "@/domain";
 
 export function useYearViewData({
   year,
@@ -9,63 +10,36 @@ export function useYearViewData({
   initialData,
   source,
   calendars,
-  setEvents,
-  setLoading,
-  setIsRefreshing,
-  setError,
-  setHasHydratedData,
-  setCalendars,
-  setSelectedCalendarIds,
+  dispatch,
 }: {
   year: number;
   initialYear: number;
   initialData: YearViewInitialData | null;
   source: YearViewDataSource;
-  calendars: CalendarSummary[];
-  setEvents: (events: CalendarEvent[] | ((prev: CalendarEvent[]) => CalendarEvent[])) => void;
-  setLoading: (loading: boolean) => void;
-  setIsRefreshing: (refreshing: boolean) => void;
-  setError: (error: string | null) => void;
-  setHasHydratedData: (hasHydrated: boolean) => void;
-  setCalendars: (calendars: CalendarSummary[]) => void;
-  setSelectedCalendarIds: (ids: string[]) => void;
+  calendars: ReadonlyArray<CalendarSummary>;
+  dispatch: (action: YearViewAction) => void;
 }) {
   const loadData = useCallback(
     async (targetYear: number) => {
-      setIsRefreshing(true);
-      setError(null);
+      dispatch({ type: "LOAD_STARTED" });
 
-      // A failed first load still hydrates — with nothing — so the sidebar
-      // shows the error plus the Connect button rather than an indefinite
-      // spinner. A failed refresh or post-mutation reconcile keeps whatever is
-      // already on screen: a dropped request should not blank the year or
-      // discard the visitor's calendar selection.
-      const data = await source.load(targetYear).catch((err: unknown) => {
+      try {
+        const data = await source.load(targetYear);
+        dispatch({
+          type: "LOAD_SUCCEEDED",
+          calendars: data.calendars,
+          selectedCalendarIds: data.selectedCalendarIds,
+          events: data.events,
+        });
+      } catch (err) {
         console.error("Failed to load year data:", err);
-        setError(err instanceof Error ? err.message : "Failed to load calendar data.");
-        return null;
-      });
-
-      if (data != null) {
-        setCalendars([...data.calendars]);
-        setSelectedCalendarIds([...data.selectedCalendarIds]);
-        setEvents([...data.events]);
+        dispatch({
+          type: "LOAD_FAILED",
+          message: err instanceof Error ? err.message : "Failed to load calendar data.",
+        });
       }
-
-      setHasHydratedData(true);
-      setLoading(false);
-      setIsRefreshing(false);
     },
-    [
-      setCalendars,
-      setError,
-      setEvents,
-      setHasHydratedData,
-      setIsRefreshing,
-      setLoading,
-      setSelectedCalendarIds,
-      source,
-    ],
+    [dispatch, source],
   );
 
   useEffect(() => {
@@ -74,14 +48,14 @@ export function useYearViewData({
   }, [year, initialYear, initialData, loadData]);
 
   const updateSelectedCalendars = useCallback(
-    (nextSelection: string[]) => {
+    (nextSelection: ReadonlyArray<string>) => {
       source.persistSelection(
         calendars.map((calendar) => calendar.id),
         nextSelection,
       );
-      setSelectedCalendarIds(nextSelection);
+      dispatch({ type: "CALENDAR_SELECTION_CHANGED", selectedCalendarIds: nextSelection });
     },
-    [calendars, setSelectedCalendarIds, source],
+    [calendars, dispatch, source],
   );
 
   const handleReloadCalendars = useCallback(() => {
