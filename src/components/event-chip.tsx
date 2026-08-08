@@ -14,7 +14,6 @@ import { cn } from "@/lib/utils";
 function EventChip({
   segment,
   event,
-  month: _month,
   calendars,
   onClick,
   overrideStartDay,

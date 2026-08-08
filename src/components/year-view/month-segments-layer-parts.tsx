@@ -4,12 +4,10 @@ import { monthColumnTemplateColumns } from "@/components/year-view/month-grid-la
 import type { RenderedBar } from "@/components/year-view/use-month-column";
 
 export const SegmentGrid = memo(function SegmentGrid({
-  month,
   multiDayLanes,
   hasSingleStrip,
   bars,
 }: {
-  month: number;
   multiDayLanes: number;
   hasSingleStrip: boolean;
   bars: RenderedBar[];
@@ -25,7 +23,6 @@ export const SegmentGrid = memo(function SegmentGrid({
           segment={bar.segment}
           event={bar.event}
           canEdit={bar.canEdit}
-          month={month}
           fullWidth={bar.fullWidth}
           variant="chip"
           displayLane={bar.displayLane}

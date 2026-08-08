@@ -18,11 +18,14 @@ export default defineConfig({
       reporter: ["text", "lcov"],
       include: ["src/**/*.ts", "src/**/*.tsx"],
       exclude: ["**/*.test.ts", "**/*.test.tsx", "**/*.d.ts", "**/node_modules/**"],
+      // Set just under the current numbers so a drop fails the build. They were
+      // previously below actual coverage, which made the gate unable to detect
+      // any regression at all.
       thresholds: {
-        lines: 14,
-        functions: 14,
-        branches: 16,
-        statements: 14,
+        lines: 39,
+        functions: 33,
+        branches: 30,
+        statements: 39,
       },
     },
   },

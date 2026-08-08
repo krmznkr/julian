@@ -5,7 +5,6 @@ import { useYearViewSharedData } from "@/components/year-view/year-view-context"
 export default function EventPopover({
   segment,
   event,
-  month,
   fullWidth,
   variant = "chip",
   displayLane,
@@ -21,7 +20,6 @@ export default function EventPopover({
     <EventChip
       segment={segment}
       event={event}
-      month={month}
       calendars={calendars}
       onClick={() => undefined}
       fullWidth={fullWidth}

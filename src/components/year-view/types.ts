@@ -10,7 +10,6 @@ export type EventPopoverProps = {
   segment: EventSegment;
   event: CalendarEvent;
   canEdit: boolean;
-  month: number;
   fullWidth?: boolean;
   leftZoneEndColumn?: number;
   variant?: "chip" | "square";

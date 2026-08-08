@@ -62,7 +62,7 @@ describe("useYearViewData", () => {
           events: [event],
           failures: [],
         }),
-      persistSelection: vi.fn(),
+      persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
     };
 
     const { state } = setup(source);
@@ -79,7 +79,7 @@ describe("useYearViewData", () => {
     // the sidebar is feedback enough.
     const source: YearViewDataSource = {
       load: () => Promise.reject(new Error("network down")),
-      persistSelection: vi.fn(),
+      persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
     };
 
     const { state } = setup(source, {
@@ -100,7 +100,7 @@ describe("useYearViewData", () => {
   it("stops the refreshing indicator whether the load succeeds or fails", async () => {
     const source: YearViewDataSource = {
       load: () => Promise.reject(new Error("boom")),
-      persistSelection: vi.fn(),
+      persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
     };
 
     const { state } = setup(source);
@@ -110,7 +110,7 @@ describe("useYearViewData", () => {
   });
 
   it("routes calendar selection changes through the source", () => {
-    const persistSelection = vi.fn();
+    const persistSelection = vi.fn<YearViewDataSource["persistSelection"]>();
     const source: YearViewDataSource = {
       load: () =>
         Promise.resolve({

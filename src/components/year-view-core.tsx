@@ -86,7 +86,6 @@ export default function YearViewCore({
   // focus to the cell the visitor came from after they close.
   const focusYearGridRef = useRef<(() => void) | null>(null);
   const registerFocusYearGrid = useCallback((focus: (() => void) | null) => {
-    // eslint-disable-next-line functional/immutable-data
     focusYearGridRef.current = focus;
   }, []);
   const focusYearGrid = useCallback(() => {

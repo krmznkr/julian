@@ -10,7 +10,6 @@ export function AuthCallbackPage() {
 
   useEffect(() => {
     if (exchangeStarted.current) return;
-    // eslint-disable-next-line functional/immutable-data
     exchangeStarted.current = true;
 
     async function processCallback() {

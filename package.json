@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "quality:oxlint": "oxlint --config .oxlintrc.json --react-plugin --react-perf-plugin --jsx-a11y-plugin --vitest-plugin --deny-warnings .",
-    "quality:oxfmt": "oxfmt --check .",
+    "quality:oxfmt": "oxfmt --check \"src/**/*.{js,jsx,ts,tsx}\" \"worker/**/*.ts\" \"*.{js,mjs,ts}\"",
     "quality:fallow": "fallow dead-code",
     "quality:fp": "eslint .",
     "quality:static": "pnpm run quality:oxlint && pnpm run quality:oxfmt && pnpm run quality:fallow && pnpm run quality:fp && pnpm run typecheck",

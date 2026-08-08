@@ -46,7 +46,6 @@ function useDemoStore(year: number) {
         }),
       // Remembered for this visit only; nothing is written to disk.
       persistSelection: (_availableIds, selectedIds) => {
-        // eslint-disable-next-line functional/immutable-data
         selectionRef.current = [...selectedIds];
       },
     }),
@@ -56,7 +55,6 @@ function useDemoStore(year: number) {
   const eventApi = useMemo<YearViewEventApi>(
     () => ({
       createEvent: (calendar, input) => {
-        // eslint-disable-next-line functional/immutable-data
         nextIdRef.current += 1;
         // All-day ends are exclusive, so a one-day event ends the next morning.
         const [y, m, d] = input.date.split("-").map(Number);
@@ -78,7 +76,6 @@ function useDemoStore(year: number) {
         };
         // The tour loops, so re-adding the same title on the same day replaces
         // the earlier copy instead of stacking duplicates forever.
-        // eslint-disable-next-line functional/immutable-data
         eventsRef.current = [
           ...eventsRef.current.filter(
             (event) => !(event.title === created.title && event.start === created.start),
@@ -88,7 +85,6 @@ function useDemoStore(year: number) {
         return Promise.resolve(created);
       },
       updateEvent: (calendarId, eventId, input) => {
-        // eslint-disable-next-line functional/immutable-data
         eventsRef.current = eventsRef.current.map((event) =>
           event.id === eventId && event.calendarId === calendarId
             ? { ...event, title: input.title }
@@ -97,7 +93,6 @@ function useDemoStore(year: number) {
         return Promise.resolve();
       },
       deleteEvent: (calendarId, eventId) => {
-        // eslint-disable-next-line functional/immutable-data
         eventsRef.current = eventsRef.current.filter(
           (event) => !(event.id === eventId && event.calendarId === calendarId),
         );
@@ -112,7 +107,6 @@ function useDemoStore(year: number) {
     () => ({
       getSidebarCollapsed: () => collapsedRef.current,
       setSidebarCollapsed: (collapsed) => {
-        // eslint-disable-next-line functional/immutable-data
         collapsedRef.current = collapsed;
       },
     }),

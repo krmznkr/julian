@@ -21,6 +21,9 @@ jobs:
           node-version: 24.15.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      # Lint, format, dead-code and the functional rules previously ran only in
+      # the pre-commit hook, one --no-verify away from never running at all.
+      - run: pnpm quality:static
       - run: pnpm test:run
+      - run: pnpm test:tz:dates
       - run: pnpm build
