@@ -1,4 +1,4 @@
-// The three seams that separate the year view from the outside world.
+// The four seams that separate the year view from the outside world.
 //
 // The live app plugs in the TanStack router, the Google Calendar API and the
 // stored calendar-selection preference. The landing page plugs in local state,
