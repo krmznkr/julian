@@ -60,6 +60,7 @@ describe("useYearViewData", () => {
           calendars: [calendar],
           selectedCalendarIds: ["cal-1"],
           events: [event],
+          failures: [],
         }),
       persistSelection: vi.fn(),
     };
@@ -112,7 +113,12 @@ describe("useYearViewData", () => {
     const persistSelection = vi.fn();
     const source: YearViewDataSource = {
       load: () =>
-        Promise.resolve({ calendars: [calendar], selectedCalendarIds: ["cal-1"], events: [] }),
+        Promise.resolve({
+          calendars: [calendar],
+          selectedCalendarIds: ["cal-1"],
+          events: [],
+          failures: [],
+        }),
       persistSelection,
     };
 

@@ -7,6 +7,7 @@
  * but keep what's on screen" rules live here instead of being re-derived at
  * every call site.
  */
+import type { YearSourceFailure } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 
 export type YearViewState = {
@@ -21,6 +22,8 @@ export type YearViewState = {
   /** True while any load is in flight, including refreshes over existing data. */
   readonly isRefreshing: boolean;
   readonly error: string | null;
+  /** Partial-load failures from the last successful load. */
+  readonly failures: ReadonlyArray<YearSourceFailure>;
   readonly scrollEdges: { readonly left: boolean; readonly right: boolean };
   readonly sidebarCollapsed: boolean;
   readonly mobileSidebarOpen: boolean;
@@ -34,6 +37,7 @@ export type YearViewAction =
       readonly calendars: ReadonlyArray<CalendarSummary>;
       readonly selectedCalendarIds: ReadonlyArray<string>;
       readonly events: ReadonlyArray<CalendarEvent>;
+      readonly failures: ReadonlyArray<YearSourceFailure>;
     }
   | { readonly type: "LOAD_FAILED"; readonly message: string }
   | { readonly type: "ERROR_DISMISSED" }
@@ -78,6 +82,7 @@ export function createInitialState(init: YearViewInit): YearViewState {
     hasHydratedData: hydrated,
     isRefreshing: false,
     error: null,
+    failures: [],
     scrollEdges: { left: false, right: false },
     sidebarCollapsed: false,
     mobileSidebarOpen: false,
@@ -98,6 +103,7 @@ export function yearViewReducer(state: YearViewState, action: YearViewAction): Y
         calendars: action.calendars,
         selectedCalendarIds: action.selectedCalendarIds,
         events: action.events,
+        failures: action.failures,
         loading: false,
         hasHydratedData: true,
         isRefreshing: false,

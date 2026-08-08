@@ -1,10 +1,12 @@
 import { useMemo } from "react";
 import { buildEventKey, buildMonthSegments } from "@/domain";
+import type { YearSourceFailure } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 
 export function useYearViewDerivedData({
   calendars,
   events,
+  failures,
   formatDate,
   isRefreshing,
   selectedCalendarIds,
@@ -12,6 +14,7 @@ export function useYearViewDerivedData({
 }: {
   calendars: ReadonlyArray<CalendarSummary>;
   events: ReadonlyArray<CalendarEvent>;
+  failures: ReadonlyArray<YearSourceFailure>;
   formatDate: (date: Date, options?: Intl.DateTimeFormatOptions) => string;
   isRefreshing: boolean;
   selectedCalendarIds: ReadonlyArray<string>;
@@ -44,13 +47,22 @@ export function useYearViewDerivedData({
     });
   }, [formatDate]);
 
-  const syncBadge = useMemo(
-    () =>
-      isRefreshing
-        ? { kind: "syncing" as const, label: "Loading" }
-        : { kind: "synced" as const, label: "Local" },
-    [isRefreshing],
-  );
+  // A partial failure is the interesting case: the year rendered, but some of
+  // it is missing. Without this the visitor sees a normal, complete-looking
+  // calendar and has no way to tell that a source dropped out.
+  const syncBadge = useMemo(() => {
+    if (isRefreshing) return { kind: "syncing" as const, label: "Loading" };
+    if (failures.length > 0) {
+      return {
+        kind: "issues" as const,
+        label:
+          failures.length === 1
+            ? `Could not load ${failures[0]?.source ?? "one calendar"}`
+            : `Could not load ${failures.length} calendars`,
+      };
+    }
+    return { kind: "synced" as const, label: "Local" };
+  }, [failures, isRefreshing]);
 
   const visibleEvents = useMemo(() => {
     const selected = new Set(selectedCalendarIds);

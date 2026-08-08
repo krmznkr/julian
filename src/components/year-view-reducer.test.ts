@@ -61,6 +61,7 @@ describe("yearViewReducer — loading", () => {
       calendars: [calendar, otherCalendar],
       selectedCalendarIds: ["cal-1"],
       events: [event],
+      failures: [],
     });
 
     expect(state).toMatchObject({
@@ -167,5 +168,20 @@ describe("yearViewReducer — chrome", () => {
 
     const opened = yearViewReducer(collapsed, { type: "MOBILE_SIDEBAR_OPEN_CHANGED", open: true });
     expect(opened.mobileSidebarOpen).toBe(true);
+  });
+});
+
+describe("yearViewReducer — partial failures", () => {
+  it("records sources that dropped out of an otherwise successful load", () => {
+    const state = yearViewReducer(createInitialState({ year: 2026 }), {
+      type: "LOAD_SUCCEEDED",
+      calendars: [calendar],
+      selectedCalendarIds: ["cal-1"],
+      events: [event],
+      failures: [{ source: "Work", message: "403" }],
+    });
+
+    expect(state.error).toBeNull();
+    expect(state.failures).toEqual([{ source: "Work", message: "403" }]);
   });
 });

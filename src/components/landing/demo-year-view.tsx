@@ -42,6 +42,7 @@ function useDemoStore(year: number) {
           calendars: seed.calendars,
           selectedCalendarIds: selectionRef.current,
           events: targetYear === year ? eventsRef.current : buildDemoYear(targetYear, today).events,
+          failures: [],
         }),
       // Remembered for this visit only; nothing is written to disk.
       persistSelection: (_availableIds, selectedIds) => {

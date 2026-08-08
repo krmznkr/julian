@@ -23,7 +23,12 @@ import {
 } from "@/lib/google-calendar";
 import { useNavigate, useSearch } from "@/lib/router";
 
-const EMPTY_YEAR = { calendars: [], selectedCalendarIds: [], events: [] } as const;
+const EMPTY_YEAR = {
+  calendars: [],
+  selectedCalendarIds: [],
+  events: [],
+  failures: [],
+} as const;
 
 const googleEventApi: YearViewEventApi = { createEvent, updateEvent, deleteEvent };
 
