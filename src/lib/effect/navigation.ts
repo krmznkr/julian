@@ -45,10 +45,10 @@ export const recordingNavigationLayer = (
 ): Layer.Layer<Navigation> =>
   Layer.succeed(Navigation, {
     assign: (url) =>
-      Ref.update(
-        ref,
-        (calls): ReadonlyArray<NavigationCall> => [...calls, { kind: "assign", url }],
-      ),
+      Ref.update(ref, (calls): ReadonlyArray<NavigationCall> => [
+        ...calls,
+        { kind: "assign", url },
+      ]),
     openExternal: (url) =>
       Ref.update(ref, (calls): ReadonlyArray<NavigationCall> => [...calls, { kind: "open", url }]),
   });
