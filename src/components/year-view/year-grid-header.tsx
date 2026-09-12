@@ -3,7 +3,11 @@ import {
   YEAR_GRID_LEGEND_HEIGHT,
   YEAR_GRID_MONTH_HEADER_HEIGHT,
 } from "@/components/year-view/constants";
-import { hasSingleDayStrip, monthColumnTemplateColumns } from "./month-grid-layout";
+import {
+  hasSingleDayStrip,
+  monthColumnTemplateColumns,
+  visibleAllDayLaneMap,
+} from "./month-grid-layout";
 import { cn } from "@/lib/utils";
 import type { MonthSegments } from "@/domain";
 
@@ -69,8 +73,9 @@ export default function YearGridHeader({
         {leftCount > 0 && <div className="shrink-0" style={leftSpacerStyle} />}
         {visibleMonths.map((month) => {
           const isCurrentMonth = isCurrentYear && month.month === todayMonth;
-          const hasSingles = month.segments.some((segment) => segment.lane === 0);
-          const hasStrip = hasSingleDayStrip(month.lanes, hasSingles);
+          const visibleLanes = visibleAllDayLaneMap(month.segments).size;
+          const hasSingles = month.segments.some((segment) => segment.lane === 0 && segment.allDay);
+          const hasStrip = hasSingleDayStrip(visibleLanes, hasSingles);
 
           return (
             <div
@@ -79,13 +84,13 @@ export default function YearGridHeader({
                 "grid w-[var(--month-col-width)] shrink-0 border-r border-border/80 bg-muted/25 text-[9px] text-muted-foreground",
                 isCurrentMonth && "bg-accent/40",
               )}
-              style={{ gridTemplateColumns: monthColumnTemplateColumns(month.lanes, hasStrip) }}
+              style={{ gridTemplateColumns: monthColumnTemplateColumns(visibleLanes, hasStrip) }}
             >
               <span
                 className="truncate px-1"
-                style={{ gridColumn: hasStrip ? `1 / ${month.lanes + 1}` : "1 / -1" }}
+                style={{ gridColumn: hasStrip ? `1 / ${visibleLanes + 1}` : "1 / -1" }}
               >
-                {month.lanes > 0 ? "Multi-day" : "On this day"}
+                {visibleLanes > 0 ? "Multi-day" : "On this day"}
               </span>
               {hasStrip && (
                 <span

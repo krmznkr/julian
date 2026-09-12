@@ -31,15 +31,15 @@ const makeEvent = (
 const cases = [
   { label: "All-day", events: [makeEvent("a", "Holiday", "2026-06-15", "2026-06-16")] },
   {
-    label: "Timed",
+    label: "Timed · dialog only",
     events: [makeEvent("t", "Dentist", "2026-06-15T09:00:00", "2026-06-15T09:30:00", false)],
   },
   {
-    label: "Ends at midnight",
+    label: "Ends at midnight · dialog only",
     events: [makeEvent("m", "Late shift", "2026-06-15T22:00:00", "2026-06-16T00:00:00", false)],
   },
   {
-    label: "Busy day",
+    label: "Busy timed day · dialog only",
     events: Array.from({ length: 6 }, (_, i) =>
       makeEvent(
         `busy-${i}`,
@@ -67,8 +67,9 @@ export function LabPage() {
     <main className="min-h-dvh bg-background p-6 text-foreground">
       <h1 className="text-xl font-semibold">Event display examples</h1>
       <p className="my-3 text-sm text-muted-foreground">
-        Single-day events stay in their day cell. Multi-day events keep their bar across month
-        boundaries. Midnight end times do not occupy the next day.
+        Only all-day events appear in cells. Timed events remain in day details. All-day multi-day
+        events keep their bar across month boundaries, and midnight end times do not occupy the next
+        day.
       </p>
       <div className="my-6 flex flex-wrap gap-6">
         {cases.map(({ label, events: items }) => {

@@ -223,10 +223,11 @@ to another year. Refreshing the page or resetting the demo discards them.
   the next day. Calendar-day counts use date boundaries, including DST days.
 - Multi-day classification applies to the whole event. A one-day tail at a
   month or year boundary stays a bar, with arrows marking continuation.
-- Month columns separate multi-day lanes from a stable "On this day" strip.
-  Single-day appointments show their start time; busy cells show a `+N` button.
-  Clicking an event selects it in the day panel. Opening Google is an explicit
-  action from the details panel.
+- Month cells show only all-day events. Timed appointments remain available in
+  the day details dialog but do not add visual noise to the year grid. All-day
+  multi-day events use lanes; busy all-day cells show a `+N` button. Clicking an
+  event selects it in the day panel. Opening Google is an explicit action from
+  the details panel.
 - The component examples at `/lab` use the same date and rendering code.
 
 ### Route behavior
@@ -318,7 +319,7 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 | Edge routing, OAuth allowlist, security headers  | `worker/index.ts`, `wrangler.jsonc`, `public/_headers`                        |
 | Route structure and URL contract                 | `src/router.tsx`, `src/lib/year-view-url.ts`                                  |
 | Calendar math and event segmentation             | `src/domain/`                                                                 |
-| Year-view state and orchestration                | `src/components/year-view-reducer.ts`, `src/components/year-view-core.tsx`   |
+| Year-view state and orchestration                | `src/components/year-view-reducer.ts`, `src/components/year-view-core.tsx`    |
 | Where the year view gets data, focus, and writes | `src/components/year-view/year-view-ports.ts`, `src/components/year-view.tsx` |
 | Landing page and its scripted demo               | `src/routes/landing-page.tsx`, `src/components/landing/`                      |
 | Month rendering and virtualization               | `src/components/year-view/`                                                   |
