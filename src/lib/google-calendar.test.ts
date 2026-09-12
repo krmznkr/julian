@@ -51,6 +51,43 @@ const withEnv = (options: {
   });
 
 describe("GoogleCalendar.listEvents", () => {
+  it.effect("preserves Google date types and skips cancelled or invalid records", () =>
+    Effect.gen(function* () {
+      const env = yield* withEnv({
+        storage: validToken,
+        responses: [
+          TestEnv.jsonResponse({
+            items: [
+              { id: "day", start: { date: "2026-06-15" }, end: { date: "2026-06-16" } },
+              {
+                id: "night",
+                start: { dateTime: "2026-06-15T23:00:00+02:00" },
+                end: { dateTime: "2026-06-16T00:00:00+02:00" },
+              },
+              {
+                id: "cancelled",
+                status: "cancelled",
+                start: { date: "2026-06-15" },
+                end: { date: "2026-06-16" },
+              },
+              { id: "invalid", start: { date: "2026-02-30" }, end: { date: "2026-03-02" } },
+              { id: "missing-end", start: { date: "2026-06-15" } },
+            ],
+          }),
+        ],
+      });
+      const events = yield* Effect.flatMap(GoogleCalendarApi, (api) =>
+        api.listEvents("cal", new Date(2026, 0, 1), new Date(2027, 0, 1)),
+      ).pipe(Effect.provide(env.layer));
+      expect(events.map((event) => event.id)).toEqual(["day", "night"]);
+      expect(events[0]).toMatchObject({ allDay: true, start: "2026-06-15", end: "2026-06-16" });
+      expect(events[1]).toMatchObject({
+        allDay: false,
+        start: "2026-06-15T23:00:00+02:00",
+        end: "2026-06-16T00:00:00+02:00",
+      });
+    }),
+  );
   it.effect("loads every page of expanded recurring event instances", () =>
     Effect.gen(function* () {
       const env = yield* withEnv({

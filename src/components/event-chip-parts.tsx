@@ -29,10 +29,10 @@ export interface EventChipProps {
 // timeline stays visible underneath.
 function getOutlineEventClassName(compact = false) {
   return cn(
-    "border-2 border-[var(--event-accent-color)] bg-transparent text-foreground transition hover:bg-background/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+    "border border-l-[3px] border-[var(--event-accent-color)] bg-[color-mix(in_srgb,var(--event-accent-color)_12%,var(--background))] text-foreground transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
     compact
       ? "year-grid-text-micro flex h-3 max-w-full shrink items-center overflow-hidden rounded-[3px] px-1"
-      : "group pointer-events-auto relative flex h-full cursor-pointer touch-none flex-col justify-between overflow-hidden rounded-[6px] px-1.5 py-0.5 text-left text-xs font-medium focus-visible:ring-ring/60",
+      : "event-bar group pointer-events-auto relative my-0.5 flex min-h-0 cursor-pointer touch-none flex-col overflow-hidden rounded-[4px] px-1 py-0.5 text-left text-xs font-medium focus-visible:ring-ring/60",
   );
 }
 
@@ -70,7 +70,7 @@ export function EventChipContent({ title, displayMode }: EventChipContentProps) 
   return (
     <span
       className={cn(
-        "overflow-hidden text-xs",
+        "event-bar-title overflow-hidden text-xs",
         displayMode === "micro" && "year-grid-text-caption leading-tight",
         displayMode === "compact" && "leading-tight",
         displayMode === "full" && "leading-snug",
@@ -118,7 +118,7 @@ export function EventChipMetadata({
       {showMetaRow && (
         <span
           className={cn(
-            "mt-auto text-[10px] font-normal opacity-70 shrink-0",
+            "event-bar-meta mt-auto text-[10px] font-normal opacity-70 shrink-0",
             displayMode !== "full" && "leading-none",
           )}
         >
@@ -159,7 +159,9 @@ export function EventChipTooltip({
             </p>
           )}
           <p className="line-clamp-2 text-muted-foreground">{formatDateRange(event)}</p>
-          {durationDays > 1 && <p className="mt-0.5 text-muted-foreground">{durationDays} days</p>}
+          {event.allDay && durationDays > 1 && (
+            <p className="mt-0.5 text-muted-foreground">{durationDays} days</p>
+          )}
         </div>
         <div className="space-y-1 text-muted-foreground">
           <p className="truncate">{calendar?.summary ?? "Calendar"}</p>

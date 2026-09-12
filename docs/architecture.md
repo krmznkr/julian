@@ -201,16 +201,32 @@ reimplementing it — a lookalike would drift from the real view on every change
 
 ### Landing demo
 
-`src/components/landing/` scripts a tour over that demo container. The year
-grid registers its keydown handler on `window` and does not check `isTrusted`,
-so `demo-input.ts` dispatches real `KeyboardEvent`s and the application's own
-logic — including its guards — handles them. `use-demo-player.ts` stops the tour
-on the first trusted keystroke, click, or when the demo scrolls out of view, and
-does not autoplay for coarse pointers, narrow viewports, or
-`prefers-reduced-motion`. The tour writes nothing that outlives the visit:
-events, calendar selection, and sidebar state are in-memory (supplied through
-the ports rather than the app's storage helpers), and the theme beat completes a
-full cycle back to the mode the visitor arrived with.
+The landing page is labelled "Demo · Sample data". A three-step tour opens
+today, creates a sample event, and opens commands. It runs once in under 15
+seconds. "Try it now" stops it immediately; "Add sample event" opens the same
+form as the N shortcut; "Reset demo" starts a fresh in-memory session.
+
+`demo-input.ts` dispatches keyboard events through the application's handlers.
+Trusted input, a hidden tab, or scrolling away cancels the tour. Touch devices,
+small screens, and reduced-motion preferences start in interactive mode.
+Events are kept per year for the visit, including edits made after navigating
+to another year. Refreshing the page or resetting the demo discards them.
+
+### Event dates and display
+
+- All-day `date` values are calendar dates, without a timezone conversion.
+- Timed `dateTime` values are instants displayed in the browser's local timezone,
+  named in the event details. They can legitimately fall on a different date
+  than the original calendar's timezone.
+- Both kinds use an exclusive end. An event ending at midnight does not occupy
+  the next day. Calendar-day counts use date boundaries, including DST days.
+- Multi-day classification applies to the whole event. A one-day tail at a
+  month or year boundary stays a bar, with arrows marking continuation.
+- Month columns separate multi-day lanes from a stable "On this day" strip.
+  Single-day appointments show their start time; busy cells show a `+N` button.
+  Clicking an event selects it in the day panel. Opening Google is an explicit
+  action from the details panel.
+- The component examples at `/lab` use the same date and rendering code.
 
 ### Route behavior
 

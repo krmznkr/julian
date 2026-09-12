@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { monthColumnTemplateColumns } from "@/components/year-view/month-grid-layout";
-import { cellVisibleSquares, SingleDayDisplay } from "@/components/year-view/single-day-display";
+import { SingleDayDisplay } from "@/components/year-view/single-day-display";
 import { cellDomId } from "@/components/year-view/year-grid-keyboard";
 import { DAYS_IN_GRID } from "@/components/year-view/constants";
 import type { DaySquare } from "@/components/year-view/use-month-column";
@@ -9,27 +9,24 @@ import { cn } from "@/lib/utils";
 
 const DayCellContent = memo(function DayCellContent({
   day,
-  year,
-  month,
   squares,
   inStrip,
 }: {
   day: number;
-  year: number;
-  month: number;
   squares: DaySquare[];
   inStrip: boolean;
 }) {
   return (
     <div
       data-day-cell={day}
-      // On days a multi-day bar passes through, single-day events live in the
-      // reserved right-hand strip column so they don't sit under the bars;
-      // otherwise they span the full cell width.
+      // Keep one stable single-day column throughout the month.
       style={{ gridRow: `${day} / ${day + 1}`, gridColumn: inStrip ? "-2 / -1" : "1 / -1" }}
-      className="z-10 flex h-full min-w-0 items-stretch"
+      className={cn(
+        "z-10 flex h-full min-w-0 items-stretch",
+        inStrip && "border-l border-border/70",
+      )}
     >
-      <SingleDayDisplay year={year} month={month} day={day} squares={squares} />
+      <SingleDayDisplay squares={squares} />
     </div>
   );
 });
@@ -57,8 +54,7 @@ const DayCell = memo(function DayCell({
   month: number;
   inStrip: boolean;
 }) {
-  const visibleSquares = cellVisibleSquares(squares);
-  const hasContent = exists && visibleSquares.length > 0;
+  const hasContent = exists && squares.length > 0;
 
   return (
     <>
@@ -70,7 +66,7 @@ const DayCell = memo(function DayCell({
         aria-current={exists && isDialogDay ? "true" : undefined}
         style={{ gridRow: `${day} / ${day + 1}`, gridColumn: "1 / -1" }}
         className={cn(
-          "relative min-w-0 border-b border-border/80",
+          "pointer-events-none relative min-w-0 border-b border-border/80",
           !exists && "border-b-0",
           exists && isWeekend && "bg-muted/80 dark:bg-muted/60",
           exists && isToday && "bg-[var(--accent-brand)]/5",
@@ -106,9 +102,7 @@ const DayCell = memo(function DayCell({
           />
         )}
       </div>
-      {hasContent && (
-        <DayCellContent day={day} year={year} month={month} squares={squares} inStrip={inStrip} />
-      )}
+      {hasContent && <DayCellContent day={day} squares={squares} inStrip={inStrip} />}
     </>
   );
 });
@@ -120,7 +114,6 @@ export const MonthDayCellsLayer = memo(function MonthDayCellsLayer({
   weekendRows,
   multiDayLanes,
   hasSingleStrip,
-  multiDayCoverageDays,
   singleDayByDay,
   keyboardFocusedDay,
   keyboardDialogDay,
@@ -133,7 +126,6 @@ export const MonthDayCellsLayer = memo(function MonthDayCellsLayer({
   weekendRows: boolean[];
   multiDayLanes: number;
   hasSingleStrip: boolean;
-  multiDayCoverageDays: Set<number>;
   singleDayByDay: Map<number, DaySquare[]>;
   keyboardFocusedDay: number | null;
   keyboardDialogDay: number | null;
@@ -148,6 +140,13 @@ export const MonthDayCellsLayer = memo(function MonthDayCellsLayer({
       style={{ gridTemplateColumns: monthColumnTemplateColumns(multiDayLanes, hasSingleStrip) }}
       role="rowgroup"
     >
+      {hasSingleStrip && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none z-[1] border-l border-border/70 bg-muted/10"
+          style={{ gridRow: "1 / -1", gridColumn: "-2 / -1" }}
+        />
+      )}
       {Array.from({ length: DAYS_IN_GRID }, (_, index) => {
         const day = index + 1;
         const exists = day <= daysInMonth;
@@ -163,7 +162,7 @@ export const MonthDayCellsLayer = memo(function MonthDayCellsLayer({
             squares={singleDayByDay.get(day) ?? []}
             year={year}
             month={month}
-            inStrip={hasSingleStrip && multiDayCoverageDays.has(day)}
+            inStrip={hasSingleStrip}
           />
         );
       })}

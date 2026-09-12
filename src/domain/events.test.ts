@@ -14,8 +14,8 @@ const calendar: CalendarSummary = {
 
 describe("isTimedMultiDayEvent", () => {
   it("returns false when start and end are on the same day", () => {
-    const start = new Date("2026-02-01T09:00:00.000Z");
-    const end = new Date("2026-02-01T20:00:00.000Z");
+    const start = new Date(2026, 1, 1, 9);
+    const end = new Date(2026, 1, 1, 20);
 
     expect(isTimedMultiDayEvent(start, end)).toBe(false);
   });
@@ -68,7 +68,7 @@ describe("normalizeEvent", () => {
     ).toBeNull();
   });
 
-  it("returns null for timed single-day events", () => {
+  it("keeps timed single-day events", () => {
     expect(
       normalizeEvent(
         {
@@ -79,7 +79,7 @@ describe("normalizeEvent", () => {
         },
         calendar,
       ),
-    ).toBeNull();
+    ).toMatchObject({ id: "5", allDay: false, isTimed: true });
   });
 
   it("normalizes all-day events", () => {

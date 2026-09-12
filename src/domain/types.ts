@@ -23,6 +23,8 @@ export type CalendarEvent = {
 };
 
 export type EventSegment = {
+  /** Classification of the whole event, including clipped month/year tails. */
+  readonly isMultiDay?: boolean;
   readonly id: string;
   readonly title: string;
   readonly startDay: number;

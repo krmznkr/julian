@@ -107,7 +107,7 @@ type TimedSeed = {
   from: Date;
   startHour: number;
   startMinute?: number;
-  /** Hours after the start; must cross midnight or the event is (correctly) dropped. */
+  /** Hours after the start, including same-day appointments. */
   durationHours: number;
 };
 
@@ -217,7 +217,15 @@ function buildSeeds(year: number, today: Date): Seed[] {
   // A dense cluster around today, so "what's on today" has something to show.
   const thisWeek: Seed[] = [
     allDay(TRAVEL, "Barcelona · client week", near(-2), 6, "Hotel Casa Bonay, room 412."),
-    allDay(WORK, "Design review · year grid", today, 1, "Bring the keyboard-nav walkthrough."),
+    overnight(
+      WORK,
+      "Design review · year grid",
+      today,
+      10,
+      0,
+      1,
+      "Bring the keyboard-nav walkthrough.",
+    ),
     allDay(TASKS_CALENDAR_ID, "Pay the electricity bill", today),
     allDay(
       TASKS_CALENDAR_ID,

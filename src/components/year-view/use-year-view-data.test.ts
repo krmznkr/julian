@@ -66,6 +66,34 @@ function setup(source: YearViewDataSource, seed?: Partial<YearViewState>) {
 }
 
 describe("useYearViewData", () => {
+  it("reloads the seed year when returning from another year", async () => {
+    const data = {
+      calendars: [calendar],
+      selectedCalendarIds: [calendar.id],
+      events: [event],
+      failures: [],
+    };
+    const load = vi.fn<YearViewDataSource["load"]>().mockResolvedValue(data);
+    const source = { load, persistSelection: vi.fn<YearViewDataSource["persistSelection"]>() };
+    const dispatch = vi.fn<(action: YearViewAction) => void>();
+    const view = renderHook(
+      ({ year }) =>
+        useYearViewData({
+          year,
+          initialYear: 2026,
+          initialData: data,
+          source,
+          calendars: data.calendars,
+          dispatch,
+        }),
+      { initialProps: { year: 2026 } },
+    );
+    expect(load).not.toHaveBeenCalled();
+    view.rerender({ year: 2027 });
+    await waitFor(() => expect(load).toHaveBeenCalledWith(2027));
+    view.rerender({ year: 2026 });
+    await waitFor(() => expect(load).toHaveBeenLastCalledWith(2026));
+  });
   it("ignores an old year that finishes after the current year", async () => {
     const old = pendingLoad();
     const current = {

@@ -18,7 +18,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:tz:dates": "TZ=America/Los_Angeles vitest run src/domain/date.test.ts src/domain/events.test.ts src/domain/year-grid.test.ts",
+    "test:tz:dates": "node scripts/test-date-timezones.mjs",
     "clean:artifacts": "rm -rf dist coverage tsconfig.tsbuildinfo"
   },
   "dependencies": {

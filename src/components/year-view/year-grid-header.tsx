@@ -1,9 +1,9 @@
 import type { CSSProperties, MutableRefObject } from "react";
 import {
-  DayHourRuler,
-  YEAR_GRID_HOUR_RULER_HEIGHT,
+  YEAR_GRID_LEGEND_HEIGHT,
   YEAR_GRID_MONTH_HEADER_HEIGHT,
-} from "@/components/year-view/day-hour-ruler";
+} from "@/components/year-view/constants";
+import { hasSingleDayStrip, monthColumnTemplateColumns } from "./month-grid-layout";
 import { cn } from "@/lib/utils";
 import type { MonthSegments } from "@/domain";
 
@@ -60,7 +60,7 @@ export default function YearGridHeader({
       </div>
       <div
         className="flex min-w-max gap-1 border-t border-border/50"
-        style={{ height: YEAR_GRID_HOUR_RULER_HEIGHT }}
+        style={{ height: YEAR_GRID_LEGEND_HEIGHT }}
       >
         <div
           className="sticky left-0 z-20 w-[var(--day-gutter-width)] shrink-0 border-r border-border/80 bg-background/90 backdrop-blur"
@@ -69,16 +69,32 @@ export default function YearGridHeader({
         {leftCount > 0 && <div className="shrink-0" style={leftSpacerStyle} />}
         {visibleMonths.map((month) => {
           const isCurrentMonth = isCurrentYear && month.month === todayMonth;
+          const hasSingles = month.segments.some((segment) => segment.lane === 0);
+          const hasStrip = hasSingleDayStrip(month.lanes, hasSingles);
 
           return (
             <div
               key={`ruler-${month.month}`}
               className={cn(
-                "w-[var(--month-col-width)] shrink-0 border-r border-border/80 bg-muted/25",
+                "grid w-[var(--month-col-width)] shrink-0 border-r border-border/80 bg-muted/25 text-[9px] text-muted-foreground",
                 isCurrentMonth && "bg-accent/40",
               )}
+              style={{ gridTemplateColumns: monthColumnTemplateColumns(month.lanes, hasStrip) }}
             >
-              <DayHourRuler showLabels />
+              <span
+                className="truncate px-1"
+                style={{ gridColumn: hasStrip ? `1 / ${month.lanes + 1}` : "1 / -1" }}
+              >
+                {month.lanes > 0 ? "Multi-day" : "On this day"}
+              </span>
+              {hasStrip && (
+                <span
+                  className="truncate border-l border-border/70 px-1"
+                  style={{ gridColumn: "-2 / -1" }}
+                >
+                  On this day
+                </span>
+              )}
             </div>
           );
         })}

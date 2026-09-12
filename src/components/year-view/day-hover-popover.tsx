@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { formatDateRange, formatTimeRange } from "@/components/year-helpers";
+import { DISPLAY_TIME_ZONE, formatDateRange, formatTimeRange } from "@/components/year-helpers";
 import type { DayPanelAnchorRect } from "@/components/year-view/use-month-day-panel";
 import type { DayEventItem } from "@/components/year-view/use-month-column";
 import { useYearViewSharedData } from "@/components/year-view/year-view-context";
@@ -47,7 +47,17 @@ const EventDetail = memo(function EventDetail({ item }: { item: DayEventItem | u
         <p className="truncate">{formatDateRange(item.event)}</p>
         <p className="truncate">{calendar?.summary ?? "Calendar"}</p>
         <p>{item.event.allDay ? "All-day event" : "Timed event"}</p>
+        {!item.event.allDay && <p>Times in {DISPLAY_TIME_ZONE}</p>}
       </div>
+      {item.event.htmlLink && (
+        <button
+          type="button"
+          className="mt-3 text-xs underline underline-offset-2"
+          onClick={() => openEventInGoogle(item.event)}
+        >
+          Open in Google Calendar
+        </button>
+      )}
 
       {item.event.description && (
         <p className="mt-3 line-clamp-4 text-[11px] leading-relaxed text-muted-foreground">
@@ -80,7 +90,6 @@ const DayPanelListItem = memo(function DayPanelListItem({
         role="option"
         onClick={() => {
           onSelect(item.key);
-          openEventInGoogle(item.event);
         }}
         className={cn(
           "flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
@@ -200,7 +209,7 @@ export function DayHoverPopover({
       role="dialog"
       aria-modal="true"
       aria-label={`${label} events`}
-      className="fixed z-50 flex overflow-hidden rounded-[12px] border border-border bg-popover shadow-lg outline-none"
+      className="fixed z-50 flex max-w-[calc(100vw-16px)] overflow-auto rounded-[12px] border border-border bg-popover shadow-lg outline-none max-sm:flex-col"
       style={{
         left: panelPosition.left,
         top: panelPosition.top,

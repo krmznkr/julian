@@ -45,6 +45,7 @@ const EventDateTime = Schema.Struct({
 
 export const GoogleCalendarEvent = Schema.Struct({
   id: Schema.String,
+  status: Schema.optionalKey(Schema.String),
   summary: Schema.optionalKey(Schema.String),
   description: Schema.optionalKey(Schema.String),
   htmlLink: Schema.optionalKey(Schema.String),

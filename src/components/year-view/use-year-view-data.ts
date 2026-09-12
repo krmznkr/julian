@@ -21,6 +21,7 @@ export function useYearViewData({
 }) {
   const requestId = useRef(0);
   const selection = useRef<ReadonlyArray<string> | null>(null);
+  const firstLoad = useRef(true);
   const loadData = useCallback(
     async (targetYear: number) => {
       const id = ++requestId.current;
@@ -53,7 +54,8 @@ export function useYearViewData({
   );
 
   useEffect(() => {
-    if (initialData == null || year !== initialYear) loadData(year);
+    if (!firstLoad.current || initialData == null || year !== initialYear) loadData(year);
+    firstLoad.current = false;
     return () => {
       requestId.current += 1;
     };

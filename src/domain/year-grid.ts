@@ -1,4 +1,4 @@
-import { clampDate, parseEventBoundary, startOfNextYear, startOfYear } from "./date";
+import { clampDate, getEventBounds, startOfNextYear, startOfYear } from "./date";
 import { buildEventKey } from "./event-key";
 import type { CalendarEvent, EventSegment, MonthSegments } from "./types";
 
@@ -9,12 +9,14 @@ function assignLanes(segments: EventSegment[], month: number): MonthSegments {
   // render in the per-day strip instead, so they get the sentinel lane 0.
   // Sort by start day (greedy lane packing); on a tie the longer bar is laid
   // out first so it takes the lower (leftmost) lane.
-  const multiDay = segments.filter((segment) => segment.endDay > segment.startDay);
+  const multiDay = segments.filter((segment) => segment.isMultiDay);
   const singleDay = segments
-    .filter((segment) => segment.endDay === segment.startDay)
+    .filter((segment) => !segment.isMultiDay)
     .map((segment) => ({ ...segment, lane: 0 }));
 
-  const sorted = [...multiDay].sort((a, b) => a.startDay - b.startDay || b.endDay - a.endDay);
+  const sorted = [...multiDay].sort(
+    (a, b) => a.startDay - b.startDay || b.endDay - a.endDay || a.id.localeCompare(b.id),
+  );
 
   const laneEnds: number[] = [];
   const assignedSegments: EventSegment[] = [];
@@ -55,10 +57,9 @@ export function buildMonthSegments(
 
   // eslint-disable-next-line functional/no-loop-statements
   for (const event of events) {
-    const start = parseEventBoundary(event.start, event.allDay);
-    const end = parseEventBoundary(event.end, event.allDay);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) continue;
-    if (end <= start) continue;
+    const bounds = getEventBounds(event);
+    if (!bounds) continue;
+    const { start, end, spanDays } = bounds;
 
     const clippedStart = clampDate(start, yearStart, yearEnd);
     const clippedEnd = clampDate(end, yearStart, yearEnd);
@@ -89,8 +90,9 @@ export function buildMonthSegments(
         calendarId: event.calendarId,
         allDay: event.allDay,
         isTimed: event.isTimed,
-        isFirstSegment: month === startMonth,
-        isLastSegment: month === endMonth,
+        isMultiDay: spanDays > 1,
+        isFirstSegment: segmentStart.getTime() === start.getTime(),
+        isLastSegment: segmentEnd.getTime() === end.getTime(),
       });
     }
   }
