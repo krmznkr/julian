@@ -5,6 +5,20 @@
 // single-day events move into the strip, so the two never sit on top of each
 // other and instead divide the column width between them.
 
+import type { EventSegment } from "@/domain";
+
+export function visibleAllDayLaneMap(segments: ReadonlyArray<EventSegment>) {
+  const sourceLanes = Array.from(
+    new Set(
+      segments
+        .filter((segment) => segment.allDay && segment.lane > 0)
+        .map((segment) => segment.lane),
+    ),
+  ).sort((a, b) => a - b);
+
+  return new Map(sourceLanes.map((lane, index) => [lane, index + 1]));
+}
+
 export function monthColumnTemplateColumns(multiDayLanes: number, hasSingleStrip: boolean): string {
   const bars = `repeat(${Math.max(1, multiDayLanes)}, minmax(0, 1fr))`;
   return hasSingleStrip ? `${bars} minmax(96px, 1.4fr)` : bars;

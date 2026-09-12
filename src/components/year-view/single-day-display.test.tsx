@@ -21,23 +21,33 @@ const square = (event: CalendarEvent) => ({
 });
 
 describe("single-day display", () => {
-  it("shows a timed appointment with its time instead of hiding it", () => {
+  it("does not show a timed appointment in the cell", () => {
     render(<SingleDayDisplay squares={[square(timed)]} />);
-    expect(screen.getByRole("button", { name: /Dentist,.*9/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Dentist/ })).not.toBeInTheDocument();
   });
 
-  it("makes additional events discoverable with a count", () => {
+  it("shows and counts only all-day events", () => {
+    const allDay = {
+      ...timed,
+      id: "holiday",
+      title: "Holiday",
+      start: "2026-06-15",
+      end: "2026-06-16",
+      allDay: true,
+      isTimed: false,
+    };
     render(
       <SingleDayDisplay
         squares={[
           square(timed),
-          square({ ...timed, id: "two", title: "Lunch" }),
-          square({ ...timed, id: "three", title: "Call" }),
+          square(allDay),
+          square({ ...allDay, id: "two", title: "Vacation" }),
         ]}
       />,
     );
-    expect(screen.getByRole("button", { name: "Show all 3 single-day events" })).toHaveTextContent(
-      "+2",
+    expect(screen.getByRole("button", { name: "Holiday, All day" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show all 2 all-day events" })).toHaveTextContent(
+      "+1",
     );
   });
 

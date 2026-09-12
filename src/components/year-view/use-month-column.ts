@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { formatTimeRange, isWeekend } from "@/components/year-helpers";
+import { isWeekend } from "@/components/year-helpers";
 import { DAYS_IN_GRID } from "@/components/year-view/constants";
+import { visibleAllDayLaneMap } from "@/components/year-view/month-grid-layout";
 import { isWritableCalendar, parseEventBoundary } from "@/domain";
 import type { CalendarEvent, CalendarSummary, EventSegment, MonthSegments } from "@/domain";
 
@@ -17,7 +18,6 @@ export type DaySquare = {
   segment: EventSegment;
   event: CalendarEvent;
   allDay: boolean;
-  timeLabel?: string;
 };
 
 export type DayEventItem = {
@@ -61,15 +61,16 @@ export function useRenderedSegments(
       })
       .filter((entry) => entry !== null);
 
-    const multiDayLanes = month.lanes;
-    const singles = resolved.filter(({ segment }) => segment.lane === 0);
+    const visibleLaneMap = visibleAllDayLaneMap(month.segments);
+    const multiDayLanes = visibleLaneMap.size;
+    const singles = resolved.filter(({ segment, event }) => segment.lane === 0 && event.allDay);
     const hasSingleDay = singles.length > 0;
 
     const renderMode: RenderedBar["renderMode"] =
       multiDayLanes >= 7 ? "micro" : multiDayLanes >= 5 ? "compact" : "full";
 
     const bars: RenderedBar[] = resolved
-      .filter(({ segment }) => segment.lane > 0)
+      .filter(({ segment, event }) => segment.lane > 0 && event.allDay)
       .map(({ segment, event }) => {
         const calendar = calendarById.get(event.calendarId);
         const canEdit = (calendar ? isWritableCalendar(calendar) : false) && event.allDay;
@@ -78,7 +79,7 @@ export function useRenderedSegments(
           event,
           canEdit,
           fullWidth: multiDayLanes <= 1 && !hasSingleDay,
-          displayLane: segment.lane,
+          displayLane: visibleLaneMap.get(segment.lane) ?? 1,
           renderMode,
         };
       });
@@ -92,8 +93,7 @@ export function useRenderedSegments(
         {
           segment,
           event,
-          allDay: event.allDay,
-          timeLabel: event.allDay ? undefined : formatTimeRange(event),
+          allDay: true,
         },
       ]);
       return acc;
@@ -123,7 +123,7 @@ export function useRenderedSegments(
       dayEvents: orderedDayEvents,
       multiDayLanes,
     };
-  }, [month.segments, month.lanes, events, calendarById]);
+  }, [month.segments, events, calendarById]);
 }
 
 /** Ordered events for one day — used by keyboard day panel. */
