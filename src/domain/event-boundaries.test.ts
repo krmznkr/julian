@@ -115,21 +115,17 @@ describe("exclusive end boundaries", () => {
 });
 
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const expectedDay: Record<string, number> = {
-  UTC: 9,
-  "America/Los_Angeles": 9,
-  "Europe/Paris": 10,
-  "Pacific/Auckland": 10,
-  "Africa/Casablanca": 9,
+const expectedPlacement: Record<string, { startDay: number; endDay: number; lane: number }> = {
+  UTC: { startDay: 9, endDay: 9, lane: 0 },
+  "America/Los_Angeles": { startDay: 9, endDay: 9, lane: 0 },
+  "Europe/Paris": { startDay: 10, endDay: 10, lane: 0 },
+  "Pacific/Auckland": { startDay: 10, endDay: 10, lane: 0 },
+  "Africa/Casablanca": { startDay: 9, endDay: 10, lane: 1 },
 };
-it.runIf(zone in expectedDay)(
+it.runIf(zone in expectedPlacement)(
   "places Google's offset timestamps in the displayed local timezone",
   () => {
     const item = event("2026-06-10T00:30:00+02:00", "2026-06-10T01:30:00+02:00");
-    expect(buildMonthSegments([item], 2026)[5].segments[0]).toMatchObject({
-      startDay: expectedDay[zone],
-      endDay: expectedDay[zone],
-      lane: 0,
-    });
+    expect(buildMonthSegments([item], 2026)[5].segments[0]).toMatchObject(expectedPlacement[zone]);
   },
 );
