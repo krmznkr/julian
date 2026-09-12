@@ -1,10 +1,6 @@
 import { useMemo } from "react";
 import { formatTimeRange, isWeekend } from "@/components/year-helpers";
 import { DAYS_IN_GRID } from "@/components/year-view/constants";
-import {
-  getTimedEventDayPlacement,
-  type TimedEventPlacement,
-} from "@/components/year-view/day-timeline-placement";
 import { isWritableCalendar, parseEventBoundary } from "@/domain";
 import type { CalendarEvent, CalendarSummary, EventSegment, MonthSegments } from "@/domain";
 
@@ -21,7 +17,6 @@ export type DaySquare = {
   segment: EventSegment;
   event: CalendarEvent;
   allDay: boolean;
-  timedPlacement?: TimedEventPlacement | null;
   timeLabel?: string;
 };
 
@@ -52,7 +47,6 @@ export function useRenderedSegments(
   month: MonthSegments,
   events: Map<string, CalendarEvent>,
   calendars: ReadonlyArray<CalendarSummary>,
-  year: number,
 ) {
   const calendarById = useMemo(
     () => new Map(calendars.map((calendar) => [calendar.id, calendar])),
@@ -68,14 +62,14 @@ export function useRenderedSegments(
       .filter((entry) => entry !== null);
 
     const multiDayLanes = month.lanes;
-    const singles = resolved.filter(({ segment }) => segment.startDay === segment.endDay);
+    const singles = resolved.filter(({ segment }) => segment.lane === 0);
     const hasSingleDay = singles.length > 0;
 
     const renderMode: RenderedBar["renderMode"] =
       multiDayLanes >= 7 ? "micro" : multiDayLanes >= 5 ? "compact" : "full";
 
     const bars: RenderedBar[] = resolved
-      .filter(({ segment }) => segment.endDay > segment.startDay)
+      .filter(({ segment }) => segment.lane > 0)
       .map(({ segment, event }) => {
         const calendar = calendarById.get(event.calendarId);
         const canEdit = (calendar ? isWritableCalendar(calendar) : false) && event.allDay;
@@ -92,9 +86,6 @@ export function useRenderedSegments(
     // Single-day events for each day, longest → shortest (all-day before timed).
     const singleDayByDay = singles.reduce((acc, { segment, event }) => {
       const list = acc.get(segment.startDay) ?? [];
-      const timedPlacement = event.allDay
-        ? null
-        : getTimedEventDayPlacement(event, year, month.month, segment.startDay);
       // eslint-disable-next-line functional/immutable-data
       acc.set(segment.startDay, [
         ...list,
@@ -102,7 +93,6 @@ export function useRenderedSegments(
           segment,
           event,
           allDay: event.allDay,
-          timedPlacement,
           timeLabel: event.allDay ? undefined : formatTimeRange(event),
         },
       ]);
@@ -133,7 +123,7 @@ export function useRenderedSegments(
       dayEvents: orderedDayEvents,
       multiDayLanes,
     };
-  }, [month.segments, month.lanes, month.month, events, calendarById, year]);
+  }, [month.segments, month.lanes, events, calendarById]);
 }
 
 /** Ordered events for one day — used by keyboard day panel. */

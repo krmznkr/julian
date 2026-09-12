@@ -152,19 +152,3 @@ export async function typeInto(
     Promise.resolve(),
   );
 }
-
-export function centerOf(element: Element) {
-  const rect = element.getBoundingClientRect();
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-}
-
-/** A real pointer sequence, so React's own handlers run exactly as for a visitor. */
-export function clickElement(element: Element) {
-  const { x, y } = centerOf(element);
-  const init = { bubbles: true, cancelable: true, clientX: x, clientY: y };
-  element.dispatchEvent(new PointerEvent("pointerdown", { ...init, pointerId: 1 }));
-  element.dispatchEvent(new MouseEvent("mousedown", init));
-  element.dispatchEvent(new PointerEvent("pointerup", { ...init, pointerId: 1 }));
-  element.dispatchEvent(new MouseEvent("mouseup", init));
-  element.dispatchEvent(new MouseEvent("click", init));
-}

@@ -184,6 +184,12 @@ afterEach(() => {
 });
 
 describe("useYearGridKeyboard — initial state", () => {
+  it("selects the clicked event instead of always selecting the first", () => {
+    const { result } = setup();
+    act(() => result.current.openDayDetails(TODAY, SHORT_EVENT.id));
+    expect(result.current.dialogActiveKey).toBe(SHORT_EVENT.id);
+    expect(result.current.announcement).toBe("Standup");
+  });
   it("starts on todayCell with no dialog when there is no url focus", () => {
     const { result } = setup();
 

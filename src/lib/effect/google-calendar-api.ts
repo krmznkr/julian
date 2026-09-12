@@ -8,7 +8,7 @@ import { Context, Effect, Layer, Option, Stream } from "effect";
 import { HttpClientRequest } from "effect/unstable/http";
 import { GoogleApiError, type GoogleApiFailure } from "@/lib/effect/errors";
 import * as S from "@/lib/effect/schemas";
-import { toUtcDateOnly, type CalendarEvent, type CalendarSummary } from "@/domain";
+import { getEventBounds, toUtcDateOnly, type CalendarEvent, type CalendarSummary } from "@/domain";
 import { GoogleHttp } from "@/lib/effect/google-http";
 
 const CALENDAR_BASE = "https://www.googleapis.com/calendar/v3";
@@ -52,16 +52,20 @@ export class GoogleCalendarApi extends Context.Service<GoogleCalendarApi, Google
   "@julian/GoogleCalendar",
 ) {}
 
-const normalize = (event: S.GoogleCalendarEvent): NormalizedEvent => {
-  const allDay = event.start?.dateTime === undefined;
+const normalize = (event: S.GoogleCalendarEvent): NormalizedEvent | null => {
+  if (event.status === "cancelled") return null;
+  const allDay = event.start?.date !== undefined;
+  const start = allDay ? event.start?.date : event.start?.dateTime;
+  const end = allDay ? event.end?.date : event.end?.dateTime;
+  if (!start || !end || !getEventBounds({ start, end, allDay })) return null;
   return {
     id: event.id,
     title: event.summary === undefined || event.summary === "" ? "(No title)" : event.summary,
     description: event.description,
     htmlLink: event.htmlLink,
     recurringEventId: event.recurringEventId,
-    start: event.start?.dateTime ?? event.start?.date ?? "",
-    end: event.end?.dateTime ?? event.end?.date ?? "",
+    start,
+    end,
     allDay,
     isTimed: !allDay,
   };
@@ -136,7 +140,7 @@ export const googleCalendarApiLayer: Layer.Layer<GoogleCalendarApi, never, Googl
           Stream.runCollect,
         );
 
-        return events.map(normalize);
+        return events.map(normalize).filter((event) => event !== null);
       });
 
       const createEvent: GoogleCalendarApiShape["createEvent"] = Effect.fn(

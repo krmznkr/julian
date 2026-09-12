@@ -40,17 +40,17 @@ export function LandingPage() {
         <DemoYearView
           banner={
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-border/40 bg-muted/40 px-6 py-2 text-center text-sm">
-              <span className="font-medium tracking-tight">Your year, on one page.</span>
-              <span className="hidden text-muted-foreground md:inline">
-                Try the calendar with sample data.
+              <span className="rounded border border-border bg-background px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
+                Demo · Sample data
               </span>
+              <span className="text-muted-foreground">Try it here. Changes stay in this demo.</span>
               <Link
                 to="/year/$year"
                 params={{ year: today.year }}
                 search={{ month: today.month, day: today.day }}
                 className="inline-flex h-7 items-center rounded-full bg-foreground px-3.5 text-xs font-medium text-background transition-opacity hover:opacity-85"
               >
-                Use my calendar
+                Connect my Google Calendar
               </Link>
             </div>
           }

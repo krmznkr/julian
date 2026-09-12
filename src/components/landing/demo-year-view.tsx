@@ -3,7 +3,7 @@
 // event store instead of the router and Google.
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import YearViewCore from "@/components/year-view-core";
-import { DemoHud, GhostCursor } from "@/components/landing/demo-hud";
+import { DemoHud } from "@/components/landing/demo-hud";
 import { buildDemoYear } from "@/components/landing/demo-data";
 import { useDemoPlayer } from "@/components/landing/use-demo-player";
 import type {
@@ -24,12 +24,12 @@ function todaySearch(today: Date): YearViewSearch {
  * Mutations are kept in a ref rather than component state: the year view owns
  * the rendered copy of the events, and this store only has to survive a
  * `loadData()` round trip so a created event doesn't vanish on reconcile.
- * Only the current year is mutable — paging to 2031 just generates a fixture.
+ * Each visited year keeps its own events until the demo is reset.
  */
 function useDemoStore(year: number) {
   const today = useMemo(() => new Date(), []);
   const seed = useMemo(() => buildDemoYear(year, today), [today, year]);
-  const eventsRef = useRef<CalendarEvent[]>(seed.events);
+  const eventsRef = useRef<Record<number, CalendarEvent[]>>({ [year]: seed.events });
   const nextIdRef = useRef(0);
   // Held here rather than recomputed from the seed on every load, so a calendar
   // the visitor unchecks stays unchecked across a refresh or a year change.
@@ -37,19 +37,25 @@ function useDemoStore(year: number) {
 
   const dataSource = useMemo<YearViewDataSource>(
     () => ({
-      load: (targetYear): Promise<YearViewLoadResult> =>
-        Promise.resolve({
+      load: (targetYear): Promise<YearViewLoadResult> => {
+        if (!eventsRef.current[targetYear])
+          eventsRef.current = {
+            ...eventsRef.current,
+            [targetYear]: buildDemoYear(targetYear, today).events,
+          };
+        return Promise.resolve({
           calendars: seed.calendars,
           selectedCalendarIds: selectionRef.current,
-          events: targetYear === year ? eventsRef.current : buildDemoYear(targetYear, today).events,
+          events: eventsRef.current[targetYear],
           failures: [],
-        }),
+        });
+      },
       // Remembered for this visit only; nothing is written to disk.
       persistSelection: (_availableIds, selectedIds) => {
         selectionRef.current = [...selectedIds];
       },
     }),
-    [seed, today, year],
+    [seed, today],
   );
 
   const eventApi = useMemo<YearViewEventApi>(
@@ -75,30 +81,43 @@ function useDemoStore(year: number) {
         };
         // The tour loops, so re-adding the same title on the same day replaces
         // the earlier copy instead of stacking duplicates forever.
-        eventsRef.current = [
-          ...eventsRef.current.filter(
-            (event) => !(event.title === created.title && event.start === created.start),
-          ),
-          created,
-        ];
+        const targetYear = Number(input.date.slice(0, 4));
+        const existing = eventsRef.current[targetYear] ?? buildDemoYear(targetYear, today).events;
+        eventsRef.current = {
+          ...eventsRef.current,
+          [targetYear]: [
+            ...existing.filter(
+              (event) => !(event.title === created.title && event.start === created.start),
+            ),
+            created,
+          ],
+        };
         return Promise.resolve(created);
       },
       updateEvent: (calendarId, eventId, input) => {
-        eventsRef.current = eventsRef.current.map((event) =>
-          event.id === eventId && event.calendarId === calendarId
-            ? { ...event, title: input.title }
-            : event,
+        eventsRef.current = Object.fromEntries(
+          Object.entries(eventsRef.current).map(([key, events]) => [
+            key,
+            events.map((event) =>
+              event.id === eventId && event.calendarId === calendarId
+                ? { ...event, title: input.title }
+                : event,
+            ),
+          ]),
         );
         return Promise.resolve();
       },
       deleteEvent: (calendarId, eventId) => {
-        eventsRef.current = eventsRef.current.filter(
-          (event) => !(event.id === eventId && event.calendarId === calendarId),
+        eventsRef.current = Object.fromEntries(
+          Object.entries(eventsRef.current).map(([key, events]) => [
+            key,
+            events.filter((event) => !(event.id === eventId && event.calendarId === calendarId)),
+          ]),
         );
         return Promise.resolve();
       },
     }),
-    [],
+    [today],
   );
 
   const collapsedRef = useRef(false);
@@ -124,7 +143,7 @@ function useDemoStore(year: number) {
   return { dataSource, eventApi, preferences, initialData, today };
 }
 
-export function DemoYearView({ banner }: { banner?: ReactNode }) {
+function DemoSession({ banner, onReset }: { banner?: ReactNode; onReset: () => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const year = useMemo(() => new Date().getFullYear(), []);
   const { dataSource, eventApi, preferences, initialData, today } = useDemoStore(year);
@@ -150,10 +169,19 @@ export function DemoYearView({ banner }: { banner?: ReactNode }) {
         dataSource={dataSource}
         eventApi={eventApi}
         preferences={preferences}
-        banner={banner}
+        banner={
+          <>
+            {banner}
+            <DemoHud {...player} onReset={onReset} />
+          </>
+        }
       />
-      <DemoHud {...player} />
-      <GhostCursor cursor={player.cursor} />
     </div>
   );
+}
+
+export function DemoYearView({ banner }: { banner?: ReactNode }) {
+  const [session, setSession] = useState(0);
+  const reset = useCallback(() => setSession((value) => value + 1), []);
+  return <DemoSession key={session} banner={banner} onReset={reset} />;
 }

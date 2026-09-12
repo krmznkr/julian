@@ -214,7 +214,10 @@ export function useYearGridKeyboard({
   );
 
   const openDayDetails = useCallback(
-    (cell: KeyboardCell) => openDialog(clampCell(cell, year)),
+    (cell: KeyboardCell, eventKey?: string) => {
+      setDialogActiveKey(eventKey);
+      openDialog(clampCell(cell, year));
+    },
     [openDialog, year],
   );
 
@@ -232,11 +235,17 @@ export function useYearGridKeyboard({
       setDialogActiveKey(undefined);
       return;
     }
-    const nextKey = dialogItems[0]?.key;
-    setDialogActiveKey(nextKey);
-    const item = dialogItems.find((entry) => entry.key === nextKey);
-    if (item) announceEvent(item.event.title);
+    setDialogActiveKey((current) => {
+      const nextKey = dialogItems.some((item) => item.key === current)
+        ? current
+        : dialogItems[0]?.key;
+      return nextKey;
+    });
   }, [announceEvent, dialogCell, dialogItems]);
+
+  useEffect(() => {
+    if (activeEvent) announceEvent(activeEvent.event.title);
+  }, [activeEvent, announceEvent]);
 
   const cycleDialogEvent = useCallback(
     (delta: number) => {

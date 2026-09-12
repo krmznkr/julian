@@ -1,185 +1,125 @@
-// Plays the demo script and yields the moment a real person touches anything.
-//
-// The visitor is always the higher authority here: one trusted keystroke or
-// click stops the tour and leaves them holding a working calendar.
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { DEMO_SCRIPT, type DemoBeat, type DemoContext } from "@/components/landing/demo-script";
-import {
-  centerOf,
-  chord,
-  clickElement,
-  pressChord,
-  sleep,
-  typeInto,
-} from "@/components/landing/demo-input";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DEMO_SCRIPT, type DemoContext } from "./demo-script";
+import { chord, pressChord, sleep, typeInto } from "./demo-input";
 
 export type DemoPlayerState = {
-  readonly status: "playing" | "taken-over" | "reduced-motion" | "static";
-  readonly caption: string | null;
-  readonly keys: readonly string[] | null;
-  readonly cursor: { readonly x: number; readonly y: number } | null;
+  readonly status: "playing" | "interactive" | "finished";
+  readonly caption: string;
+  readonly step: number;
   readonly replay: () => void;
+  readonly takeControl: () => void;
+  readonly addEvent: () => void;
 };
 
-/**
- * A tour of keyboard shortcuts has nothing to say on a phone, and autoplay is
- * exactly what "reduce motion" asks us not to do. Both cases still get the real
- * calendar — just without anyone else's hands on it.
- */
-function initialStatus(): DemoPlayerState["status"] {
-  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
-  const narrow = window.matchMedia("(max-width: 767px)").matches;
-  if (coarsePointer || narrow) return "static";
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return "reduced-motion";
-  return "playing";
-}
-
 export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): DemoPlayerState {
-  const [status, setStatus] = useState<DemoPlayerState["status"]>(initialStatus);
-  const [caption, setCaption] = useState<string | null>(null);
-  const [keys, setKeys] = useState<readonly string[] | null>(null);
-  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
-  const [onScreen, setOnScreen] = useState(true);
+  const [status, setStatus] = useState<DemoPlayerState["status"]>(() =>
+    window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse), (max-width: 767px)")
+      .matches
+      ? "interactive"
+      : "playing",
+  );
+  const [caption, setCaption] = useState(DEMO_SCRIPT[0].caption);
+  const [step, setStep] = useState(0);
   const [runId, setRunId] = useState(0);
-
-  const replay = useCallback(() => {
-    setStatus("playing");
-    setRunId((value) => value + 1);
-  }, []);
-
-  // A tour running under the fold would fire shortcuts at an app nobody can see.
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setOnScreen((entry?.intersectionRatio ?? 0) > 0.5),
-      { threshold: [0, 0.5, 1] },
-    );
-    observer.observe(root);
-    return () => observer.disconnect();
+  const controllerRef = useRef<AbortController | null>(null);
+  const focusGrid = useCallback(() => {
+    rootRef.current
+      ?.querySelector<HTMLElement>("[data-year-grid-root]")
+      ?.focus({ preventScroll: true });
   }, [rootRef]);
+  const takeControl = useCallback(() => {
+    controllerRef.current?.abort();
+    setStatus("interactive");
+  }, []);
+  const replay = useCallback(() => {
+    controllerRef.current?.abort();
+    setStep(0);
+    setCaption(DEMO_SCRIPT[0].caption);
+    setStatus("playing");
+    setRunId((id) => id + 1);
+  }, []);
+  const addEvent = useCallback(() => {
+    takeControl();
+    focusGrid();
+    pressChord(chord("n"));
+  }, [focusGrid, takeControl]);
 
-  // Any trusted input hands the app back to the visitor.
   useEffect(() => {
     if (status !== "playing") return;
-    const yieldToUser = (event: Event) => {
-      if (!event.isTrusted) return;
-      setStatus("taken-over");
-      setCaption(null);
-      setKeys(null);
-      setCursor(null);
-    };
-    window.addEventListener("keydown", yieldToUser, true);
-    window.addEventListener("pointerdown", yieldToUser, true);
-    return () => {
-      window.removeEventListener("keydown", yieldToUser, true);
-      window.removeEventListener("pointerdown", yieldToUser, true);
-    };
-  }, [status]);
-
-  useEffect(() => {
-    if (status !== "playing" || !onScreen) return;
-
     const controller = new AbortController();
+    controllerRef.current = controller;
     const { signal } = controller;
-
-    // Dialogs and popovers are portaled to `document.body`, outside the demo
-    // container, so the root is a preference rather than a boundary.
-    const query = (selector: string) =>
-      rootRef.current?.querySelector(selector) ?? document.querySelector(selector);
-
-    // The shell renders the sidebar twice — a mobile drawer and a desktop
-    // column — so a plain `querySelector` can resolve to the off-screen copy.
-    // Dispatching to it would still work, but the cursor would fly to nowhere.
-    const queryVisible = (selector: string) => {
-      const scope: ParentNode = rootRef.current ?? document;
-      return (
-        [...scope.querySelectorAll(selector)].find((element) => {
-          const rect = element.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0;
-        }) ?? null
-      );
+    const stopOnInput = (event: Event) => {
+      if (
+        event.isTrusted &&
+        !(event.target instanceof Element && event.target.closest("[data-demo-controls]"))
+      )
+        takeControl();
     };
-
-    const focusGrid = () => {
-      const grid = query("[data-year-grid-root]");
-      if (grid instanceof HTMLElement) grid.focus({ preventScroll: true });
+    const stopWhenHidden = () => {
+      if (document.hidden) takeControl();
     };
-
-    const context: DemoContext = {
+    window.addEventListener("keydown", stopOnInput, true);
+    window.addEventListener("pointerdown", stopOnInput, true);
+    document.addEventListener("visibilitychange", stopWhenHidden);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry && entry.intersectionRatio < 0.25) takeControl();
+      },
+      { threshold: 0.25 },
+    );
+    if (rootRef.current) observer.observe(rootRef.current);
+    const ctx: DemoContext = {
       signal,
-      query,
-      focusGrid,
       wait: (ms) => sleep(ms, signal),
-      press: async (spec, holdMs = 700) => {
+      press: async (spec, holdMs = 400) => {
         if (signal.aborted) return;
-        const parsed = chord(spec);
-        setKeys(parsed.caps);
-        pressChord(parsed);
+        pressChord(chord(spec));
         await sleep(holdMs, signal);
-        setKeys(null);
       },
       type: async (selector, text) => {
-        const input = query(selector);
-        if (!(input instanceof HTMLInputElement)) return;
-        setKeys(null);
-        await typeInto(input, text, { signal });
-      },
-      clickOn: async (selector) => {
-        const target = queryVisible(selector);
-        if (!target) return;
-        setCursor(centerOf(target));
-        // Let the cursor visibly travel before it lands.
-        await sleep(700, signal);
         if (signal.aborted) return;
-        clickElement(target);
-        await sleep(400, signal);
+        const input = document.querySelector<HTMLInputElement>(selector);
+        if (input) await typeInto(input, text, { signal, perCharMs: 25 });
       },
       submitDialog: async () => {
-        // Checked here as well as in the caller: a visitor who interrupts
-        // mid-quick-add must not have an event created after they took over.
         if (signal.aborted) return;
-        const form = query("[data-slot='dialog-content'] form");
-        if (!(form instanceof HTMLFormElement)) return;
-        setKeys(["return"]);
-        form.requestSubmit();
-        await sleep(600, signal);
-        setKeys(null);
+        document
+          .querySelector<HTMLFormElement>("[data-slot='dialog-content'] form")
+          ?.requestSubmit();
+        await sleep(400, signal);
       },
     };
-
-    const runBeat = async (beat: DemoBeat) => {
-      setCaption(beat.caption);
-      await beat.run(context);
+    const run = async () => {
+      await sleep(300, signal);
       if (signal.aborted) return;
-      await sleep(beat.restMs ?? 900, signal);
-    };
-
-    const runFrom = async (index: number): Promise<void> => {
+      // Replays begin with a closed overlay and the grid focused.
+      pressChord(chord("Escape"));
+      await sleep(50, signal);
       if (signal.aborted) return;
-      const beat = DEMO_SCRIPT[index % DEMO_SCRIPT.length];
-      if (!beat) return;
-      await runBeat(beat);
-      if (signal.aborted) return;
-      return runFrom(index + 1);
-    };
-
-    // Late enough that the grid has laid out and the first paint has settled.
-    const start = window.setTimeout(() => {
       focusGrid();
-      void runFrom(0);
-    }, 1100);
-
-    return () => {
-      window.clearTimeout(start);
-      controller.abort();
-      setKeys(null);
-      setCursor(null);
+      await DEMO_SCRIPT.reduce(async (previous, beat, index) => {
+        await previous;
+        if (signal.aborted) return;
+        setStep(index);
+        setCaption(beat.caption);
+        await beat.run(ctx);
+        await sleep(400, signal);
+      }, Promise.resolve());
+      if (!signal.aborted) setStatus("finished");
     };
-  }, [onScreen, rootRef, runId, status]);
+    void run();
+    return () => {
+      controller.abort();
+      observer.disconnect();
+      window.removeEventListener("keydown", stopOnInput, true);
+      window.removeEventListener("pointerdown", stopOnInput, true);
+      document.removeEventListener("visibilitychange", stopWhenHidden);
+    };
+  }, [focusGrid, rootRef, runId, status, takeControl]);
 
   return useMemo(
-    () => ({ status, caption, keys, cursor, replay }),
-    [caption, cursor, keys, replay, status],
+    () => ({ status, caption, step, replay, takeControl, addEvent }),
+    [status, caption, step, replay, takeControl, addEvent],
   );
 }

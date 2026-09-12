@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef } from "react";
+import { memo, useRef } from "react";
 import { DayHoverPopover } from "@/components/year-view/day-hover-popover";
 import { MonthDayCellsLayer } from "@/components/year-view/month-day-cells-layer";
 import { hasSingleDayStrip } from "@/components/year-view/month-grid-layout";
@@ -44,20 +44,6 @@ function MonthSegmentsLayer({
   const panel = useMonthDayPanel(dayEvents, monthName, keyboardDialogDay, layerRef, ROW_HEIGHT);
 
   const hasSingleStrip = hasSingleDayStrip(multiDayLanes, singleDayByDay.size > 0);
-  // Days covered by a multi-day bar — single-day events on these days move into
-  // the reserved strip column so the two layers divide the width.
-  const multiDayCoverageDays = useMemo(
-    () =>
-      new Set(
-        bars.flatMap((bar) =>
-          Array.from(
-            { length: bar.segment.endDay - bar.segment.startDay + 1 },
-            (_, offset) => bar.segment.startDay + offset,
-          ),
-        ),
-      ),
-    [bars],
-  );
 
   return (
     <div ref={layerRef} className="absolute inset-0">
@@ -68,7 +54,6 @@ function MonthSegmentsLayer({
         weekendRows={weekendRows}
         multiDayLanes={multiDayLanes}
         hasSingleStrip={hasSingleStrip}
-        multiDayCoverageDays={multiDayCoverageDays}
         singleDayByDay={singleDayByDay}
         keyboardFocusedDay={keyboardFocusedDay}
         keyboardDialogDay={keyboardDialogDay}

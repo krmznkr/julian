@@ -193,6 +193,31 @@
   grid-template-rows: repeat(31, 30px);
 }
 
+.event-bar {
+  container-type: inline-size;
+}
+
+.event-bar-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+@container (max-width: 64px) {
+  .event-bar-title {
+    display: block;
+    writing-mode: vertical-rl;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-height: 0;
+    flex: 1;
+  }
+  .event-bar-meta,
+  .event-bar-time {
+    display: none;
+  }
+}
+
 .year-grid-height {
   height: 930px;
 }

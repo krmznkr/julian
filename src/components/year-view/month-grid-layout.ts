@@ -6,8 +6,8 @@
 // other and instead divide the column width between them.
 
 export function monthColumnTemplateColumns(multiDayLanes: number, hasSingleStrip: boolean): string {
-  const total = Math.max(1, multiDayLanes) + (hasSingleStrip ? 1 : 0);
-  return `repeat(${total}, minmax(0, 1fr))`;
+  const bars = `repeat(${Math.max(1, multiDayLanes)}, minmax(0, 1fr))`;
+  return hasSingleStrip ? `${bars} minmax(96px, 1.4fr)` : bars;
 }
 
 /** Whether the single-day strip column should be reserved for this month. */
