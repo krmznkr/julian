@@ -79,8 +79,7 @@ function useDemoStore(year: number) {
           calendarSummary: calendar.summary,
           htmlLink: null,
         };
-        // The tour loops, so re-adding the same title on the same day replaces
-        // the earlier copy instead of stacking duplicates forever.
+        // Re-adding the same title on the same day replaces the earlier copy.
         const targetYear = Number(input.date.slice(0, 4));
         const existing = eventsRef.current[targetYear] ?? buildDemoYear(targetYear, today).events;
         eventsRef.current = {

@@ -50,17 +50,14 @@ export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): Dem
     controllerRef.current = controller;
     const { signal } = controller;
     const stopOnInput = (event: Event) => {
-      if (
-        event.isTrusted &&
-        !(event.target instanceof Element && event.target.closest("[data-demo-controls]"))
-      )
-        takeControl();
+      if (event.isTrusted) takeControl();
     };
     const stopWhenHidden = () => {
       if (document.hidden) takeControl();
     };
     window.addEventListener("keydown", stopOnInput, true);
     window.addEventListener("pointerdown", stopOnInput, true);
+    window.addEventListener("touchstart", stopOnInput, true);
     document.addEventListener("visibilitychange", stopWhenHidden);
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -114,6 +111,7 @@ export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): Dem
       observer.disconnect();
       window.removeEventListener("keydown", stopOnInput, true);
       window.removeEventListener("pointerdown", stopOnInput, true);
+      window.removeEventListener("touchstart", stopOnInput, true);
       document.removeEventListener("visibilitychange", stopWhenHidden);
     };
   }, [focusGrid, rootRef, runId, status, takeControl]);

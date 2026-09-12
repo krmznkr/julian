@@ -207,7 +207,8 @@ seconds. "Try it now" stops it immediately; "Add sample event" opens the same
 form as the N shortcut; "Reset demo" starts a fresh in-memory session.
 
 `demo-input.ts` dispatches keyboard events through the application's handlers.
-Trusted input, a hidden tab, or scrolling away cancels the tour. Touch devices,
+Any trusted input, including a login click, cancels the tour before the action
+continues. A hidden tab or scrolling away also cancels it. Touch devices,
 small screens, and reduced-motion preferences start in interactive mode.
 Events are kept per year for the visit, including edits made after navigating
 to another year. Refreshing the page or resetting the demo discards them.
