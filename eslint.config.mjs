@@ -28,6 +28,10 @@ export default [
     },
   },
   {
+    files: ["worker/**/*.ts"],
+    languageOptions: { parser: tsParser },
+  },
+  {
     files: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "functional/no-let": "off",

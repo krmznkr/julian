@@ -30,7 +30,7 @@ function EventChip({
 }: EventChipProps & { ref?: React.Ref<HTMLButtonElement> }) {
   const isSquare = variant === "square";
   const calendar = calendars.find((item) => item.id === event.calendarId);
-  const { startLabel, endLabel, syncState, hasSyncIssue, isPendingSync } = useEventLabels(event);
+  const { startLabel, endLabel } = useEventLabels(event);
   const { displayStartDay, displayEndDay, chipStyle, placementClassName, isSingleDay } =
     useChipStyle(
       segment,
@@ -81,8 +81,6 @@ function EventChip({
       <EventChipMetadata
         hasDescription={!!event.description}
         displayMode={displayMode}
-        isPendingSync={isPendingSync}
-        hasSyncIssue={hasSyncIssue}
         isSingleDay={isSingleDay}
         totalEventDays={totalEventDays}
         displayStartDay={displayStartDay}
@@ -104,7 +102,6 @@ function EventChip({
         startLabel={startLabel}
         endLabel={endLabel}
         durationDays={totalEventDays}
-        syncState={syncState}
       />
     </Tooltip>
   );

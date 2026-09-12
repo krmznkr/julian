@@ -205,9 +205,5 @@ export function useEventLabels(event: CalendarEvent) {
   const endDisplayDate = event.allDay ? addDays(endDate, -1) : endDate;
   const startLabel = event.allDay ? startDate.toLocaleDateString() : startDate.toLocaleString();
   const endLabel = event.allDay ? endDisplayDate.toLocaleDateString() : endDate.toLocaleString();
-  const syncState = event.syncState ?? "synced";
-  const hasSyncIssue = syncState === "failed" || syncState === "conflict";
-  const isPendingSync = syncState === "pending";
-
-  return { startLabel, endLabel, syncState, hasSyncIssue, isPendingSync };
+  return { startLabel, endLabel };
 }

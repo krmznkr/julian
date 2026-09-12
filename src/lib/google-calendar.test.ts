@@ -33,6 +33,7 @@ const expiredWithRefresh = {
 const withEnv = (options: {
   readonly responses: ReadonlyArray<Response | (() => Response)>;
   readonly storage?: Readonly<Record<string, string>>;
+  readonly retryTimes?: number;
 }) =>
   Effect.gen(function* () {
     const fetch = yield* TestEnv.makeFetchStub(options.responses);
@@ -40,7 +41,12 @@ const withEnv = (options: {
     return {
       fetch,
       navigations,
-      layer: TestEnv.layer({ fetch, navigations, storage: options.storage }),
+      layer: TestEnv.layer({
+        fetch,
+        navigations,
+        storage: options.storage,
+        config: { retryTimes: options.retryTimes ?? 0 },
+      }),
     };
   });
 
@@ -141,6 +147,28 @@ describe("GoogleCalendar.listEvents", () => {
 });
 
 describe("TokenStore refresh", () => {
+  it.effect("keeps credentials on rate limits, proxy rejection and client misconfiguration", () =>
+    Effect.gen(function* () {
+      for (const [status, code] of [
+        [429, "rate_limited"],
+        [403, "forbidden"],
+        [400, "invalid_client"],
+      ] as const) {
+        const env = yield* withEnv({
+          storage: expiredWithRefresh,
+          responses: [TestEnv.jsonResponse({ error: code }, status)],
+        });
+        const result = yield* Effect.gen(function* () {
+          const auth = yield* GoogleAuth;
+          const error = yield* Effect.flip(auth.isAuthenticated);
+          const store = yield* KeyValueStore;
+          return { error, refresh: yield* store.get(STORAGE_KEYS.refreshToken) };
+        }).pipe(Effect.provide(env.layer));
+        expect(result.error.status).toBe(status);
+        expect(Option.getOrNull(result.refresh)).toBe("refresh");
+      }
+    }),
+  );
   it.effect("does not force logout on a transient 5xx during refresh", () =>
     Effect.gen(function* () {
       const env = yield* withEnv({
@@ -229,6 +257,31 @@ describe("GoogleAuth", () => {
 });
 
 describe("loadCalendarYear", () => {
+  it.effect("reports a failed task list while keeping tasks from other lists", () =>
+    Effect.gen(function* () {
+      const env = yield* withEnv({
+        storage: validToken,
+        responses: [
+          TestEnv.jsonResponse({ items: [] }),
+          TestEnv.jsonResponse({
+            items: [
+              { id: "good", title: "Good" },
+              { id: "bad", title: "Bad" },
+            ],
+          }),
+          TestEnv.jsonResponse({
+            items: [{ id: "t1", title: "Pay rent", due: "2026-09-01T00:00:00Z" }],
+          }),
+          TestEnv.jsonResponse({ error: "forbidden" }, 403),
+        ],
+      });
+      const data = yield* loadCalendarYear(2026).pipe(Effect.provide(env.layer));
+      expect(data.events.map((event) => event.title)).toEqual(["Pay rent"]);
+      expect(data.failures).toEqual([
+        { source: "task-list:bad", message: "Failed to fetch tasks from list bad" },
+      ]);
+    }),
+  );
   it.effect("keeps the year usable when one calendar fails, and reports the failure", () =>
     Effect.gen(function* () {
       let call = 0;
@@ -303,6 +356,39 @@ describe("outgoing request headers", () => {
 });
 
 describe("GoogleCalendarApi.createEvent", () => {
+  it.effect("rejects impossible dates before sending a request", () =>
+    Effect.gen(function* () {
+      const env = yield* withEnv({ storage: validToken, responses: [] });
+      for (const date of ["2026-02-29", "2026-04-31", "2026-02-30"]) {
+        const error = yield* Effect.flip(
+          Effect.flatMap(GoogleCalendarApi, (calendar) =>
+            calendar.createEvent({ id: "c1", summary: "C" }, { title: "Invalid", date }),
+          ).pipe(Effect.provide(env.layer)),
+        );
+        expect(error.message).toContain("Invalid event date");
+      }
+      expect(yield* Ref.get(env.fetch.requests)).toHaveLength(0);
+    }),
+  );
+
+  it.effect("does not retry event creation after a server failure", () =>
+    Effect.gen(function* () {
+      const env = yield* withEnv({
+        storage: validToken,
+        retryTimes: 3,
+        responses: [TestEnv.jsonResponse({ error: "backendError" }, 503)],
+      });
+      yield* Effect.flip(
+        Effect.flatMap(GoogleCalendarApi, (calendar) =>
+          calendar.createEvent(
+            { id: "c1", summary: "C" },
+            { title: "One event", date: "2026-09-12" },
+          ),
+        ).pipe(Effect.provide(env.layer)),
+      );
+      expect(yield* Ref.get(env.fetch.requests)).toHaveLength(1);
+    }),
+  );
   it.effect("rejects a malformed date locally without calling Google", () =>
     Effect.gen(function* () {
       const env = yield* withEnv({
@@ -384,6 +470,47 @@ describe("GoogleTasks.listTasks", () => {
 
       const urls = (yield* Ref.get(env.fetch.requests)).map((request) => request.url);
       expect(new URL(urls[1]!).searchParams.get("pageToken")).toBe("next");
+    }),
+  );
+});
+
+describe("calendar and task-list discovery", () => {
+  it.effect("loads all calendar pages", () =>
+    Effect.gen(function* () {
+      const env = yield* withEnv({
+        storage: validToken,
+        responses: [
+          TestEnv.jsonResponse({
+            items: [{ id: "c1", summary: "One" }],
+            nextPageToken: "next page",
+          }),
+          TestEnv.jsonResponse({ items: [{ id: "c2", summary: "Two" }] }),
+        ],
+      });
+      const calendars = yield* Effect.flatMap(GoogleCalendarApi, (api) => api.listCalendars).pipe(
+        Effect.provide(env.layer),
+      );
+      expect(calendars.map((calendar) => calendar.id)).toEqual(["c1", "c2"]);
+      const requests = yield* Ref.get(env.fetch.requests);
+      expect(new URL(requests[1]!.url).searchParams.get("pageToken")).toBe("next page");
+    }),
+  );
+
+  it.effect("loads all task-list pages", () =>
+    Effect.gen(function* () {
+      const env = yield* withEnv({
+        storage: validToken,
+        responses: [
+          TestEnv.jsonResponse({ items: [{ id: "l1", title: "One" }], nextPageToken: "next page" }),
+          TestEnv.jsonResponse({ items: [{ id: "l2", title: "Two" }] }),
+        ],
+      });
+      const lists = yield* Effect.flatMap(GoogleTasks, (api) => api.listTaskLists).pipe(
+        Effect.provide(env.layer),
+      );
+      expect(lists.map((list) => list.id)).toEqual(["l1", "l2"]);
+      const requests = yield* Ref.get(env.fetch.requests);
+      expect(new URL(requests[1]!.url).searchParams.get("pageToken")).toBe("next page");
     }),
   );
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import {
   createInitialState,
   yearViewReducer,
@@ -11,6 +11,17 @@ import type { YearViewDataSource } from "@/components/year-view/year-view-ports"
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 
 const calendar: CalendarSummary = { id: "cal-1", summary: "Personal", accessRole: "owner" };
+
+function pendingLoad() {
+  type Data = Awaited<ReturnType<YearViewDataSource["load"]>>;
+  let resolve!: (data: Data) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<Data>((onResolve, onReject) => {
+    resolve = onResolve;
+    reject = onReject;
+  });
+  return { promise, resolve, reject };
+}
 
 const event: CalendarEvent = {
   id: "e1",
@@ -38,21 +49,96 @@ function setup(source: YearViewDataSource, seed?: Partial<YearViewState>) {
     state.current = yearViewReducer(state.current, action);
   };
 
-  const view = renderHook(() =>
-    useYearViewData({
-      year: 2026,
-      initialYear: 2026,
-      initialData: null,
-      source,
-      calendars: [calendar],
-      dispatch,
-    }),
+  const view = renderHook(
+    ({ year }) =>
+      useYearViewData({
+        year,
+        initialYear: 2026,
+        initialData: null,
+        source,
+        calendars: [calendar],
+        dispatch,
+      }),
+    { initialProps: { year: 2026 } },
   );
 
   return { ...view, actions, state };
 }
 
 describe("useYearViewData", () => {
+  it("ignores an old year that finishes after the current year", async () => {
+    const old = pendingLoad();
+    const current = {
+      calendars: [calendar],
+      selectedCalendarIds: [calendar.id],
+      events: [{ ...event, id: "new-year" }],
+      failures: [],
+    };
+    const source = {
+      load: (year: number) => (year === 2026 ? old.promise : Promise.resolve(current)),
+      persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
+    };
+    const view = setup(source);
+    view.rerender({ year: 2027 });
+    await waitFor(() => expect(view.state.current.events).toEqual(current.events));
+    await act(async () => old.resolve({ ...current, events: [event] }));
+    expect(view.state.current.events).toEqual(current.events);
+  });
+
+  it("ignores a superseded refresh failure", async () => {
+    const old = pendingLoad();
+    const data = {
+      calendars: [calendar],
+      selectedCalendarIds: [calendar.id],
+      events: [event],
+      failures: [],
+    };
+    const source = {
+      load: vi
+        .fn<YearViewDataSource["load"]>()
+        .mockReturnValueOnce(old.promise)
+        .mockResolvedValue(data),
+      persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
+    };
+    const view = setup(source);
+    await act(async () => view.result.current.handleReloadCalendars());
+    await waitFor(() => expect(view.state.current.events).toEqual([event]));
+    await act(async () => old.reject(new Error("stale failure")));
+    expect(view.state.current.error).toBeNull();
+  });
+
+  it("preserves a selection made while a refresh is pending", async () => {
+    const pending = pendingLoad();
+    const view = setup({
+      load: () => pending.promise,
+      persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
+    });
+    view.result.current.updateSelectedCalendars([]);
+    await act(async () =>
+      pending.resolve({
+        calendars: [calendar],
+        selectedCalendarIds: [calendar.id],
+        events: [event],
+        failures: [],
+      }),
+    );
+    expect(view.state.current.selectedCalendarIds).toEqual([]);
+  });
+
+  it("does not dispatch after unmount", async () => {
+    const pending = pendingLoad();
+    const view = setup({
+      load: () => pending.promise,
+      persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
+    });
+    view.unmount();
+    const count = view.actions.length;
+    await act(async () =>
+      pending.resolve({ calendars: [], selectedCalendarIds: [], events: [], failures: [] }),
+    );
+    expect(view.actions).toHaveLength(count);
+  });
+
   it("applies a successful load", async () => {
     const source: YearViewDataSource = {
       load: () =>

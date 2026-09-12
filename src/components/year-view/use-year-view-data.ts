@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { YearViewAction } from "@/components/year-view-reducer";
 import type { YearViewInitialData } from "@/components/year-view/types";
 import type { YearViewDataSource } from "@/components/year-view/year-view-ports";
@@ -19,20 +19,29 @@ export function useYearViewData({
   calendars: ReadonlyArray<CalendarSummary>;
   dispatch: (action: YearViewAction) => void;
 }) {
+  const requestId = useRef(0);
+  const selection = useRef<ReadonlyArray<string> | null>(null);
   const loadData = useCallback(
     async (targetYear: number) => {
+      const id = ++requestId.current;
+      const selectionAtStart = selection.current;
       dispatch({ type: "LOAD_STARTED" });
 
       try {
         const data = await source.load(targetYear);
+        if (id !== requestId.current) return;
         dispatch({
           type: "LOAD_SUCCEEDED",
           calendars: data.calendars,
-          selectedCalendarIds: data.selectedCalendarIds,
+          selectedCalendarIds:
+            selection.current !== selectionAtStart && selection.current !== null
+              ? selection.current
+              : data.selectedCalendarIds,
           events: data.events,
           failures: data.failures,
         });
       } catch (err) {
+        if (id !== requestId.current) return;
         console.error("Failed to load year data:", err);
         dispatch({
           type: "LOAD_FAILED",
@@ -44,12 +53,15 @@ export function useYearViewData({
   );
 
   useEffect(() => {
-    if (initialData != null && year === initialYear) return;
-    loadData(year);
+    if (initialData == null || year !== initialYear) loadData(year);
+    return () => {
+      requestId.current += 1;
+    };
   }, [year, initialYear, initialData, loadData]);
 
   const updateSelectedCalendars = useCallback(
     (nextSelection: ReadonlyArray<string>) => {
+      selection.current = nextSelection;
       source.persistSelection(
         calendars.map((calendar) => calendar.id),
         nextSelection,

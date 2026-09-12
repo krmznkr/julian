@@ -19,6 +19,8 @@ export const TokenResponse = Schema.Struct({
 });
 export interface TokenResponse extends Schema.Schema.Type<typeof TokenResponse> {}
 
+export const OAuthErrorResponse = Schema.Struct({ error: Schema.String });
+
 // calendarList.list item.
 export const GoogleCalendarListItem = Schema.Struct({
   id: Schema.String,
@@ -32,6 +34,7 @@ export interface GoogleCalendarListItem extends Schema.Schema.Type<typeof Google
 
 export const GoogleCalendarList = Schema.Struct({
   items: Schema.optionalKey(Schema.Array(GoogleCalendarListItem)),
+  nextPageToken: Schema.optionalKey(Schema.String),
 });
 
 // events.list item + page.
@@ -75,6 +78,7 @@ export interface GoogleTaskListItem extends Schema.Schema.Type<typeof GoogleTask
 
 export const GoogleTaskList = Schema.Struct({
   items: Schema.optionalKey(Schema.Array(GoogleTaskListItem)),
+  nextPageToken: Schema.optionalKey(Schema.String),
 });
 
 export const GoogleTask = Schema.Struct({

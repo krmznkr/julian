@@ -9,7 +9,6 @@ export function normalizeEvent(
     start?: { date?: string | null; dateTime?: string | null } | null;
     end?: { date?: string | null; dateTime?: string | null } | null;
     htmlLink?: string | null;
-    etag?: string | null;
     recurringEventId?: string | null;
   },
   calendar: CalendarSummary,
@@ -41,10 +40,6 @@ export function normalizeEvent(
     calendarColor: calendar.backgroundColor ?? null,
     calendarSummary: calendar.summary ?? null,
     htmlLink: event.htmlLink ?? null,
-    etag: event.etag ?? null,
     recurringEventId: event.recurringEventId ?? null,
-    syncState: "synced",
-    lastSyncedAt: new Date().toISOString(),
-    pendingMutationIds: [],
   };
 }

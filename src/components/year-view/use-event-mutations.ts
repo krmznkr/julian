@@ -1,15 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { YearViewAction } from "@/components/year-view-reducer";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";
 import type { YearViewEventApi } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 
-/**
- * One create / edit / delete flow: which record the dialog is acting on, whether
- * the request is in flight, and what went wrong. The three flows are identical
- * apart from the call they make, so they share this shape instead of repeating
- * the submitting / error / close / refocus dance three times.
- */
 export type MutationSlot<T> = {
   readonly target: T | null;
   readonly isOpen: boolean;
@@ -28,15 +22,17 @@ function useMutationSlot<T>(onSettled: () => void): MutationSlotInternals<T> {
   const [target, setTarget] = useState<T | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlight = useRef(false);
 
   const open = useCallback((next: T) => {
+    if (inFlight.current) return;
     setError(null);
     setTarget(next);
   }, []);
 
   const setOpen = useCallback(
     (isOpen: boolean) => {
-      if (isOpen) return;
+      if (isOpen || inFlight.current) return;
       setTarget(null);
       setError(null);
       onSettled();
@@ -46,7 +42,8 @@ function useMutationSlot<T>(onSettled: () => void): MutationSlotInternals<T> {
 
   const run = useCallback(
     async (perform: (current: T) => Promise<void>, fallbackMessage: string) => {
-      if (target === null) return;
+      if (target === null || inFlight.current) return;
+      inFlight.current = true;
       setSubmitting(true);
       setError(null);
       try {
@@ -56,6 +53,7 @@ function useMutationSlot<T>(onSettled: () => void): MutationSlotInternals<T> {
       } catch (err) {
         setError(err instanceof Error ? err.message : fallbackMessage);
       } finally {
+        inFlight.current = false;
         setSubmitting(false);
       }
     },
@@ -71,11 +69,7 @@ function toDateKey(year: number, cell: KeyboardCell): string {
   return `${year}-${month}-${day}`;
 }
 
-/**
- * The year view's three write paths. Each one updates local state optimistically
- * so the grid reacts immediately, then asks the caller to reconcile against the
- * source so colours and ordering match the stored copy.
- */
+// Apply confirmed writes locally, then reload the server copy.
 export function useEventMutations({
   year,
   eventApi,
@@ -118,7 +112,12 @@ export function useEventMutations({
     (title: string) =>
       edit.run(async (event) => {
         await eventApi.updateEvent(event.calendarId, event.id, { title });
-        dispatch({ type: "EVENT_UPDATED", id: event.id, changes: { title } });
+        dispatch({
+          type: "EVENT_UPDATED",
+          id: event.id,
+          calendarId: event.calendarId,
+          changes: { title },
+        });
       }, "Failed to update event"),
     [dispatch, edit, eventApi],
   );
@@ -127,7 +126,7 @@ export function useEventMutations({
     () =>
       remove.run(async (event) => {
         await eventApi.deleteEvent(event.calendarId, event.id);
-        dispatch({ type: "EVENT_DELETED", id: event.id });
+        dispatch({ type: "EVENT_DELETED", id: event.id, calendarId: event.calendarId });
       }, "Failed to delete event"),
     [dispatch, eventApi, remove],
   );
