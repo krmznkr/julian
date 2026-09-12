@@ -72,7 +72,6 @@ function useDemoStore(year: number) {
           calendarColor: calendar.backgroundColor ?? null,
           calendarSummary: calendar.summary,
           htmlLink: null,
-          syncState: "synced",
         };
         // The tour loops, so re-adding the same title on the same day replaces
         // the earlier copy instead of stacking duplicates forever.

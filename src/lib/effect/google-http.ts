@@ -30,14 +30,6 @@ export interface GoogleHttpShape {
     message: string,
   ) => Effect.Effect<S["Type"], GoogleApiError | NotAuthenticatedError>;
 
-  // As `json`, for a plain GET.
-  readonly getJson: <S extends JsonSchema>(
-    schema: S,
-    url: string,
-    operation: string,
-    message: string,
-  ) => Effect.Effect<S["Type"], GoogleApiError | NotAuthenticatedError>;
-
   // Execute a request for its status only, tolerating the given extra statuses.
   readonly send: (
     request: HttpClientRequest.HttpClientRequest,
@@ -75,6 +67,7 @@ export const googleHttpLayer: Layer.Layer<
 
     const baseClient = retryingClient(httpClient, config.retryTimes);
     const okClient = okClientWithRetry(httpClient, config.retryTimes);
+    const writeClient = okClientWithRetry(httpClient, 0);
 
     // Yields the current access token or fails with `NotAuthenticatedError`.
     const requireToken = Effect.gen(function* () {
@@ -93,7 +86,8 @@ export const googleHttpLayer: Layer.Layer<
 
     const json: GoogleHttpShape["json"] = Effect.fn("GoogleHttp.json")(
       function* (schema, request, operation, message) {
-        const client = yield* authorized(okClient);
+        // Retrying a POST after a lost response can create a second event.
+        const client = yield* authorized(request.method === "POST" ? writeClient : okClient);
         return yield* client
           .execute(request)
           .pipe(
@@ -102,9 +96,6 @@ export const googleHttpLayer: Layer.Layer<
           );
       },
     );
-
-    const getJson: GoogleHttpShape["getJson"] = (schema, url, operation, message) =>
-      json(schema, HttpClientRequest.get(url), operation, message);
 
     const send: GoogleHttpShape["send"] = Effect.fn("GoogleHttp.send")(
       function* (request, operation, message, tolerate) {
@@ -149,6 +140,6 @@ export const googleHttpLayer: Layer.Layer<
         ),
       );
 
-    return GoogleHttp.of({ json, getJson, send, paginate });
+    return GoogleHttp.of({ json, send, paginate });
   }),
 );

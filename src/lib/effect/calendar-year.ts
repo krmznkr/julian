@@ -1,11 +1,4 @@
-// Aggregates a whole year of calendar + task data for the year view.
-//
-// This is the only place that decides how to degrade when *part* of the data is
-// unavailable, which is a real product decision: one broken calendar should not
-// blank the year. Unlike the previous implementation, a partial failure is
-// logged through the Effect logger and reported back to the caller in
-// `failures` rather than silently becoming an empty array, so the UI can tell
-// "you have no events" apart from "we could not load them".
+// Keep usable sources and report each failed calendar or task list.
 import { Effect } from "effect";
 import { resolveSelectedCalendarIds } from "@/lib/calendar-selection";
 import type { AppError, GoogleApiFailure } from "@/lib/effect/errors";
@@ -97,14 +90,14 @@ export const loadCalendarYear = Effect.fn("CalendarYear.load")(function* (year: 
 
   const taskEvents = yield* optional(
     "tasks",
-    [] as ReadonlyArray<CalendarEvent>,
+    { events: [] as ReadonlyArray<CalendarEvent>, failures: [] as YearData["failures"] },
     loadTaskEvents(tasksApi, year, config.apiConcurrency),
   );
 
   const allCalendars = [...calendars, tasksCalendar];
-  const failures = [...perCalendar, taskEvents].flatMap((result) =>
-    result.failure === undefined ? [] : [result.failure],
-  );
+  const failures = [...perCalendar, taskEvents]
+    .flatMap((result) => (result.failure === undefined ? [] : [result.failure]))
+    .concat(taskEvents.value.failures);
 
   const selectedCalendarIds = yield* resolveSelectedCalendarIds(
     allCalendars.map((calendar) => calendar.id),
@@ -113,7 +106,7 @@ export const loadCalendarYear = Effect.fn("CalendarYear.load")(function* (year: 
   return {
     calendars: allCalendars,
     selectedCalendarIds,
-    events: [...perCalendar.flatMap((result) => result.value), ...taskEvents.value],
+    events: [...perCalendar.flatMap((result) => result.value), ...taskEvents.value.events],
     failures,
   } satisfies YearData;
 });
@@ -122,7 +115,7 @@ const loadTaskEvents = (
   tasksApi: GoogleTasksShape,
   year: number,
   concurrency: number,
-): Effect.Effect<ReadonlyArray<CalendarEvent>, GoogleApiFailure> =>
+): Effect.Effect<Pick<YearData, "events" | "failures">, GoogleApiFailure> =>
   Effect.gen(function* () {
     const lists = yield* tasksApi.listTaskLists;
 
@@ -132,12 +125,13 @@ const loadTaskEvents = (
       { concurrency },
     );
 
-    return perList
+    const events = perList
       .flatMap((result) => result.value)
       .flatMap((task): ReadonlyArray<CalendarEvent> => {
         if (task.due === undefined || task.status === "completed") return [];
 
         const due = new Date(task.due);
+        if (Number.isNaN(due.getTime())) return [];
         const start = toUtcDateOnly(due);
         const end = toUtcDateOnly(
           new Date(Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate() + 1)),
@@ -160,4 +154,8 @@ const loadTaskEvents = (
         ];
       })
       .filter((event) => Number(event.start.slice(0, 4)) === year);
+    return {
+      events,
+      failures: perList.flatMap((result) => (result.failure === undefined ? [] : [result.failure])),
+    };
   });

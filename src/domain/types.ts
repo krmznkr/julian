@@ -1,5 +1,3 @@
-export type EventSyncState = "synced" | "pending" | "failed" | "conflict";
-
 export type CalendarSummary = {
   readonly id: string;
   readonly summary: string;
@@ -21,11 +19,7 @@ export type CalendarEvent = {
   readonly calendarColor?: string | null;
   readonly calendarSummary?: string | null;
   readonly htmlLink?: string | null;
-  readonly etag?: string | null;
   readonly recurringEventId?: string | null;
-  readonly syncState?: EventSyncState;
-  readonly lastSyncedAt?: string | null;
-  readonly pendingMutationIds?: readonly string[];
 };
 
 export type EventSegment = {

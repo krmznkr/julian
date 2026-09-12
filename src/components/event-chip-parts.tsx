@@ -84,8 +84,6 @@ export function EventChipContent({ title, displayMode }: EventChipContentProps) 
 interface EventChipMetadataProps {
   hasDescription: boolean;
   displayMode: "full" | "compact" | "micro";
-  isPendingSync: boolean;
-  hasSyncIssue: boolean;
   isSingleDay: boolean;
   totalEventDays: number;
   displayStartDay: number;
@@ -95,8 +93,6 @@ interface EventChipMetadataProps {
 export function EventChipMetadata({
   hasDescription,
   displayMode,
-  isPendingSync,
-  hasSyncIssue,
   isSingleDay,
   totalEventDays,
   displayStartDay,
@@ -119,15 +115,6 @@ export function EventChipMetadata({
           <FileText className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
         </span>
       )}
-      {(isPendingSync || hasSyncIssue) && (
-        <span
-          className={cn(
-            "absolute right-2 top-1.5 inline-flex h-1.5 w-1.5 rounded-full",
-            hasSyncIssue ? "bg-destructive/80" : "bg-amber-500/80",
-          )}
-          aria-hidden="true"
-        />
-      )}
       {showMetaRow && (
         <span
           className={cn(
@@ -148,7 +135,6 @@ interface EventChipTooltipProps {
   startLabel: string;
   endLabel: string;
   durationDays: number;
-  syncState: string;
 }
 
 export function EventChipTooltip({
@@ -157,7 +143,6 @@ export function EventChipTooltip({
   startLabel,
   endLabel,
   durationDays,
-  syncState,
 }: EventChipTooltipProps) {
   return (
     <TooltipContent
@@ -189,13 +174,6 @@ export function EventChipTooltip({
         <div className="space-y-1 text-muted-foreground">
           <p className="truncate">Start: {startLabel}</p>
           <p className="truncate">End: {endLabel}</p>
-        </div>
-        <div className="space-y-1 text-muted-foreground">
-          <p className="truncate">Event ID: {event.id}</p>
-          <p className="truncate">Calendar ID: {event.calendarId}</p>
-          {syncState === "pending" && <p className="truncate">Sync: Pending</p>}
-          {syncState === "failed" && <p className="truncate text-destructive">Sync: Failed</p>}
-          {syncState === "conflict" && <p className="truncate text-destructive">Sync: Conflict</p>}
         </div>
         {event.htmlLink && (
           <div className="pt-1">
