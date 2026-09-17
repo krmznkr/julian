@@ -206,16 +206,36 @@
 @container (max-width: 64px) {
   .event-bar-title {
     display: block;
-    writing-mode: vertical-rl;
+    overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    min-height: 0;
-    flex: 1;
   }
+
   .event-bar-meta,
   .event-bar-time {
     display: none;
   }
+}
+
+.event-bar-dense {
+  z-index: 1;
+}
+
+.event-bar-dense:hover,
+.event-bar-dense:focus-visible {
+  z-index: 40;
+}
+
+.event-bar-dense .event-bar-title {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.event-bar-dense .event-bar-meta,
+.event-bar-dense .event-bar-time {
+  display: none;
 }
 
 .year-grid-height {

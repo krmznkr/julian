@@ -5,17 +5,15 @@ import type { RenderedBar } from "@/components/year-view/use-month-column";
 
 export const SegmentGrid = memo(function SegmentGrid({
   multiDayLanes,
-  hasSingleStrip,
   bars,
 }: {
   multiDayLanes: number;
-  hasSingleStrip: boolean;
   bars: RenderedBar[];
 }) {
   return (
     <div
       className="year-grid-rows pointer-events-none absolute inset-0 z-20 grid gap-y-0 gap-x-0 overflow-hidden"
-      style={{ gridTemplateColumns: monthColumnTemplateColumns(multiDayLanes, hasSingleStrip) }}
+      style={{ gridTemplateColumns: monthColumnTemplateColumns(multiDayLanes) }}
     >
       {bars.map((bar) => (
         <EventPopover
@@ -26,8 +24,9 @@ export const SegmentGrid = memo(function SegmentGrid({
           fullWidth={bar.fullWidth}
           variant="chip"
           displayLane={bar.displayLane}
+          collisionLaneCount={multiDayLanes}
           renderMode={bar.renderMode}
-          showTooltip={false}
+          showTooltip
         />
       ))}
     </div>

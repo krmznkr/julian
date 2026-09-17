@@ -137,7 +137,7 @@ export const MonthDayCellsLayer = memo(function MonthDayCellsLayer({
   return (
     <div
       className="year-grid-rows absolute inset-0 z-0 grid gap-x-0 gap-y-0 overflow-hidden"
-      style={{ gridTemplateColumns: monthColumnTemplateColumns(multiDayLanes, hasSingleStrip) }}
+      style={{ gridTemplateColumns: monthColumnTemplateColumns(multiDayLanes) }}
       role="rowgroup"
     >
       {hasSingleStrip && (

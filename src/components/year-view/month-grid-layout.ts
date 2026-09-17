@@ -1,30 +1,30 @@
-// The day-cell layer (single-day events) and the multi-day bar layer are two
-// stacked grids sharing one column template so their columns line up. When a
-// month has both multi-day bars and single-day events we append one extra
-// "single-day strip" column on the right: bars keep lanes 1..multiDayLanes and
-// single-day events move into the strip, so the two never sit on top of each
-// other and instead divide the column width between them.
+// Google Calendar-style collision layout. Every visible year-view event gets a
+// lane for the part of the month it occupies. A lane is reused as soon as the
+// previous event ends, so overlapping blocks sit beside one another while
+// non-overlapping blocks can expand back into the same column.
 
 import type { EventSegment } from "@/domain";
 
-export function visibleAllDayLaneMap(segments: ReadonlyArray<EventSegment>) {
-  const sourceLanes = Array.from(
-    new Set(
-      segments
-        .filter((segment) => segment.allDay && segment.lane > 0)
-        .map((segment) => segment.lane),
-    ),
-  ).sort((a, b) => a - b);
+export function visibleYearEventLaneMap(segments: ReadonlyArray<EventSegment>) {
+  const visible = segments
+    .filter((segment) => segment.allDay || segment.isMultiDay)
+    .sort((a, b) => a.startDay - b.startDay || b.endDay - a.endDay || a.id.localeCompare(b.id));
+  const laneEnds: number[] = [];
+  const lanes = new Map<string, number>();
 
-  return new Map(sourceLanes.map((lane, index) => [lane, index + 1]));
+  // eslint-disable-next-line functional/no-loop-statements
+  for (const segment of visible) {
+    const reusableLane = laneEnds.findIndex((endDay) => segment.startDay > endDay);
+    const laneIndex = reusableLane >= 0 ? reusableLane : laneEnds.length;
+    // eslint-disable-next-line functional/immutable-data
+    laneEnds[laneIndex] = segment.endDay;
+    // eslint-disable-next-line functional/immutable-data
+    lanes.set(segment.id, laneIndex + 1);
+  }
+
+  return { lanes, laneCount: laneEnds.length };
 }
 
-export function monthColumnTemplateColumns(multiDayLanes: number, hasSingleStrip: boolean): string {
-  const bars = `repeat(${Math.max(1, multiDayLanes)}, minmax(0, 1fr))`;
-  return hasSingleStrip ? `${bars} minmax(96px, 1.4fr)` : bars;
-}
-
-/** Whether the single-day strip column should be reserved for this month. */
-export function hasSingleDayStrip(multiDayLanes: number, hasSingleDay: boolean): boolean {
-  return hasSingleDay && multiDayLanes >= 1;
+export function monthColumnTemplateColumns(lanes: number): string {
+  return `repeat(${Math.max(1, lanes)}, minmax(0, 1fr))`;
 }

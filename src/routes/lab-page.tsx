@@ -1,120 +1,146 @@
 import { useMemo } from "react";
-import { SingleDayDisplay } from "@/components/year-view/single-day-display";
 import MonthColumn from "@/components/year-view/month-column";
+import { TooltipProvider } from "@/components/tooltip";
 import { YearViewSharedDataProvider } from "@/components/year-view/year-view-context";
 import { buildEventKey, buildMonthSegments, type CalendarEvent } from "@/domain";
 
-const calendar = { id: "sample", summary: "Sample", backgroundColor: "#4285f4" };
-const sharedData = {
-  calendars: [calendar],
-  monthNames: Array.from({ length: 12 }, (_, month) =>
-    new Date(2026, month, 1).toLocaleDateString(undefined, { month: "long" }),
-  ),
+const calendar = {
+  id: "sample",
+  summary: "Sample calendar",
+  backgroundColor: "#38a66f",
+  accessRole: "owner" as const,
 };
-const noop = () => {};
-const makeEvent = (
-  id: string,
-  title: string,
-  start: string,
-  end: string,
-  allDay = true,
-): CalendarEvent => ({
-  id,
-  title,
-  start,
-  end,
-  allDay,
-  isTimed: !allDay,
-  calendarId: calendar.id,
-  calendarColor: calendar.backgroundColor,
-});
-const cases = [
-  { label: "All-day", events: [makeEvent("a", "Holiday", "2026-06-15", "2026-06-16")] },
+
+const sampleEvents: CalendarEvent[] = [
   {
-    label: "Timed · dialog only",
-    events: [makeEvent("t", "Dentist", "2026-06-15T09:00:00", "2026-06-15T09:30:00", false)],
+    id: "paris",
+    title: "🇫🇷 Paris & Lille · vacation",
+    start: "2026-09-17",
+    end: "2026-09-27",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#38a66f",
   },
   {
-    label: "Ends at midnight · dialog only",
-    events: [makeEvent("m", "Late shift", "2026-06-15T22:00:00", "2026-06-16T00:00:00", false)],
+    id: "moxy",
+    title: "🏨 Moxy CDG · evening arrival",
+    start: "2026-09-18T18:30:00",
+    end: "2026-09-21T09:00:00",
+    allDay: false,
+    isTimed: true,
+    calendarId: calendar.id,
+    calendarColor: "#9a73df",
   },
   {
-    label: "Busy timed day · dialog only",
-    events: Array.from({ length: 6 }, (_, i) =>
-      makeEvent(
-        `busy-${i}`,
-        `Appointment ${i + 1}`,
-        `2026-06-15T${String(9 + i).padStart(2, "0")}:00:00`,
-        `2026-06-15T${String(10 + i).padStart(2, "0")}:00:00`,
-        false,
-      ),
-    ),
+    id: "clamart",
+    title: "🏨 Clamart · Residence Service",
+    start: "2026-09-18",
+    end: "2026-09-22",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#58b98a",
   },
-];
-const spanning = [
-  makeEvent("trip", "Trip across months", "2026-05-31", "2026-06-03"),
-  makeEvent("night", "Overnight flight", "2026-05-31T23:30:00", "2026-06-01T02:00:00", false),
-  ...cases.flatMap((item) => item.events),
+  {
+    id: "office",
+    title: "Out of office",
+    start: "2026-09-20",
+    end: "2026-09-25",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#ed7658",
+  },
+  {
+    id: "leave",
+    title: "🌴 Annual leave",
+    start: "2026-09-20",
+    end: "2026-09-25",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#78b96d",
+  },
+  {
+    id: "lille",
+    title: "🏨 Lille · Montempô Gares",
+    start: "2026-09-21",
+    end: "2026-09-25",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#49a97b",
+  },
+  {
+    id: "train",
+    title: "Train to Lille · 14:08",
+    start: "2026-09-21",
+    end: "2026-09-22",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#9a73df",
+  },
 ];
 
+const noop = () => {};
+
 export function LabPage() {
-  const months = useMemo(() => buildMonthSegments(spanning, 2026), []);
-  const events = useMemo(
-    () => new Map(spanning.map((event) => [buildEventKey(event.id, event.calendarId), event])),
+  const month = useMemo(() => buildMonthSegments(sampleEvents, 2026)[8], []);
+  const eventMap = useMemo(
+    () =>
+      new Map(
+        sampleEvents.map((event) => [buildEventKey(event.id, event.calendarId), event] as const),
+      ),
     [],
   );
+  const sharedData = useMemo(
+    () => ({
+      calendars: [calendar],
+      monthNames: Array.from({ length: 12 }, (_, index) =>
+        new Date(2026, index, 1).toLocaleDateString(undefined, { month: "long" }),
+      ),
+    }),
+    [],
+  );
+
   return (
-    <main className="min-h-dvh bg-background p-6 text-foreground">
-      <h1 className="text-xl font-semibold">Event display examples</h1>
-      <p className="my-3 text-sm text-muted-foreground">
-        Only all-day events appear in cells. Timed events remain in day details. All-day multi-day
-        events keep their bar across month boundaries, and midnight end times do not occupy the next
-        day.
-      </p>
-      <div className="my-6 flex flex-wrap gap-6">
-        {cases.map(({ label, events: items }) => {
-          const segments = buildMonthSegments(items, 2026)[5].segments;
-          const squares = items.map((event) => ({
-            event,
-            allDay: event.allDay,
-            segment: segments.find(
-              (segment) => segment.id === buildEventKey(event.id, event.calendarId),
-            )!,
-          }));
-          return (
-            <section key={label}>
-              <h2 className="mb-2 text-sm">{label}</h2>
-              {[120, 220].map((width) => (
-                <div key={width} className="mb-2 h-[30px] border border-border" style={{ width }}>
-                  <SingleDayDisplay squares={squares} />
-                </div>
-              ))}
-            </section>
-          );
-        })}
-      </div>
+    <TooltipProvider>
       <YearViewSharedDataProvider value={sharedData}>
-        <div className="flex gap-1 overflow-x-auto">
-          {[4, 5].map((month) => (
-            <section key={month}>
-              <h2 className="py-2 text-sm">{sharedData.monthNames[month]}</h2>
-              <MonthColumn
-                month={months[month]}
-                events={events}
-                year={2026}
-                todayDay={1}
-                todayMonth={0}
-                isCurrentYear={false}
-                rowHeight={30}
-                keyboardFocusedDay={null}
-                keyboardDialogDay={null}
-                dialogActiveKey={undefined}
-                onDialogActiveKeyChange={noop}
-              />
-            </section>
-          ))}
-        </div>
+        <main className="min-h-dvh bg-muted/30 px-6 py-8 text-foreground">
+          <header className="mx-auto mb-6 max-w-4xl">
+            <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              Production component preview
+            </div>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+              Google-style overlap columns
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              All visible events use the same collision lanes. Purple begins at 18:30 on September
+              18 and ends at 09:00 on September 21. Nothing is replaced by a hidden-event count.
+            </p>
+          </header>
+          <section className="mx-auto max-w-4xl overflow-x-auto rounded-xl border border-border bg-background p-5 shadow-sm">
+            <div className="mb-2 w-[var(--month-col-width)] border-b border-border pb-2 text-sm font-semibold">
+              September
+            </div>
+            <MonthColumn
+              month={month}
+              events={eventMap}
+              year={2026}
+              todayDay={17}
+              todayMonth={8}
+              isCurrentYear={false}
+              rowHeight={30}
+              keyboardFocusedDay={null}
+              keyboardDialogDay={null}
+              dialogActiveKey={undefined}
+              onDialogActiveKeyChange={noop}
+            />
+          </section>
+        </main>
       </YearViewSharedDataProvider>
-    </main>
+    </TooltipProvider>
   );
 }

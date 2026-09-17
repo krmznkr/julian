@@ -46,7 +46,7 @@ describe("orderByDurationDesc", () => {
 });
 
 describe("useRenderedSegments", () => {
-  it("keeps timed events in day details but excludes them from cells and bars", () => {
+  it("renders all-day and timed multi-day events as collision bars", () => {
     const allDay = evt({ id: "holiday", start: "2026-03-05", end: "2026-03-06" }).event;
     const timed = evt({
       id: "meeting",
@@ -73,9 +73,10 @@ describe("useRenderedSegments", () => {
       ]),
     );
 
-    expect(result.current.singleDayByDay.get(5)?.map(({ event }) => event.id)).toEqual(["holiday"]);
-    expect(result.current.bars).toEqual([]);
-    expect(result.current.multiDayLanes).toBe(0);
+    expect(result.current.singleDayByDay.size).toBe(0);
+    expect(result.current.bars.map(({ event }) => event.id)).toEqual(["flight", "holiday"]);
+    expect(result.current.bars.map(({ displayLane }) => displayLane)).toEqual([1, 2]);
+    expect(result.current.multiDayLanes).toBe(2);
     expect(result.current.dayEvents.get(5)?.map(({ event }) => event.id)).toEqual([
       "holiday",
       "flight",
