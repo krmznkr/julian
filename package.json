@@ -58,7 +58,7 @@
     "typescript": "6.0.3",
     "vite": "8.1.5",
     "vitest": "4.1.5",
-    "wrangler": "4.115.0"
+    "wrangler": "4.119.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
