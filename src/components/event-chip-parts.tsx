@@ -20,6 +20,7 @@ export interface EventChipProps {
   variant?: "chip" | "square";
   displayMode?: "full" | "compact" | "micro";
   displayLane?: number;
+  collisionLaneCount?: number;
   showTooltip?: boolean;
   onPointerEnter?: () => void;
   onFocus?: () => void;

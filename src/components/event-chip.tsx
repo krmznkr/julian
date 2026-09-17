@@ -1,6 +1,11 @@
 import { memo, useMemo } from "react";
 import { Tooltip, TooltipTrigger } from "@/components/tooltip";
-import { eventCalendarSpanDays, formatDateRange, formatTimeRange } from "@/components/year-helpers";
+import {
+  eventCalendarSpanDays,
+  formatDateRange,
+  formatTimeRange,
+  ROW_HEIGHT,
+} from "@/components/year-helpers";
 import { useChipStyle, useEventLabels } from "@/components/use-event-chip";
 import {
   type EventChipProps,
@@ -10,6 +15,7 @@ import {
   EventChipTooltip,
 } from "@/components/event-chip-parts";
 import { cn } from "@/lib/utils";
+import { parseEventBoundary } from "@/domain";
 
 function EventChip({
   segment,
@@ -22,6 +28,7 @@ function EventChip({
   variant = "chip",
   displayMode = "full",
   displayLane,
+  collisionLaneCount,
   leftZoneEndColumn,
   showTooltip = true,
   onPointerEnter,
@@ -39,13 +46,36 @@ function EventChip({
     fullWidth,
     variant,
     leftZoneEndColumn,
+    collisionLaneCount,
   );
   const totalEventDays = useMemo(() => eventCalendarSpanDays(event), [event]);
+  const timedInsets = useMemo(() => {
+    if (event.allDay || !segment.isMultiDay) return {};
+    const start = parseEventBoundary(event.start, false);
+    const end = parseEventBoundary(event.end, false);
+    const startFraction = (start.getHours() * 60 + start.getMinutes()) / (24 * 60);
+    const endFraction = (end.getHours() * 60 + end.getMinutes()) / (24 * 60);
+    return {
+      marginTop: segment.isFirstSegment ? startFraction * ROW_HEIGHT + 1 : 1,
+      marginBottom:
+        segment.isLastSegment && endFraction > 0 ? (1 - endFraction) * ROW_HEIGHT + 1 : 1,
+    };
+  }, [
+    event.allDay,
+    event.start,
+    event.end,
+    segment.isMultiDay,
+    segment.isFirstSegment,
+    segment.isLastSegment,
+  ]);
   const resolvedChipStyle = useMemo(() => {
     const color = segment.calendarColor ?? calendar?.backgroundColor ?? null;
-    if (!color) return chipStyle;
-    return { ...chipStyle, "--event-accent-color": color } as typeof chipStyle;
-  }, [chipStyle, segment.calendarColor, calendar?.backgroundColor]);
+    return {
+      ...chipStyle,
+      ...timedInsets,
+      ...(color ? { "--event-accent-color": color } : {}),
+    } as typeof chipStyle;
+  }, [chipStyle, timedInsets, segment.calendarColor, calendar?.backgroundColor]);
 
   if (isSquare) {
     return (
@@ -76,6 +106,7 @@ function EventChip({
       title={`${event.title} · ${formatDateRange(event)} · ${formatTimeRange(event)}`}
       className={cn(
         getChipClassName(variant, fullWidth, event.allDay),
+        collisionLaneCount !== undefined && collisionLaneCount > 3 && "event-bar-dense",
         segment.isFirstSegment === false && "rounded-t-none border-t-dashed",
         segment.isLastSegment === false && "rounded-b-none border-b-dashed",
       )}

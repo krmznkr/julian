@@ -1,7 +1,6 @@
 import { memo, useRef } from "react";
 import { DayHoverPopover } from "@/components/year-view/day-hover-popover";
 import { MonthDayCellsLayer } from "@/components/year-view/month-day-cells-layer";
-import { hasSingleDayStrip } from "@/components/year-view/month-grid-layout";
 import { SegmentGrid } from "@/components/year-view/month-segments-layer-parts";
 import { useMonthDayPanel } from "@/components/year-view/use-month-day-panel";
 import { ROW_HEIGHT } from "@/components/year-helpers";
@@ -43,8 +42,6 @@ function MonthSegmentsLayer({
   const layerRef = useRef<HTMLDivElement | null>(null);
   const panel = useMonthDayPanel(dayEvents, monthName, keyboardDialogDay, layerRef, ROW_HEIGHT);
 
-  const hasSingleStrip = hasSingleDayStrip(multiDayLanes, singleDayByDay.size > 0);
-
   return (
     <div ref={layerRef} className="absolute inset-0">
       <MonthDayCellsLayer
@@ -53,14 +50,14 @@ function MonthSegmentsLayer({
         daysInMonth={daysInMonth}
         weekendRows={weekendRows}
         multiDayLanes={multiDayLanes}
-        hasSingleStrip={hasSingleStrip}
+        hasSingleStrip={false}
         singleDayByDay={singleDayByDay}
         keyboardFocusedDay={keyboardFocusedDay}
         keyboardDialogDay={keyboardDialogDay}
         showTodayLine={_showTodayLine}
         todayRowTop={_todayRowTop}
       />
-      <SegmentGrid multiDayLanes={multiDayLanes} hasSingleStrip={hasSingleStrip} bars={bars} />
+      <SegmentGrid multiDayLanes={multiDayLanes} bars={bars} />
       <DayHoverPopover
         open={panel.open}
         label={panel.label}
