@@ -105,14 +105,37 @@ describe("yearViewReducer — events", () => {
     const state = yearViewReducer(loaded({ events: [event, { ...event, id: "e2" }] }), {
       type: "EVENT_UPDATED",
       id: "e2",
+      calendarId: "cal-1",
       changes: { title: "Renamed" },
     });
     expect(state.events.map((e) => e.title)).toEqual(["Trip", "Renamed"]);
   });
 
   it("removes a deleted event", () => {
-    const state = yearViewReducer(loaded(), { type: "EVENT_DELETED", id: "e1" });
+    const state = yearViewReducer(loaded(), {
+      type: "EVENT_DELETED",
+      id: "e1",
+      calendarId: "cal-1",
+    });
     expect(state.events).toEqual([]);
+  });
+
+  it("does not edit or delete another calendar's copy of an event", () => {
+    const copy = { ...event, calendarId: "cal-2" };
+    const before = loaded({ events: [event, copy] });
+    const edited = yearViewReducer(before, {
+      type: "EVENT_UPDATED",
+      id: event.id,
+      calendarId: event.calendarId,
+      changes: { title: "Renamed" },
+    });
+    expect(edited.events).toEqual([{ ...event, title: "Renamed" }, copy]);
+    const deleted = yearViewReducer(before, {
+      type: "EVENT_DELETED",
+      id: event.id,
+      calendarId: event.calendarId,
+    });
+    expect(deleted.events).toEqual([copy]);
   });
 });
 

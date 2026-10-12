@@ -1,10 +1,7 @@
 import { useMemo } from "react";
-import { formatTimeRange, isWeekend } from "@/components/year-helpers";
+import { isWeekend } from "@/components/year-helpers";
 import { DAYS_IN_GRID } from "@/components/year-view/constants";
-import {
-  getTimedEventDayPlacement,
-  type TimedEventPlacement,
-} from "@/components/year-view/day-timeline-placement";
+import { visibleYearEventLaneMap } from "@/components/year-view/month-grid-layout";
 import { isWritableCalendar, parseEventBoundary } from "@/domain";
 import type { CalendarEvent, CalendarSummary, EventSegment, MonthSegments } from "@/domain";
 
@@ -21,8 +18,6 @@ export type DaySquare = {
   segment: EventSegment;
   event: CalendarEvent;
   allDay: boolean;
-  timedPlacement?: TimedEventPlacement | null;
-  timeLabel?: string;
 };
 
 export type DayEventItem = {
@@ -52,7 +47,6 @@ export function useRenderedSegments(
   month: MonthSegments,
   events: Map<string, CalendarEvent>,
   calendars: ReadonlyArray<CalendarSummary>,
-  year: number,
 ) {
   const calendarById = useMemo(
     () => new Map(calendars.map((calendar) => [calendar.id, calendar])),
@@ -67,15 +61,15 @@ export function useRenderedSegments(
       })
       .filter((entry) => entry !== null);
 
-    const multiDayLanes = month.lanes;
-    const singles = resolved.filter(({ segment }) => segment.startDay === segment.endDay);
-    const hasSingleDay = singles.length > 0;
+    const { lanes: visibleLaneMap, laneCount: multiDayLanes } = visibleYearEventLaneMap(
+      month.segments,
+    );
 
     const renderMode: RenderedBar["renderMode"] =
       multiDayLanes >= 7 ? "micro" : multiDayLanes >= 5 ? "compact" : "full";
 
     const bars: RenderedBar[] = resolved
-      .filter(({ segment }) => segment.endDay > segment.startDay)
+      .filter(({ segment, event }) => event.allDay || segment.isMultiDay)
       .map(({ segment, event }) => {
         const calendar = calendarById.get(event.calendarId);
         const canEdit = (calendar ? isWritableCalendar(calendar) : false) && event.allDay;
@@ -83,34 +77,11 @@ export function useRenderedSegments(
           segment,
           event,
           canEdit,
-          fullWidth: multiDayLanes <= 1 && !hasSingleDay,
-          displayLane: segment.lane,
+          fullWidth: multiDayLanes <= 1,
+          displayLane: visibleLaneMap.get(segment.id) ?? 1,
           renderMode,
         };
       });
-
-    // Single-day events for each day, longest → shortest (all-day before timed).
-    const singleDayByDay = singles.reduce((acc, { segment, event }) => {
-      const list = acc.get(segment.startDay) ?? [];
-      const timedPlacement = event.allDay
-        ? null
-        : getTimedEventDayPlacement(event, year, month.month, segment.startDay);
-      // eslint-disable-next-line functional/immutable-data
-      acc.set(segment.startDay, [
-        ...list,
-        {
-          segment,
-          event,
-          allDay: event.allDay,
-          timedPlacement,
-          timeLabel: event.allDay ? undefined : formatTimeRange(event),
-        },
-      ]);
-      return acc;
-    }, new Map<number, DaySquare[]>());
-    const orderedSingleDayByDay = new Map(
-      Array.from(singleDayByDay, ([day, list]) => [day, orderByDurationDesc(list)]),
-    );
 
     // Every event touching a day (multi-day bars + single-day), for the hover
     // card. Multi-day events appear on each day they cover.
@@ -129,11 +100,11 @@ export function useRenderedSegments(
 
     return {
       bars,
-      singleDayByDay: orderedSingleDayByDay,
+      singleDayByDay: new Map<number, DaySquare[]>(),
       dayEvents: orderedDayEvents,
       multiDayLanes,
     };
-  }, [month.segments, month.lanes, month.month, events, calendarById, year]);
+  }, [month.segments, events, calendarById]);
 }
 
 /** Ordered events for one day — used by keyboard day panel. */

@@ -1,12 +1,3 @@
-/**
- * The year view's state, as a single reducer.
- *
- * Actions name *what happened*, not which field to poke. That matters most for
- * loading: one `LOAD_SUCCEEDED` replaces the six separate setter calls the view
- * used to fire per refresh, so the "hydrated but still refreshing" and "failed
- * but keep what's on screen" rules live here instead of being re-derived at
- * every call site.
- */
 import type { YearSourceFailure } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent, CalendarSummary } from "@/domain";
 
@@ -49,9 +40,10 @@ export type YearViewAction =
   | {
       readonly type: "EVENT_UPDATED";
       readonly id: string;
+      readonly calendarId: string;
       readonly changes: Partial<CalendarEvent>;
     }
-  | { readonly type: "EVENT_DELETED"; readonly id: string }
+  | { readonly type: "EVENT_DELETED"; readonly id: string; readonly calendarId: string }
   | {
       readonly type: "SCROLL_EDGES_CHANGED";
       readonly edges: { readonly left: boolean; readonly right: boolean };
@@ -136,12 +128,19 @@ export function yearViewReducer(state: YearViewState, action: YearViewAction): Y
       return {
         ...state,
         events: state.events.map((event) =>
-          event.id === action.id ? { ...event, ...action.changes } : event,
+          event.id === action.id && event.calendarId === action.calendarId
+            ? { ...event, ...action.changes }
+            : event,
         ),
       };
 
     case "EVENT_DELETED":
-      return { ...state, events: state.events.filter((event) => event.id !== action.id) };
+      return {
+        ...state,
+        events: state.events.filter(
+          (event) => event.id !== action.id || event.calendarId !== action.calendarId,
+        ),
+      };
 
     // Compared before storing: the scroll listener fires on every frame and a
     // fresh object would re-render the grid each time.

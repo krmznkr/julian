@@ -1,14 +1,8 @@
-// OAuth token lifecycle as an Effect service.
-//
-// This was previously inlined into the calendar module, which meant the "get a
-// valid access token, refreshing when near expiry" rule lived next to calendar
-// pagination. Isolating it gives the refresh policy one owner and lets the HTTP
-// layer depend on "a token" rather than on the whole calendar module.
 import { Context, Effect, Layer, Option, Semaphore } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http";
 import { GoogleApiError } from "@/lib/effect/errors";
 import { googleApiError } from "@/lib/effect/http-errors";
-import { okClientWithRetry } from "@/lib/effect/http-policy";
+import { retryingClient } from "@/lib/effect/http-policy";
 import * as S from "@/lib/effect/schemas";
 import { AppConfig } from "@/lib/effect/config";
 import { KeyValueStore } from "@/lib/effect/key-value-store";
@@ -51,7 +45,7 @@ export const tokenStoreLayer: Layer.Layer<
     // Token refresh is idempotent and the proxy is the app's own Worker, so a
     // bounded retry avoids bouncing the user to a re-login screen because of one
     // dropped request.
-    const client = okClientWithRetry(httpClient, config.retryTimes);
+    const client = retryingClient(httpClient, config.retryTimes);
     const refreshLock = yield* Semaphore.make(1);
 
     const persist = Effect.fn("TokenStore.persist")(function* (response: S.TokenResponse) {
@@ -78,43 +72,39 @@ export const tokenStoreLayer: Layer.Layer<
       { discard: true },
     );
 
-    const refresh = Effect.fn("TokenStore.refresh")(
-      function* () {
-        const refreshToken = yield* store.get(STORAGE_KEYS.refreshToken);
-        if (Option.isNone(refreshToken)) return Option.none<string>();
+    const refresh = Effect.fn("TokenStore.refresh")(function* () {
+      const refreshToken = yield* store.get(STORAGE_KEYS.refreshToken);
+      if (Option.isNone(refreshToken)) return Option.none<string>();
 
-        const request = HttpClientRequest.post(`${config.proxyBaseUrl}/refresh`).pipe(
-          HttpClientRequest.bodyJsonUnsafe({ refresh_token: refreshToken.value }),
+      const request = HttpClientRequest.post(`${config.proxyBaseUrl}/refresh`).pipe(
+        HttpClientRequest.bodyJsonUnsafe({ refresh_token: refreshToken.value }),
+      );
+
+      const response = yield* client
+        .execute(request)
+        .pipe(googleApiError("TokenStore.refresh", "Token refresh failed"));
+      if (response.status < 200 || response.status >= 300) {
+        const body = yield* HttpClientResponse.schemaBodyJson(S.OAuthErrorResponse)(response).pipe(
+          Effect.orElseSucceed(() => ({ error: "unknown" })),
         );
-
-        const response = yield* client
-          .execute(request)
-          .pipe(
-            Effect.flatMap(HttpClientResponse.schemaBodyJson(S.TokenResponse)),
-            googleApiError("TokenStore.refresh", "Token refresh failed"),
-          );
-
-        yield* persist(response);
-        return Option.some(response.access_token);
-      },
-      (effect) =>
-        effect.pipe(
-          // Only a 4xx means the refresh token itself is invalid or revoked: drop
-          // it and report "no token" so the user re-authenticates. Transient
-          // failures (network, 5xx, malformed body) stay in the error channel so
-          // callers can distinguish "signed out" from "temporarily unavailable"
-          // and avoid a needless forced logout.
-          Effect.catchIf(
-            (error: GoogleApiError) =>
-              error.status !== undefined && error.status >= 400 && error.status < 500,
-            () =>
-              Effect.logInfo("Refresh token rejected; clearing stored credentials").pipe(
-                Effect.andThen(clear),
-                Effect.as(Option.none<string>()),
-              ),
-          ),
-        ),
-    );
+        // Only invalid_grant means the user's refresh token was rejected.
+        if (response.status === 400 && body.error === "invalid_grant") {
+          yield* clear;
+          return Option.none<string>();
+        }
+        return yield* new GoogleApiError({
+          operation: "TokenStore.refresh",
+          message: "Token refresh failed",
+          status: response.status,
+          cause: body,
+        });
+      }
+      const token = yield* HttpClientResponse.schemaBodyJson(S.TokenResponse)(response).pipe(
+        googleApiError("TokenStore.refresh", "Invalid token response"),
+      );
+      yield* persist(token);
+      return Option.some(token.access_token);
+    });
 
     // Reads the stored token, returning `None` when it is absent or too close
     // to expiry to be worth using.

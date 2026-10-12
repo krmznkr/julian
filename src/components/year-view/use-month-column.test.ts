@@ -1,6 +1,7 @@
+import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { orderByDurationDesc } from "@/components/year-view/use-month-column";
-import type { CalendarEvent } from "@/domain";
+import { orderByDurationDesc, useRenderedSegments } from "@/components/year-view/use-month-column";
+import { buildEventKey, buildMonthSegments, type CalendarEvent } from "@/domain";
 
 function evt(overrides: Partial<CalendarEvent> & { id: string; start: string; end: string }) {
   const event: CalendarEvent = {
@@ -41,5 +42,46 @@ describe("orderByDurationDesc", () => {
     const b = evt({ id: "a-event", title: "A", start: "2026-03-05", end: "2026-03-06" });
     const ordered = orderByDurationDesc([a, b]);
     expect(ordered.map((o) => o.event.title)).toEqual(["A", "B"]);
+  });
+});
+
+describe("useRenderedSegments", () => {
+  it("renders all-day and timed multi-day events as collision bars", () => {
+    const allDay = evt({ id: "holiday", start: "2026-03-05", end: "2026-03-06" }).event;
+    const timed = evt({
+      id: "meeting",
+      start: "2026-03-05T09:00:00",
+      end: "2026-03-05T10:00:00",
+      allDay: false,
+      isTimed: true,
+    }).event;
+    const overnight = evt({
+      id: "flight",
+      start: "2026-03-05T23:00:00",
+      end: "2026-03-06T02:00:00",
+      allDay: false,
+      isTimed: true,
+    }).event;
+    const events = [allDay, timed, overnight];
+    const eventMap = new Map(
+      events.map((event) => [buildEventKey(event.id, event.calendarId), event]),
+    );
+    const month = buildMonthSegments(events, 2026)[2];
+    const { result } = renderHook(() =>
+      useRenderedSegments(month, eventMap, [
+        { id: "cal-1", summary: "Calendar", accessRole: "owner" },
+      ]),
+    );
+
+    expect(result.current.singleDayByDay.size).toBe(0);
+    expect(result.current.bars.map(({ event }) => event.id)).toEqual(["flight", "holiday"]);
+    expect(result.current.bars.map(({ displayLane }) => displayLane)).toEqual([1, 2]);
+    expect(result.current.multiDayLanes).toBe(2);
+    expect(result.current.dayEvents.get(5)?.map(({ event }) => event.id)).toEqual([
+      "holiday",
+      "flight",
+      "meeting",
+    ]);
+    expect(result.current.dayEvents.get(6)?.map(({ event }) => event.id)).toEqual(["flight"]);
   });
 });

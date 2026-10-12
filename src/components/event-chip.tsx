@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import { Tooltip, TooltipTrigger } from "@/components/tooltip";
-import { eventCalendarSpanDays, formatDateRange } from "@/components/year-helpers";
+import { eventCalendarSpanDays, formatDateRange, formatTimeRange } from "@/components/year-helpers";
 import { useChipStyle, useEventLabels } from "@/components/use-event-chip";
 import {
   type EventChipProps,
@@ -22,6 +22,7 @@ function EventChip({
   variant = "chip",
   displayMode = "full",
   displayLane,
+  collisionLaneCount,
   leftZoneEndColumn,
   showTooltip = true,
   onPointerEnter,
@@ -30,22 +31,26 @@ function EventChip({
 }: EventChipProps & { ref?: React.Ref<HTMLButtonElement> }) {
   const isSquare = variant === "square";
   const calendar = calendars.find((item) => item.id === event.calendarId);
-  const { startLabel, endLabel, syncState, hasSyncIssue, isPendingSync } = useEventLabels(event);
-  const { displayStartDay, displayEndDay, chipStyle, placementClassName, isSingleDay } =
-    useChipStyle(
-      segment,
-      overrideStartDay,
-      overrideEndDay,
-      displayLane,
-      fullWidth,
-      variant,
-      leftZoneEndColumn,
-    );
+  const { startLabel, endLabel } = useEventLabels(event);
+  const { displayStartDay, displayEndDay, chipStyle, isSingleDay } = useChipStyle(
+    segment,
+    overrideStartDay,
+    overrideEndDay,
+    displayLane,
+    fullWidth,
+    variant,
+    leftZoneEndColumn,
+    collisionLaneCount,
+  );
   const totalEventDays = useMemo(() => eventCalendarSpanDays(event), [event]);
+  // The year grid has one row per date. Keep timed events at that resolution
+  // too: intraday margins can collapse short overnight events into empty bars.
   const resolvedChipStyle = useMemo(() => {
     const color = segment.calendarColor ?? calendar?.backgroundColor ?? null;
-    if (!color) return chipStyle;
-    return { ...chipStyle, "--event-accent-color": color } as typeof chipStyle;
+    return {
+      ...chipStyle,
+      ...(color ? { "--event-accent-color": color } : {}),
+    } as typeof chipStyle;
   }, [chipStyle, segment.calendarColor, calendar?.backgroundColor]);
 
   if (isSquare) {
@@ -72,19 +77,31 @@ function EventChip({
       tabIndex={-1}
       onClick={onClick}
       data-event-chip="true"
-      aria-label={`${segment.title}, ${formatDateRange(event)}${totalEventDays > 1 ? `, ${totalEventDays} days` : ""}`}
-      title={segment.title}
-      className={cn(getChipClassName(variant, fullWidth, event.allDay), placementClassName)}
+      data-event-key={segment.id}
+      aria-label={`${segment.title}, ${formatDateRange(event)}, ${formatTimeRange(event)}${event.allDay && totalEventDays > 1 ? `, ${totalEventDays} days` : ""}`}
+      title={`${event.title} · ${formatDateRange(event)} · ${formatTimeRange(event)}`}
+      className={cn(
+        getChipClassName(variant, fullWidth, event.allDay),
+        collisionLaneCount !== undefined && collisionLaneCount > 3 && "event-bar-dense",
+        segment.isFirstSegment === false && "rounded-t-none border-t-dashed",
+        segment.isLastSegment === false && "rounded-b-none border-b-dashed",
+      )}
       style={resolvedChipStyle}
     >
-      <EventChipContent title={segment.title} displayMode={displayMode} />
+      <EventChipContent
+        title={`${segment.isFirstSegment === false ? "↑ " : ""}${segment.title}${segment.isLastSegment === false ? " ↓" : ""}`}
+        displayMode={displayMode}
+      />
+      {!event.allDay && displayMode === "full" && !isSingleDay && (
+        <span className="event-bar-time truncate text-[9px] text-muted-foreground">
+          {formatTimeRange(event)}
+        </span>
+      )}
       <EventChipMetadata
         hasDescription={!!event.description}
         displayMode={displayMode}
-        isPendingSync={isPendingSync}
-        hasSyncIssue={hasSyncIssue}
         isSingleDay={isSingleDay}
-        totalEventDays={totalEventDays}
+        totalEventDays={event.allDay ? totalEventDays : 0}
         displayStartDay={displayStartDay}
         displayEndDay={displayEndDay}
       />
@@ -104,7 +121,6 @@ function EventChip({
         startLabel={startLabel}
         endLabel={endLabel}
         durationDays={totalEventDays}
-        syncState={syncState}
       />
     </Tooltip>
   );
