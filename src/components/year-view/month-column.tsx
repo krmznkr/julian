@@ -38,7 +38,6 @@ function MonthColumn({
     month,
     events,
     calendars,
-    year,
   );
   const weekendRows = useWeekendRows(year, month.month, daysInMonth);
 

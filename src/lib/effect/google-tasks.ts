@@ -27,13 +27,22 @@ export const googleTasksLayer: Layer.Layer<GoogleTasks, never, GoogleHttp> = Lay
     const http = yield* GoogleHttp;
 
     const listTaskLists = http
-      .getJson(
+      .paginate(
         S.GoogleTaskList,
-        `${TASKS_BASE}/users/@me/lists`,
+        (pageToken) => {
+          const params = new URLSearchParams({ maxResults: "100" });
+          if (Option.isSome(pageToken)) params.set("pageToken", pageToken.value);
+          return `${TASKS_BASE}/users/@me/lists?${params}`;
+        },
+        (page) => page.nextPageToken,
         "GoogleTasks.listTaskLists",
         "Failed to fetch task lists",
       )
-      .pipe(Effect.map((data) => data.items ?? []));
+      .pipe(
+        Stream.map((page) => page.items ?? []),
+        Stream.flattenIterable,
+        Stream.runCollect,
+      );
 
     const listTasks: GoogleTasksShape["listTasks"] = Effect.fn("GoogleTasks.listTasks")(function* (
       taskListId: string,

@@ -8,7 +8,7 @@ import { Context, Effect, Layer, Option, Stream } from "effect";
 import { HttpClientRequest } from "effect/unstable/http";
 import { GoogleApiError, type GoogleApiFailure } from "@/lib/effect/errors";
 import * as S from "@/lib/effect/schemas";
-import { toUtcDateOnly, type CalendarEvent, type CalendarSummary } from "@/domain";
+import { getEventBounds, toUtcDateOnly, type CalendarEvent, type CalendarSummary } from "@/domain";
 import { GoogleHttp } from "@/lib/effect/google-http";
 
 const CALENDAR_BASE = "https://www.googleapis.com/calendar/v3";
@@ -52,16 +52,20 @@ export class GoogleCalendarApi extends Context.Service<GoogleCalendarApi, Google
   "@julian/GoogleCalendar",
 ) {}
 
-const normalize = (event: S.GoogleCalendarEvent): NormalizedEvent => {
-  const allDay = event.start?.dateTime === undefined;
+const normalize = (event: S.GoogleCalendarEvent): NormalizedEvent | null => {
+  if (event.status === "cancelled") return null;
+  const allDay = event.start?.date !== undefined;
+  const start = allDay ? event.start?.date : event.start?.dateTime;
+  const end = allDay ? event.end?.date : event.end?.dateTime;
+  if (!start || !end || !getEventBounds({ start, end, allDay })) return null;
   return {
     id: event.id,
     title: event.summary === undefined || event.summary === "" ? "(No title)" : event.summary,
     description: event.description,
     htmlLink: event.htmlLink,
     recurringEventId: event.recurringEventId,
-    start: event.start?.dateTime ?? event.start?.date ?? "",
-    end: event.end?.dateTime ?? event.end?.date ?? "",
+    start,
+    end,
     allDay,
     isTimed: !allDay,
   };
@@ -76,6 +80,8 @@ const parseIsoDate = (
 
   const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
   if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || toUtcDateOnly(date) !== value) return undefined;
   return { year, month, day };
 };
 
@@ -86,13 +92,22 @@ export const googleCalendarApiLayer: Layer.Layer<GoogleCalendarApi, never, Googl
       const http = yield* GoogleHttp;
 
       const listCalendars = http
-        .getJson(
+        .paginate(
           S.GoogleCalendarList,
-          `${CALENDAR_BASE}/users/me/calendarList`,
+          (pageToken) => {
+            const params = new URLSearchParams({ maxResults: "250" });
+            if (Option.isSome(pageToken)) params.set("pageToken", pageToken.value);
+            return `${CALENDAR_BASE}/users/me/calendarList?${params}`;
+          },
+          (page) => page.nextPageToken,
           "GoogleCalendar.listCalendars",
           "Failed to fetch calendars",
         )
-        .pipe(Effect.map((data) => data.items ?? []));
+        .pipe(
+          Stream.map((page) => page.items ?? []),
+          Stream.flattenIterable,
+          Stream.runCollect,
+        );
 
       const listEvents: GoogleCalendarApiShape["listEvents"] = Effect.fn(
         "GoogleCalendar.listEvents",
@@ -125,7 +140,7 @@ export const googleCalendarApiLayer: Layer.Layer<GoogleCalendarApi, never, Googl
           Stream.runCollect,
         );
 
-        return events.map(normalize);
+        return events.map(normalize).filter((event) => event !== null);
       });
 
       const createEvent: GoogleCalendarApiShape["createEvent"] = Effect.fn(
@@ -147,7 +162,7 @@ export const googleCalendarApiLayer: Layer.Layer<GoogleCalendarApi, never, Googl
           });
         }
         const endDate = toUtcDateOnly(
-          new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day + 1)),
+          new Date(new Date(`${input.date}T00:00:00Z`).getTime() + 86_400_000),
         );
 
         const request = HttpClientRequest.post(

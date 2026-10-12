@@ -1,7 +1,6 @@
-import { memo, useMemo, useRef } from "react";
+import { memo, useRef } from "react";
 import { DayHoverPopover } from "@/components/year-view/day-hover-popover";
 import { MonthDayCellsLayer } from "@/components/year-view/month-day-cells-layer";
-import { hasSingleDayStrip } from "@/components/year-view/month-grid-layout";
 import { SegmentGrid } from "@/components/year-view/month-segments-layer-parts";
 import { useMonthDayPanel } from "@/components/year-view/use-month-day-panel";
 import { ROW_HEIGHT } from "@/components/year-helpers";
@@ -43,22 +42,6 @@ function MonthSegmentsLayer({
   const layerRef = useRef<HTMLDivElement | null>(null);
   const panel = useMonthDayPanel(dayEvents, monthName, keyboardDialogDay, layerRef, ROW_HEIGHT);
 
-  const hasSingleStrip = hasSingleDayStrip(multiDayLanes, singleDayByDay.size > 0);
-  // Days covered by a multi-day bar — single-day events on these days move into
-  // the reserved strip column so the two layers divide the width.
-  const multiDayCoverageDays = useMemo(
-    () =>
-      new Set(
-        bars.flatMap((bar) =>
-          Array.from(
-            { length: bar.segment.endDay - bar.segment.startDay + 1 },
-            (_, offset) => bar.segment.startDay + offset,
-          ),
-        ),
-      ),
-    [bars],
-  );
-
   return (
     <div ref={layerRef} className="absolute inset-0">
       <MonthDayCellsLayer
@@ -67,15 +50,14 @@ function MonthSegmentsLayer({
         daysInMonth={daysInMonth}
         weekendRows={weekendRows}
         multiDayLanes={multiDayLanes}
-        hasSingleStrip={hasSingleStrip}
-        multiDayCoverageDays={multiDayCoverageDays}
+        hasSingleStrip={false}
         singleDayByDay={singleDayByDay}
         keyboardFocusedDay={keyboardFocusedDay}
         keyboardDialogDay={keyboardDialogDay}
         showTodayLine={_showTodayLine}
         todayRowTop={_todayRowTop}
       />
-      <SegmentGrid multiDayLanes={multiDayLanes} hasSingleStrip={hasSingleStrip} bars={bars} />
+      <SegmentGrid multiDayLanes={multiDayLanes} bars={bars} />
       <DayHoverPopover
         open={panel.open}
         label={panel.label}

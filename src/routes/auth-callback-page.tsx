@@ -23,15 +23,6 @@ export function AuthCallbackPage() {
 
         await handleAuthCallback(code);
         setStatus("success");
-
-        // Redirect back to the app after a short delay
-        const year = new Date().getFullYear();
-        const redirectUrl = `/year/${year}`;
-        const timeout = setTimeout(() => {
-          location.assign(redirectUrl);
-        }, 1000);
-
-        return () => clearTimeout(timeout);
       } catch (err) {
         setStatus("error");
         setError(err instanceof Error ? err.message : "Unknown error");
@@ -41,12 +32,20 @@ export function AuthCallbackPage() {
     processCallback();
   }, []);
 
+  useEffect(() => {
+    if (status !== "success") return;
+    const timeout = setTimeout(() => {
+      location.assign(`/year/${new Date().getFullYear()}`);
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [status]);
+
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4" />
-          <p className="text-white">Authorizing with Google...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto mb-4" />
+          <p className="text-foreground">Authorizing with Google...</p>
         </div>
       </div>
     );
@@ -56,8 +55,8 @@ export function AuthCallbackPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p className="text-white mb-4">✓ Successfully authenticated!</p>
-          <p className="text-gray-400">Redirecting...</p>
+          <p className="text-foreground mb-4">Connected to Google.</p>
+          <p className="text-muted-foreground">Redirecting...</p>
         </div>
       </div>
     );
@@ -66,8 +65,8 @@ export function AuthCallbackPage() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <p className="text-red-500 mb-4">✗ Authentication failed</p>
-        <p className="text-gray-400 mb-4">{error}</p>
+        <p className="text-destructive mb-4">Authentication failed</p>
+        <p className="text-muted-foreground mb-4">{error}</p>
         <a href="/" className="text-blue-500 hover:underline">
           Go back to calendar
         </a>

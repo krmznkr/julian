@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from "react";
-import { YEAR_GRID_HEADER_HEIGHT } from "@/components/year-view/day-hour-ruler";
+import { YEAR_GRID_HEADER_HEIGHT } from "@/components/year-view/constants";
 import { scrollMonthIntoView } from "@/components/year-view/month-scroll";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";
 

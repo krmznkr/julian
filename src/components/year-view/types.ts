@@ -14,6 +14,7 @@ export type EventPopoverProps = {
   leftZoneEndColumn?: number;
   variant?: "chip" | "square";
   displayLane?: number;
+  collisionLaneCount?: number;
   renderMode?: "full" | "compact" | "micro";
   showTooltip?: boolean;
   onPointerEnter?: () => void;
