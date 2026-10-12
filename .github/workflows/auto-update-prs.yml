@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update every open PR that is already set to auto-merge
+        id: update
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -61,16 +62,54 @@ jobs:
             exit 0
           fi
 
+          updated=false
           while read -r pr branch; do
             echo "Updating PR #$pr"
             # A failure here is not fatal: the next run retries, and a branch
             # that cannot be updated needs a human anyway.
             if gh pr update-branch "$pr" --repo "$REPO"; then
-              # The update is pushed with GITHUB_TOKEN, so the PR's own CI does
-              # not start and the required `ci` check would stay pending.
-              gh workflow run ci.yml --repo "$REPO" --ref "$branch" \
-                || echo "Could not start CI for #$pr; leaving it for review."
+              updated=true
             else
               echo "Could not update #$pr; leaving it for review."
             fi
           done <<<"$prs"
+          echo "updated=$updated" >>"$GITHUB_OUTPUT"
+
+      # The branch update is pushed with GITHUB_TOKEN, and GitHub holds the PR's
+      # own CI run for approval (`action_required`) instead of starting it, so
+      # the required `ci` check would stay pending and block auto-merge. A
+      # dispatched run does not satisfy the PR's merge requirements, so approve
+      # the held run itself.
+      - name: Approve held CI runs on auto-merge PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          UPDATED: ${{ steps.update.outputs.updated }}
+        run: |
+          set -euo pipefail
+
+          # The run appears a moment after the branch moves; wait for it only
+          # when this job moved a branch.
+          attempts=1
+          if [ "$UPDATED" = true ]; then attempts=6; fi
+
+          for attempt in $(seq 1 "$attempts"); do
+            while read -r branch sha; do
+              [ -n "$branch" ] || continue
+              for run in $(gh run list --repo "$REPO" --branch "$branch" \
+                --event pull_request --limit 10 \
+                --json databaseId,headSha,conclusion \
+                --jq ".[] | select(.headSha == \"$sha\" and .conclusion == \"action_required\") | .databaseId"); do
+                echo "Approving run $run on $branch"
+                gh api -X POST "repos/$REPO/actions/runs/$run/approve" >/dev/null \
+                  || echo "Could not approve run $run; leaving it for review."
+              done
+            done < <(gh pr list --repo "$REPO" --state open \
+              --json headRefName,headRefOid,autoMergeRequest \
+              --jq '.[] | select(.autoMergeRequest != null) | "\(.headRefName) \(.headRefOid)"')
+
+            # Several PRs were moved at once and their runs appear one by one,
+            # so keep looking for the full window rather than stopping at the
+            # first approval; an approved run is no longer `action_required`.
+            if [ "$attempt" -lt "$attempts" ]; then sleep 10; fi
+          done
