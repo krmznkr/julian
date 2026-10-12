@@ -1,11 +1,6 @@
 import { memo, useMemo } from "react";
 import { Tooltip, TooltipTrigger } from "@/components/tooltip";
-import {
-  eventCalendarSpanDays,
-  formatDateRange,
-  formatTimeRange,
-  ROW_HEIGHT,
-} from "@/components/year-helpers";
+import { eventCalendarSpanDays, formatDateRange, formatTimeRange } from "@/components/year-helpers";
 import { useChipStyle, useEventLabels } from "@/components/use-event-chip";
 import {
   type EventChipProps,
@@ -15,7 +10,6 @@ import {
   EventChipTooltip,
 } from "@/components/event-chip-parts";
 import { cn } from "@/lib/utils";
-import { parseEventBoundary } from "@/domain";
 
 function EventChip({
   segment,
@@ -49,33 +43,15 @@ function EventChip({
     collisionLaneCount,
   );
   const totalEventDays = useMemo(() => eventCalendarSpanDays(event), [event]);
-  const timedInsets = useMemo(() => {
-    if (event.allDay || !segment.isMultiDay) return {};
-    const start = parseEventBoundary(event.start, false);
-    const end = parseEventBoundary(event.end, false);
-    const startFraction = (start.getHours() * 60 + start.getMinutes()) / (24 * 60);
-    const endFraction = (end.getHours() * 60 + end.getMinutes()) / (24 * 60);
-    return {
-      marginTop: segment.isFirstSegment ? startFraction * ROW_HEIGHT + 1 : 1,
-      marginBottom:
-        segment.isLastSegment && endFraction > 0 ? (1 - endFraction) * ROW_HEIGHT + 1 : 1,
-    };
-  }, [
-    event.allDay,
-    event.start,
-    event.end,
-    segment.isMultiDay,
-    segment.isFirstSegment,
-    segment.isLastSegment,
-  ]);
+  // The year grid has one row per date. Keep timed events at that resolution
+  // too: intraday margins can collapse short overnight events into empty bars.
   const resolvedChipStyle = useMemo(() => {
     const color = segment.calendarColor ?? calendar?.backgroundColor ?? null;
     return {
       ...chipStyle,
-      ...timedInsets,
       ...(color ? { "--event-accent-color": color } : {}),
     } as typeof chipStyle;
-  }, [chipStyle, timedInsets, segment.calendarColor, calendar?.backgroundColor]);
+  }, [chipStyle, segment.calendarColor, calendar?.backgroundColor]);
 
   if (isSquare) {
     return (
