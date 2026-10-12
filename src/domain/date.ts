@@ -1,3 +1,5 @@
+import type { CalendarEvent } from "./types";
+
 export function toDateInputValue(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -12,8 +14,9 @@ export function isDateOnlyString(value: string) {
 }
 
 export function parseDateInput(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, (month ?? 1) - 1, day ?? 1, 0, 0, 0, 0);
+  if (!isDateOnlyString(value)) return new Date(NaN);
+  const date = new Date(`${value}T00:00:00`);
+  return toDateInputValue(date) === value ? date : new Date(NaN);
 }
 
 export function parseEventBoundary(value: string, allDay: boolean) {
@@ -23,11 +26,9 @@ export function parseEventBoundary(value: string, allDay: boolean) {
   if (isDateOnlyString(value)) {
     return parseDateInput(value);
   }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return parsed;
-  }
-  return new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate(), 0, 0, 0, 0);
+  // Legacy all-day timestamps still represent calendar dates, not instants.
+  if (!Number.isFinite(Date.parse(value))) return new Date(NaN);
+  return parseDateInput(value.slice(0, 10));
 }
 
 export function serializeEventBoundary(date: Date, allDay: boolean) {
@@ -51,7 +52,23 @@ function startOfDay(date: Date) {
 }
 
 export function isTimedMultiDayEvent(startDate: Date, endDate: Date): boolean {
-  return startOfDay(endDate).getTime() > startOfDay(startDate).getTime();
+  return (
+    endDate > startDate &&
+    startOfDay(new Date(endDate.getTime() - 1)).getTime() > startOfDay(startDate).getTime()
+  );
+}
+
+// Google end boundaries are exclusive for both all-day and timed events.
+export function getEventBounds(event: Pick<CalendarEvent, "start" | "end" | "allDay">) {
+  const start = parseEventBoundary(event.start, event.allDay);
+  const end = parseEventBoundary(event.end, event.allDay);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start)
+    return null;
+  const lastOccupiedDate = new Date(end.getTime() - 1);
+  const dayNumber = (date: Date) =>
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000;
+  const spanDays = dayNumber(lastOccupiedDate) - dayNumber(start) + 1;
+  return { start, end, lastOccupiedDate, spanDays };
 }
 
 export function startOfYear(year: number) {
@@ -62,13 +79,8 @@ export function startOfNextYear(year: number) {
   return new Date(year + 1, 0, 1, 0, 0, 0, 0);
 }
 
-/**
- * Format a `Date` as a `YYYY-MM-DD` date-only string in UTC.
- *
- * Google's all-day boundaries are date-only and timezone-free, so they must be
- * read and written in UTC; using local getters here would shift the date by a
- * day either side of midnight for anyone west of Greenwich.
- */
+// UTC date serialization for API payloads and Google Tasks due dates.
+// Displayed all-day dates use parseEventBoundary instead.
 export function toUtcDateOnly(date: Date): string {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");

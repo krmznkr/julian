@@ -1,9 +1,9 @@
 import type { CSSProperties, MutableRefObject } from "react";
 import {
-  DayHourRuler,
-  YEAR_GRID_HOUR_RULER_HEIGHT,
+  YEAR_GRID_LEGEND_HEIGHT,
   YEAR_GRID_MONTH_HEADER_HEIGHT,
-} from "@/components/year-view/day-hour-ruler";
+} from "@/components/year-view/constants";
+import { monthColumnTemplateColumns, visibleYearEventLaneMap } from "./month-grid-layout";
 import { cn } from "@/lib/utils";
 import type { MonthSegments } from "@/domain";
 
@@ -60,7 +60,7 @@ export default function YearGridHeader({
       </div>
       <div
         className="flex min-w-max gap-1 border-t border-border/50"
-        style={{ height: YEAR_GRID_HOUR_RULER_HEIGHT }}
+        style={{ height: YEAR_GRID_LEGEND_HEIGHT }}
       >
         <div
           className="sticky left-0 z-20 w-[var(--day-gutter-width)] shrink-0 border-r border-border/80 bg-background/90 backdrop-blur"
@@ -69,16 +69,20 @@ export default function YearGridHeader({
         {leftCount > 0 && <div className="shrink-0" style={leftSpacerStyle} />}
         {visibleMonths.map((month) => {
           const isCurrentMonth = isCurrentYear && month.month === todayMonth;
+          const visibleLanes = visibleYearEventLaneMap(month.segments).laneCount;
 
           return (
             <div
               key={`ruler-${month.month}`}
               className={cn(
-                "w-[var(--month-col-width)] shrink-0 border-r border-border/80 bg-muted/25",
+                "grid w-[var(--month-col-width)] shrink-0 border-r border-border/80 bg-muted/25 text-[9px] text-muted-foreground",
                 isCurrentMonth && "bg-accent/40",
               )}
+              style={{ gridTemplateColumns: monthColumnTemplateColumns(visibleLanes) }}
             >
-              <DayHourRuler showLabels />
+              <span className="truncate px-1" style={{ gridColumn: "1 / -1" }}>
+                Events
+              </span>
             </div>
           );
         })}

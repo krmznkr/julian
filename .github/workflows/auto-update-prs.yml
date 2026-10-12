@@ -9,9 +9,15 @@ name: Keep auto-merge PRs current
 on:
   push:
     branches: [main]
+  # An auto-merge lands with GITHUB_TOKEN, and pushes made with that token
+  # start no workflows, so the push trigger never sees it. The schedule moves
+  # the rest of the queue along.
+  schedule:
+    - cron: "17 6 * * *"
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -33,18 +39,38 @@ jobs:
           # Only touch PRs that have auto-merge enabled: those have already been
           # opted in, so updating them cannot merge anything a human did not ask
           # for. A DIRTY branch has a real conflict and needs a person.
-          prs=$(gh pr list --repo "$REPO" --state open \
-            --json number,autoMergeRequest,mergeStateStatus \
-            --jq '.[] | select(.autoMergeRequest != null and .mergeStateStatus == "BEHIND") | .number')
+          #
+          # GitHub recomputes mergeStateStatus lazily and reports UNKNOWN right
+          # after main moves, which is exactly when the push trigger runs, so
+          # wait for it to settle before deciding nothing is behind.
+          for attempt in 1 2 3 4 5 6; do
+            states=$(gh pr list --repo "$REPO" --state open \
+              --json number,headRefName,autoMergeRequest,mergeStateStatus \
+              --jq '[.[] | select(.autoMergeRequest != null)]')
+            if [ "$(jq 'any(.[]; .mergeStateStatus == "UNKNOWN")' <<<"$states")" = false ]; then
+              break
+            fi
+            echo "Merge state not computed yet (attempt $attempt); waiting."
+            sleep 10
+          done
+
+          prs=$(jq -r '.[] | select(.mergeStateStatus == "BEHIND") | "\(.number) \(.headRefName)"' <<<"$states")
 
           if [ -z "$prs" ]; then
             echo "No auto-merge PRs are behind main."
             exit 0
           fi
 
-          for pr in $prs; do
+          while read -r pr branch; do
             echo "Updating PR #$pr"
-            # A failure here is not fatal: the next push to main retries, and a
-            # branch that cannot be updated needs a human anyway.
-            gh pr update-branch "$pr" --repo "$REPO" || echo "Could not update #$pr; leaving it for review."
-          done
+            # A failure here is not fatal: the next run retries, and a branch
+            # that cannot be updated needs a human anyway.
+            if gh pr update-branch "$pr" --repo "$REPO"; then
+              # The update is pushed with GITHUB_TOKEN, so the PR's own CI does
+              # not start and the required `ci` check would stay pending.
+              gh workflow run ci.yml --repo "$REPO" --ref "$branch" \
+                || echo "Could not start CI for #$pr; leaving it for review."
+            else
+              echo "Could not update #$pr; leaving it for review."
+            fi
+          done <<<"$prs"

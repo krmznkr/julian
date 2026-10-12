@@ -120,7 +120,9 @@ export default function YearGrid(props: YearGridProps) {
               if (day < 1 || day > daysInMonth) return;
 
               event.preventDefault();
-              keyboard.openDayDetails({ month, day });
+              const eventKey =
+                target?.closest("[data-event-key]")?.getAttribute("data-event-key") ?? undefined;
+              keyboard.openDayDetails({ month, day }, eventKey);
             }}
           >
             <p id="year-grid-keyboard-help" className="sr-only">
