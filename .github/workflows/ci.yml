@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Started by "Keep auto-merge PRs current" after it updates a PR branch.
+  workflow_dispatch:
 
 permissions:
   contents: read
