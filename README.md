@@ -1,8 +1,8 @@
 # Julian
 
-A calm, browser-based full-year calendar focused on all-day, multi-day, and
-timed events. It connects to Google Calendar and Google Tasks through OAuth,
-then renders the whole year as a navigable grid.
+A full-year calendar for Google Calendar events and Google Tasks. View all-day,
+multi-day, and timed events, navigate with the keyboard, and create, rename, or
+delete events on writable calendars.
 
 ## Run Locally
 

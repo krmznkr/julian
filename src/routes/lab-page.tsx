@@ -1,176 +1,146 @@
-import { SingleDayDisplay } from "@/components/year-view/single-day-display";
-import { getTimedEventDayPlacement } from "@/components/year-view/day-timeline-placement";
-import type { DaySquare } from "@/components/year-view/use-month-column";
-import type { CalendarEvent, EventSegment } from "@/domain";
+import { useMemo } from "react";
+import MonthColumn from "@/components/year-view/month-column";
+import { TooltipProvider } from "@/components/tooltip";
+import { YearViewSharedDataProvider } from "@/components/year-view/year-view-context";
+import { buildEventKey, buildMonthSegments, type CalendarEvent } from "@/domain";
 
-const YEAR = 2026;
-const MONTH = 5; // 0-indexed = June
-const DAY = 15;
+const calendar = {
+  id: "sample",
+  summary: "Sample calendar",
+  backgroundColor: "#38a66f",
+  accessRole: "owner" as const,
+};
 
-function makeEvent(
-  id: string,
-  title: string,
-  startIso: string,
-  endIso: string,
-  allDay: boolean,
-  color: string,
-): CalendarEvent {
-  return {
-    id,
-    title,
-    start: startIso,
-    end: endIso,
-    allDay,
-    isTimed: !allDay,
-    calendarId: "cal-1",
-    calendarColor: color,
-  };
-}
-
-function makeSegment(event: CalendarEvent): EventSegment {
-  return {
-    id: event.id,
-    title: event.title,
-    startDay: DAY,
-    endDay: DAY,
-    lane: 0,
-    calendarColor: event.calendarColor ?? null,
-    calendarId: event.calendarId,
-    allDay: event.allDay,
-    isTimed: event.isTimed,
-  };
-}
-
-function makeSquare(event: CalendarEvent): DaySquare {
-  const timedPlacement = event.allDay ? null : getTimedEventDayPlacement(event, YEAR, MONTH, DAY);
-  return { segment: makeSegment(event), event, allDay: event.allDay, timedPlacement };
-}
-
-function d(h: number, m = 0) {
-  return `${YEAR}-${String(MONTH + 1).padStart(2, "0")}-${String(DAY).padStart(2, "0")}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
-}
-
-const CASES: { label: string; description: string; squares: DaySquare[] }[] = [
-  { label: "Empty", description: "No events", squares: [] },
+const sampleEvents: CalendarEvent[] = [
   {
-    label: "Single timed",
-    description: "One block on the 24h timeline",
-    squares: [makeSquare(makeEvent("t1", "Standup", d(9), d(9, 30), false, "#4285F4"))],
+    id: "paris",
+    title: "🇫🇷 Paris & Lille · vacation",
+    start: "2026-09-17",
+    end: "2026-09-27",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#38a66f",
   },
   {
-    label: "Two timed",
-    description: "Two non-overlapping blocks",
-    squares: [
-      makeSquare(makeEvent("t2a", "Standup", d(9), d(9, 30), false, "#4285F4")),
-      makeSquare(makeEvent("t2b", "Lunch", d(12), d(13), false, "#0F9D58")),
-    ],
+    id: "moxy",
+    title: "🏨 Moxy CDG · evening arrival",
+    start: "2026-09-18T18:30:00",
+    end: "2026-09-21T09:00:00",
+    allDay: false,
+    isTimed: true,
+    calendarId: calendar.id,
+    calendarColor: "#9a73df",
   },
   {
-    label: "Overlapping",
-    description: "Three overlapping blocks",
-    squares: [
-      makeSquare(makeEvent("t3a", "Meeting A", d(10), d(12), false, "#4285F4")),
-      makeSquare(makeEvent("t3b", "Meeting B", d(10, 30), d(11, 30), false, "#DB4437")),
-      makeSquare(makeEvent("t3c", "Call", d(11), d(12), false, "#F4B400")),
-    ],
+    id: "clamart",
+    title: "🏨 Clamart · Residence Service",
+    start: "2026-09-18",
+    end: "2026-09-22",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#58b98a",
   },
   {
-    label: "Single all-day",
-    description: "Full-width hollow outline spanning the cell",
-    squares: [makeSquare(makeEvent("a1", "Vacation", d(0), d(0), true, "#4285F4"))],
+    id: "office",
+    title: "Out of office",
+    start: "2026-09-20",
+    end: "2026-09-25",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#ed7658",
   },
   {
-    label: "Many all-day",
-    description: "Stacked full-width outlines",
-    squares: [
-      makeSquare(makeEvent("a2a", "Vacation", d(0), d(0), true, "#4285F4")),
-      makeSquare(makeEvent("a2b", "OOO", d(0), d(0), true, "#DB4437")),
-      makeSquare(makeEvent("a2c", "Holiday", d(0), d(0), true, "#0F9D58")),
-      makeSquare(makeEvent("a2d", "Conference", d(0), d(0), true, "#F4B400")),
-    ],
+    id: "leave",
+    title: "🌴 Annual leave",
+    start: "2026-09-20",
+    end: "2026-09-25",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#78b96d",
   },
   {
-    label: "Mix",
-    description: "Full-width all-day outline + partial timed blocks",
-    squares: [
-      makeSquare(makeEvent("m1", "OOO", d(0), d(0), true, "#DB4437")),
-      makeSquare(makeEvent("m2", "Standup", d(9), d(9, 30), false, "#4285F4")),
-      makeSquare(makeEvent("m3", "Lunch", d(12), d(13), false, "#0F9D58")),
-    ],
+    id: "lille",
+    title: "🏨 Lille · Montempô Gares",
+    start: "2026-09-21",
+    end: "2026-09-25",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#49a97b",
   },
   {
-    label: "Dense",
-    description: "Stacked all-day outlines + partial timed blocks",
-    squares: [
-      makeSquare(makeEvent("d1", "Vacation", d(0), d(0), true, "#4285F4")),
-      makeSquare(makeEvent("d2", "OOO", d(0), d(0), true, "#DB4437")),
-      makeSquare(makeEvent("d3", "Standup", d(9), d(9, 30), false, "#F4B400")),
-      makeSquare(makeEvent("d4", "1:1", d(10), d(11), false, "#0F9D58")),
-      makeSquare(makeEvent("d5", "Review", d(11), d(12, 30), false, "#AB47BC")),
-      makeSquare(makeEvent("d6", "Lunch", d(12), d(13), false, "#00ACC1")),
-    ],
-  },
-  {
-    label: "Long title",
-    description: "All-day chip truncates; partial timed on timeline",
-    squares: [
-      makeSquare(
-        makeEvent("l1", "Very Long Event Title That Will Truncate", d(0), d(0), true, "#4285F4"),
-      ),
-      makeSquare(
-        makeEvent("l2", "Another Extremely Long Meeting Name Here", d(10), d(12), false, "#DB4437"),
-      ),
-    ],
-  },
-  {
-    label: "Edge times",
-    description: "Blocks at start and end of day",
-    squares: [
-      makeSquare(makeEvent("e1", "Midnight", d(0), d(0, 30), false, "#4285F4")),
-      makeSquare(makeEvent("e2", "Late night", d(23), d(23, 59), false, "#DB4437")),
-    ],
-  },
-  {
-    label: "Full-day timed",
-    description: "Hollow outline spanning 24h — partial blocks visible inside",
-    squares: [
-      makeSquare(makeEvent("f1", "All-day meeting", d(0), d(23, 59), false, "#4285F4")),
-      makeSquare(makeEvent("f2", "Standup", d(9), d(9, 30), false, "#0F9D58")),
-    ],
+    id: "train",
+    title: "Train to Lille · 14:08",
+    start: "2026-09-21",
+    end: "2026-09-22",
+    allDay: true,
+    isTimed: false,
+    calendarId: calendar.id,
+    calendarColor: "#9a73df",
   },
 ];
 
-function CaseCard({ label, description, squares }: (typeof CASES)[number]) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="text-[11px] font-medium text-foreground">{label}</div>
-      <div
-        className="flex h-[30px] min-w-0 items-stretch rounded-md border border-border/60 bg-card"
-        style={{ width: 220 }}
-      >
-        <SingleDayDisplay year={YEAR} month={MONTH} day={DAY} squares={squares} />
-      </div>
-      <div className="text-[10px] text-muted-foreground">{description}</div>
-    </div>
-  );
-}
+const noop = () => {};
 
 export function LabPage() {
+  const month = useMemo(() => buildMonthSegments(sampleEvents, 2026)[8], []);
+  const eventMap = useMemo(
+    () =>
+      new Map(
+        sampleEvents.map((event) => [buildEventKey(event.id, event.calendarId), event] as const),
+      ),
+    [],
+  );
+  const sharedData = useMemo(
+    () => ({
+      calendars: [calendar],
+      monthNames: Array.from({ length: 12 }, (_, index) =>
+        new Date(2026, index, 1).toLocaleDateString(undefined, { month: "long" }),
+      ),
+    }),
+    [],
+  );
+
   return (
-    <main className="min-h-dvh bg-background p-8">
-      <div className="mb-8">
-        <h1 className="text-lg font-semibold text-foreground">Day cell lab</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Full cell width is 24 hours. All-day and full-day timed events span the entire cell as
-          hollow outlines. Partial timed events are not drawn on the cell — they appear in the day
-          detail card.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-6">
-        {CASES.map((c) => (
-          <CaseCard key={c.label} {...c} />
-        ))}
-      </div>
-    </main>
+    <TooltipProvider>
+      <YearViewSharedDataProvider value={sharedData}>
+        <main className="min-h-dvh bg-muted/30 px-6 py-8 text-foreground">
+          <header className="mx-auto mb-6 max-w-4xl">
+            <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              Production component preview
+            </div>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+              Google-style overlap columns
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              All visible events use the same collision lanes. Purple begins at 18:30 on September
+              18 and ends at 09:00 on September 21. Nothing is replaced by a hidden-event count.
+            </p>
+          </header>
+          <section className="mx-auto max-w-4xl overflow-x-auto rounded-xl border border-border bg-background p-5 shadow-sm">
+            <div className="mb-2 w-[var(--month-col-width)] border-b border-border pb-2 text-sm font-semibold">
+              September
+            </div>
+            <MonthColumn
+              month={month}
+              events={eventMap}
+              year={2026}
+              todayDay={17}
+              todayMonth={8}
+              isCurrentYear={false}
+              rowHeight={30}
+              keyboardFocusedDay={null}
+              keyboardDialogDay={null}
+              dialogActiveKey={undefined}
+              onDialogActiveKeyChange={noop}
+            />
+          </section>
+        </main>
+      </YearViewSharedDataProvider>
+    </TooltipProvider>
   );
 }

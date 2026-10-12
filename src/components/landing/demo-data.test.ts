@@ -26,9 +26,7 @@ describe("buildDemoYear", () => {
   });
 
   it("drops nothing to normalization — every seed survives as an event", () => {
-    // `normalizeEvent` rejects single-day timed events. If a seed is written
-    // that way it silently disappears from the demo, so this asserts the exact
-    // count: adding a seed should fail here until the number is updated.
+    // Every seed, including same-day timed appointments, must survive.
     const { events } = buildDemoYear(YEAR, TODAY);
     const ids = new Set(events.map((event) => event.id));
     expect(ids.size).toBe(events.length);
