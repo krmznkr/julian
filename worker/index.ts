@@ -17,7 +17,7 @@ interface RateLimiter {
 }
 
 interface Env {
-  ASSETS: Fetcher;
+  ASSETS: { fetch(request: Request): Promise<Response> };
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   SITE_RATELIMIT: RateLimiter;
@@ -122,7 +122,7 @@ function json(data: unknown, status = 200): Response {
   return withSecurityHeaders(
     new Response(JSON.stringify(data), {
       status,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     }),
   );
 }
@@ -130,26 +130,36 @@ function json(data: unknown, status = 200): Response {
 // Forwards a token request to Google with the server-held client credentials
 // and passes Google's response (body + status) straight back to the caller.
 async function exchangeWithGoogle(body: URLSearchParams): Promise<Response> {
-  const res = await fetch(GOOGLE_TOKEN_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  return withSecurityHeaders(
-    new Response(res.body, {
-      status: res.status,
-      headers: { "Content-Type": "application/json" },
-    }),
-  );
+  try {
+    const res = await fetch(GOOGLE_TOKEN_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
+    return withSecurityHeaders(
+      new Response(res.body, {
+        status: res.status,
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      }),
+    );
+  } catch {
+    return json(
+      { error: "upstream_unavailable", error_description: "Could not reach Google" },
+      502,
+    );
+  }
 }
 
-async function handleTokenExchange(request: Request, env: Env): Promise<Response> {
-  const { code, code_verifier, redirect_uri } = (await request.json()) as {
-    code?: string;
-    code_verifier?: string;
-    redirect_uri?: string;
-  };
-  if (!code || !code_verifier || !redirect_uri) {
+async function handleTokenExchange(body: Record<string, unknown>, env: Env): Promise<Response> {
+  const { code, code_verifier, redirect_uri } = body;
+  if (
+    typeof code !== "string" ||
+    !code ||
+    typeof code_verifier !== "string" ||
+    !code_verifier ||
+    typeof redirect_uri !== "string" ||
+    !redirect_uri
+  ) {
     return json(
       { error: "invalid_request", error_description: "Missing code/code_verifier/redirect_uri" },
       400,
@@ -167,9 +177,9 @@ async function handleTokenExchange(request: Request, env: Env): Promise<Response
   );
 }
 
-async function handleRefresh(request: Request, env: Env): Promise<Response> {
-  const { refresh_token } = (await request.json()) as { refresh_token?: string };
-  if (!refresh_token) {
+async function handleRefresh(body: Record<string, unknown>, env: Env): Promise<Response> {
+  const { refresh_token } = body;
+  if (typeof refresh_token !== "string" || !refresh_token) {
     return json({ error: "invalid_request", error_description: "Missing refresh_token" }, 400);
   }
   return exchangeWithGoogle(
@@ -180,6 +190,41 @@ async function handleRefresh(request: Request, env: Env): Promise<Response> {
       grant_type: "refresh_token",
     }),
   );
+}
+
+// Count streamed bytes too: Content-Length may be absent or untrusted.
+async function readOAuthBody(request: Request): Promise<Record<string, unknown> | Response> {
+  const reader = request.body?.getReader();
+  if (!reader) return json({ error: "invalid_request" }, 400);
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_OAUTH_BODY_BYTES) {
+        await reader.cancel();
+        return json({ error: "payload_too_large" }, 413);
+      }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+      return json({ error: "invalid_request" }, 400);
+    }
+    return body as Record<string, unknown>;
+  } catch {
+    return json({ error: "bad_request", error_description: "Invalid JSON body" }, 400);
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 // Gate the OAuth proxy: same-site browser POSTs only, with a sane body size.
@@ -248,13 +293,14 @@ export default {
           500,
         );
       }
-      try {
-        if (url.pathname === "/api/oauth/token") return await handleTokenExchange(request, env);
-        if (url.pathname === "/api/oauth/refresh") return await handleRefresh(request, env);
-      } catch {
-        return json({ error: "bad_request", error_description: "Invalid JSON body" }, 400);
+      if (url.pathname !== "/api/oauth/token" && url.pathname !== "/api/oauth/refresh") {
+        return json({ error: "not_found" }, 404);
       }
-      return json({ error: "not_found" }, 404);
+      const body = await readOAuthBody(request);
+      if (body instanceof Response) return body;
+      return url.pathname === "/api/oauth/token"
+        ? handleTokenExchange(body, env)
+        : handleRefresh(body, env);
     }
 
     // Everything else is the static SPA (index.html fallback handled by the

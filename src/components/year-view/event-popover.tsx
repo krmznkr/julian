@@ -8,6 +8,7 @@ export default function EventPopover({
   fullWidth,
   variant = "chip",
   displayLane,
+  collisionLaneCount,
   renderMode = "full",
   showTooltip,
   leftZoneEndColumn,
@@ -25,6 +26,7 @@ export default function EventPopover({
       fullWidth={fullWidth}
       variant={variant}
       displayLane={displayLane}
+      collisionLaneCount={collisionLaneCount}
       displayMode={renderMode}
       leftZoneEndColumn={leftZoneEndColumn}
       showTooltip={showTooltip}

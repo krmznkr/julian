@@ -1,6 +1,5 @@
 import type { CalendarEvent } from "@/domain";
-import { addDays, parseEventBoundary } from "@/domain";
-import { ONE_DAY_MS } from "@/components/year-view/constants";
+import { getEventBounds, parseEventBoundary } from "@/domain";
 
 export const ROW_HEIGHT = 30;
 
@@ -18,9 +17,7 @@ const TIME_RANGE_FORMAT = new Intl.DateTimeFormat("en-US", {
 
 /** Full-span length of the event in calendar days (matches all-day exclusive-end semantics and drag preview). */
 export function eventCalendarSpanDays(event: CalendarEvent) {
-  const start = parseEventBoundary(event.start, event.allDay);
-  const end = parseEventBoundary(event.end, event.allDay);
-  return Math.max(1, Math.round((end.getTime() - start.getTime()) / ONE_DAY_MS));
+  return getEventBounds(event)?.spanDays ?? 0;
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -32,9 +29,9 @@ function isSameDay(a: Date, b: Date) {
 }
 
 export function formatDateRange(event: CalendarEvent) {
-  const start = parseEventBoundary(event.start, event.allDay);
-  const end = parseEventBoundary(event.end, event.allDay);
-  const displayEnd = event.allDay ? addDays(end, -1) : end;
+  const bounds = getEventBounds(event);
+  if (!bounds) return "Invalid event dates";
+  const { start, lastOccupiedDate: displayEnd } = bounds;
   if (isSameDay(start, displayEnd)) {
     return DATE_RANGE_FORMAT.format(start);
   }
@@ -51,6 +48,8 @@ export function formatTimeRange(event: CalendarEvent) {
 
   return `${TIME_RANGE_FORMAT.format(start)} – ${TIME_RANGE_FORMAT.format(end)}`;
 }
+
+export const DISPLAY_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export function isWeekend(year: number, month: number, day: number) {
   const date = new Date(year, month, day);
