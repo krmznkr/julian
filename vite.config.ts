@@ -1,12 +1,21 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import { renderHeadersFile } from "./worker/security-headers";
 
 const resolvePath = (...parts: string[]) => path.resolve(__dirname, ...parts);
 
+const securityHeadersFile = (): Plugin => ({
+  name: "julian:security-headers",
+  apply: "build",
+  generateBundle() {
+    this.emitFile({ type: "asset", fileName: "_headers", source: renderHeadersFile() });
+  },
+});
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), securityHeadersFile()],
   envDir: resolvePath("."),
   envPrefix: ["VITE_"],
   resolve: {

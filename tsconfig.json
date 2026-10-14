@@ -18,7 +18,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "plugins": [{ "name": "@effect/language-service" }]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "worker/**/*.ts", "vite.config.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist", "coverage"]

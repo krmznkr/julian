@@ -4,6 +4,7 @@
 // of a raw Promise chain. The public API and console/report behaviour are kept
 // identical so callers (and tests) don't change.
 import { Cause, Effect } from "effect";
+import { AsyncTaskError } from "@/lib/effect/errors";
 import { runFork } from "@/lib/effect/runtime";
 
 type AsyncTaskReporter = false | ((error: Error) => void);
@@ -53,14 +54,15 @@ export function runAsyncTask(
 ) {
   const program = Effect.tryPromise({
     try: async () => (typeof task === "function" ? task() : task),
-    catch: (error) => error,
+    catch: (error) => new AsyncTaskError({ cause: normalizeAsyncTaskError(error) }),
   });
 
   runFork(
     program.pipe(
-      Effect.catchCause((cause: Cause.Cause<unknown>) =>
+      Effect.catchCause((cause: Cause.Cause<AsyncTaskError>) =>
         Effect.sync(() => {
-          reportAsyncTaskError(Cause.squash(cause), options);
+          const error = Cause.squash(cause);
+          reportAsyncTaskError(error instanceof AsyncTaskError ? error.cause : error, options);
         }),
       ),
     ),

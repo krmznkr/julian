@@ -11,6 +11,8 @@
 //   - The OAuth proxy only answers same-site browser requests (Origin allowlist)
 //     and rejects oversized bodies, so drive-by bots can't spam Google through it.
 
+import { SECURITY_HEADERS } from "./security-headers";
+
 // The native Workers rate-limiting binding: limit({ key }) -> { success }.
 interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
@@ -70,39 +72,6 @@ const ALLOWED_ORIGINS = new Set([
 
 // OAuth JSON bodies are tiny; anything larger is abuse or a bug.
 const MAX_OAUTH_BODY_BYTES = 4096;
-
-// Content-Security-Policy tuned to exactly what the app needs:
-//   - scripts/styles/assets are all same-origin (Vite output + bootstrap.js)
-//   - the browser calls our own /api/oauth (self) and the Google Calendar API
-//   - Google sign-in is a top-level navigation to accounts.google.com
-//   - avatars can come from Google's user-content CDN (https:) or data URIs
-//   - the page may never be framed (clickjacking) and can't be a frame target
-const CONTENT_SECURITY_POLICY = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
-  "font-src 'self' data:",
-  "connect-src 'self' https://www.googleapis.com",
-  "form-action 'self' https://accounts.google.com",
-  "upgrade-insecure-requests",
-].join("; ");
-
-const SECURITY_HEADERS: Record<string, string> = {
-  "Content-Security-Policy": CONTENT_SECURITY_POLICY,
-  "Strict-Transport-Security": "max-age=15552000; includeSubDomains",
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
-  "Cross-Origin-Opener-Policy": "same-origin",
-  // Reinforces robots.txt / the noindex meta on every response, including
-  // assets and API replies, so nothing this Worker emits is ever indexed.
-  "X-Robots-Tag": "noindex, nofollow",
-};
 
 // Copies a response and layers the hardening headers on top. Existing headers
 // (content-type, cache-control from the assets binding, etc.) are preserved.

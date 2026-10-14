@@ -32,13 +32,13 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 ## Remember (gotchas)
 
 - **New browser-side external API call?** Add its origin to `connect-src` in
-  **both** `worker/index.ts` and `public/_headers`, or CSP will block it.
+  `worker/security-headers.ts`, or CSP will block it.
 - **New dev/preview origin for OAuth?** Add it to `ALLOWED_ORIGINS` in
   `worker/index.ts`.
 - **Dashboard work** must be done while logged into account **`93527…`**
   (`krmznkr@gmail.com`, Google SSO) — not the personal `c57b…` account.
-- **CSP is duplicated** in `worker/index.ts` and `public/_headers`; keep them in
-  sync.
+- **CSP has one source**, `worker/security-headers.ts`; the build emits
+  `dist/_headers` from it.
 - **Rotate the secret** with `pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET`
   (Worker secret store only — never in `.env`, never `VITE_`-prefixed).
 

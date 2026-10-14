@@ -4,7 +4,7 @@
 // the error payloads are schema-described: they can be encoded/decoded, they
 // carry operation labels for diagnosis, and they stay discriminable in the
 // Effect error channel instead of becoming untyped thrown values.
-import { Schema } from "effect";
+import { Data, Schema } from "effect";
 
 // A network/API failure while talking to Google (or the OAuth Worker proxy).
 // `operation` labels the boundary that failed, which is what makes a report
@@ -32,6 +32,9 @@ export class AuthConfigError extends Schema.TaggedError<AuthConfigError>()(
   "Google.AuthConfigError",
   { message: Schema.String },
 ) {}
+
+// A fire-and-forget task started from React failed; `cause` is the original error.
+export class AsyncTaskError extends Data.TaggedError("AsyncTaskError")<{ readonly cause: Error }> {}
 
 export type AppError = GoogleApiError | NotAuthenticatedError | AuthConfigError;
 
