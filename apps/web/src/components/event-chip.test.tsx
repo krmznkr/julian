@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import EventChip from "./event-chip";
-import { buildMonthSegments, type CalendarEvent } from "@/domain";
+import { buildMonthSegments, type CalendarEvent } from "@julian/domain";
 
 afterEach(cleanup);
 

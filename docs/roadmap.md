@@ -118,7 +118,61 @@ Each phase is one or more PRs, merged green, deployable on its own.
       blocks.
 - [ ] Preview deploy per PR, production deploy on main.
 
-### Phase 6: Quality signals
+### Phase 6: Releases and channels
+
+- [ ] Conventional commits enforced on PR titles (squash merges).
+
+#### Versioning
+
+- **One product version**, kept in the root `package.json`. Workspace packages
+  are private and never published, so they stay `0.0.0` and are not versioned
+  independently.
+- **Semver, defined for a web app** (there is no public API):
+
+  | Bump  | When                                                                                                                 | Commit type                                    |
+  | ----- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+  | Major | breaks bookmarks or stored state: URL scheme change, local storage migration, new OAuth scope that forces re-consent | `feat!:` / `BREAKING CHANGE:`                  |
+  | Minor | new user-visible feature                                                                                             | `feat:`                                        |
+  | Patch | fix, performance, security hardening                                                                                 | `fix:`, `perf:`                                |
+  | None  | refactor, tests, docs, CI, deps                                                                                      | `refactor:`, `test:`, `docs:`, `ci:`, `chore:` |
+
+- **Version strings per channel**, all valid semver:
+
+  | Channel | Example                                                        |
+  | ------- | -------------------------------------------------------------- |
+  | Stable  | `1.4.0`                                                        |
+  | Nightly | `1.5.0-nightly.20261015+a1b2c3d` (next minor, date, short SHA) |
+  | Preview | `1.5.0-pr.42+a1b2c3d`                                          |
+  | Local   | `1.5.0-dev+a1b2c3d`                                            |
+
+- **Injected at build time** (`__APP_VERSION__`, `__APP_CHANNEL__`, `__APP_COMMIT__`
+  via Vite `define`), and attached to Worker deployments as the version
+  message, so a Cloudflare rollback names the release it returns to.
+- **1.0.0** ships when the workspace split, Effect migration, and year URLs land;
+  until then the repo stays on `0.x`.
+
+#### Pipeline
+
+- [ ] [release-please](https://github.com/googleapis/release-please): release PR
+      bumps semver, writes `CHANGELOG.md`, tags, and publishes a GitHub Release.
+- [ ] Three channels, all free on the existing zone (one-level subdomains are
+      covered by the free certificate):
+
+| Channel | Trigger                                | Where                                      |
+| ------- | -------------------------------------- | ------------------------------------------ |
+| Preview | every PR                               | Worker preview URL, linked in a PR comment |
+| Nightly | 03:00 UTC cron, only if `main` changed | `julian-nightly.krmznkr.com`               |
+| Stable  | release tag                            | `julian.krmznkr.com`                       |
+
+- [ ] Pushes to `main` stop deploying production; only releases do.
+- [ ] Stable deploys use Workers gradual deployments (10% → 100%) with a
+      smoke test gate and one-command rollback to the previous version.
+- [ ] Version, channel, and commit shown in the app (footer / about) and in a
+      `/version.json` endpoint.
+- [ ] Release notes generated from merged PRs; nightly builds tagged
+      `nightly-YYYYMMDD` as prereleases.
+
+### Phase 7: Quality signals
 
 - [ ] Playwright E2E on `/demo/2026` (keyboard nav, event create) in CI.
 - [ ] Coverage ≥ 80% statements, ≥ 70% branches, per package.
