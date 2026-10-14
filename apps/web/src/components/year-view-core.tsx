@@ -339,6 +339,7 @@ export default function YearViewCore({
           error={mutations.create.error}
           onSubmit={mutations.submitCreate}
           onOpenChange={mutations.create.setOpen}
+          restoreFocus={focusYearGrid}
         />
         <EventFormDialog
           open={mutations.edit.isOpen}
@@ -351,6 +352,7 @@ export default function YearViewCore({
           error={mutations.edit.error}
           onSubmit={mutations.submitEdit}
           onOpenChange={mutations.edit.setOpen}
+          restoreFocus={focusYearGrid}
         />
         <DeleteEventDialog
           open={mutations.remove.isOpen}
@@ -359,6 +361,7 @@ export default function YearViewCore({
           error={mutations.remove.error}
           onConfirm={mutations.confirmDelete}
           onOpenChange={mutations.remove.setOpen}
+          restoreFocus={focusYearGrid}
         />
       </YearViewProvider>
     </TooltipProvider>

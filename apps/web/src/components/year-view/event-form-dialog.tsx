@@ -24,6 +24,8 @@ type EventFormDialogProps = {
   error: string | null;
   onSubmit: (title: string) => void;
   onOpenChange: (open: boolean) => void;
+  // Where focus goes once the dialog closes; Radix would otherwise drop it on <body>.
+  restoreFocus: () => void;
 };
 
 const COPY = {
@@ -43,6 +45,7 @@ export default function EventFormDialog({
   error,
   onSubmit,
   onOpenChange,
+  restoreFocus,
 }: EventFormDialogProps) {
   const [title, setTitle] = useState(initialTitle ?? "");
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -61,6 +64,10 @@ export default function EventFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="sm:max-w-md"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          restoreFocus();
+        }}
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           inputRef.current?.focus();

@@ -16,6 +16,8 @@ type DeleteEventDialogProps = {
   error: string | null;
   onConfirm: () => void;
   onOpenChange: (open: boolean) => void;
+  // Where focus goes once the dialog closes; Radix would otherwise drop it on <body>.
+  restoreFocus: () => void;
 };
 
 export default function DeleteEventDialog({
@@ -25,6 +27,7 @@ export default function DeleteEventDialog({
   error,
   onConfirm,
   onOpenChange,
+  restoreFocus,
 }: DeleteEventDialogProps) {
   const confirmRef = useRef<HTMLButtonElement | null>(null);
 
@@ -32,6 +35,10 @@ export default function DeleteEventDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="sm:max-w-md"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          restoreFocus();
+        }}
         onOpenAutoFocus={(event) => {
           // Focus Delete so the keyboard flow stays Cmd+⌫ → Enter.
           event.preventDefault();
