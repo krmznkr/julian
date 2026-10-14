@@ -61,8 +61,10 @@ const DayCell = memo(function DayCell({
       <div
         id={exists ? cellDomId(year, month, day) : undefined}
         data-day-cell-frame={day}
-        role={exists ? "gridcell" : undefined}
-        aria-selected={exists && isKeyboardFocused ? true : undefined}
+        // Plain layout, not ARIA grid cells: the days are laid out as month
+        // columns with no row elements, so grid roles would be invalid. The
+        // application root points at them through aria-activedescendant and
+        // announces moves in its own live region.
         aria-current={exists && isDialogDay ? "true" : undefined}
         style={{ gridRow: `${day} / ${day + 1}`, gridColumn: "1 / -1" }}
         className={cn(
@@ -138,7 +140,6 @@ export const MonthDayCellsLayer = memo(function MonthDayCellsLayer({
     <div
       className="year-grid-rows absolute inset-0 z-0 grid gap-x-0 gap-y-0 overflow-hidden"
       style={{ gridTemplateColumns: monthColumnTemplateColumns(multiDayLanes) }}
-      role="rowgroup"
     >
       {hasSingleStrip && (
         <div
