@@ -177,7 +177,7 @@ flowchart TD
   derived --> grid --> columns --> layers
 ```
 
-The domain layer in `src/domain/` owns date parsing, event normalization,
+The domain layer in `apps/web/src/domain/` owns date parsing, event normalization,
 composite event keys, year clipping, month segmentation, and greedy lane
 assignment. Components consume those results rather than duplicating calendar
 math.
@@ -186,7 +186,7 @@ math.
 
 `YearViewCore` holds the entire year view but no opinion about where its data
 and its focus live. Three ports in
-`src/components/year-view/year-view-ports.ts` supply that, so the same component
+`apps/web/src/components/year-view/year-view-ports.ts` supply that, so the same component
 serves both the signed-in app and the landing page:
 
 | Port                  | Live container (`year-view.tsx`)            | Demo container (`landing/demo-year-view.tsx`) |
@@ -239,7 +239,7 @@ to another year. Refreshing the page or resetting the demo discards them.
 | `/auth/callback` | Validates OAuth state and exchanges the single-use code                                 |
 | `/lab`           | Component/design experimentation                                                        |
 
-The `/` guard reads `localStorage` synchronously via `src/lib/session.ts` rather
+The `/` guard reads `localStorage` synchronously via `apps/web/src/lib/session.ts` rather
 than awaiting `isAuthenticated()`, so a returning visitor never sees the pitch
 flash before the redirect. The year view still performs the full authenticated
 check once it mounts.
@@ -275,7 +275,7 @@ flowchart LR
   prodBuild["Production Vite build<br/>public Google client ID"]
   secretScan["Fail if dist contains<br/>a GOCSPX client secret"]
   wrangler["Wrangler deploy"]
-  worker["Cloudflare Worker<br/>assets + worker/index.ts"]
+  worker["Cloudflare Worker<br/>assets + apps/edge/src/index.ts"]
 
   pr --> ci
   ci --> main --> prodBuild --> secretScan --> wrangler --> worker
@@ -291,7 +291,7 @@ client-secret pattern, and only then deploys.
 | Value                   | Local development                      | GitHub Actions                  | Worker runtime                       |
 | ----------------------- | -------------------------------------- | ------------------------------- | ------------------------------------ |
 | `VITE_GOOGLE_CLIENT_ID` | `.env` from `.env.example`             | Public value in deploy workflow | Embedded in static JS                |
-| `GOOGLE_CLIENT_ID`      | Wrangler variable                      | `wrangler.jsonc`                | Worker binding                       |
+| `GOOGLE_CLIENT_ID`      | Wrangler variable                      | `apps/edge/wrangler.jsonc`                | Worker binding                       |
 | `GOOGLE_CLIENT_SECRET`  | Optional local Wrangler secret         | Never supplied to build         | Encrypted Worker secret              |
 | `CLOUDFLARE_API_TOKEN`  | Operator environment for manual deploy | Repository secret               | Consumed by Wrangler, not the Worker |
 
@@ -315,15 +315,15 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 
 | Change                                           | Primary files                                                                 |
 | ------------------------------------------------ | ----------------------------------------------------------------------------- |
-| OAuth scopes, token lifecycle, Google mapping    | `src/lib/google-calendar.ts`                                                  |
-| Edge routing, OAuth allowlist, security headers  | `worker/index.ts`, `worker/security-headers.ts`, `wrangler.jsonc` |
-| Route structure and URL contract                 | `src/router.tsx`, `src/lib/year-view-url.ts`                                  |
-| Calendar math and event segmentation             | `src/domain/`                                                                 |
-| Year-view state and orchestration                | `src/components/year-view-reducer.ts`, `src/components/year-view-core.tsx`    |
-| Where the year view gets data, focus, and writes | `src/components/year-view/year-view-ports.ts`, `src/components/year-view.tsx` |
-| Landing page and its scripted demo               | `src/routes/landing-page.tsx`, `src/components/landing/`                      |
-| Month rendering and virtualization               | `src/components/year-view/`                                                   |
-| Build chunking and deployment                    | `vite.config.ts`, `.github/workflows/deploy.yml`                              |
+| OAuth scopes, token lifecycle, Google mapping    | `apps/web/src/lib/google-calendar.ts`                                                  |
+| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/index.ts`, `packages/security/src/index.ts`, `apps/edge/wrangler.jsonc` |
+| Route structure and URL contract                 | `apps/web/src/router.tsx`, `apps/web/src/lib/year-view-url.ts`                                  |
+| Calendar math and event segmentation             | `apps/web/src/domain/`                                                                 |
+| Year-view state and orchestration                | `apps/web/src/components/year-view-reducer.ts`, `apps/web/src/components/year-view-core.tsx`    |
+| Where the year view gets data, focus, and writes | `apps/web/src/components/year-view/year-view-ports.ts`, `apps/web/src/components/year-view.tsx` |
+| Landing page and its scripted demo               | `apps/web/src/routes/landing-page.tsx`, `apps/web/src/components/landing/`                      |
+| Month rendering and virtualization               | `apps/web/src/components/year-view/`                                                   |
+| Build chunking and deployment                    | `apps/web/vite.config.ts`, `.github/workflows/deploy.yml`                              |
 
 ## Related documentation
 

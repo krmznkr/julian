@@ -32,22 +32,22 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 ## Remember (gotchas)
 
 - **New browser-side external API call?** Add its origin to `connect-src` in
-  `worker/security-headers.ts`, or CSP will block it.
+  `packages/security/src/index.ts`, or CSP will block it.
 - **New dev/preview origin for OAuth?** Add it to `ALLOWED_ORIGINS` in
-  `worker/index.ts`.
+  `apps/edge/src/index.ts`.
 - **Dashboard work** must be done while logged into account **`93527…`**
   (`krmznkr@gmail.com`, Google SSO) — not the personal `c57b…` account.
-- **CSP has one source**, `worker/security-headers.ts`; the build emits
+- **CSP has one source**, `packages/security/src/index.ts`; the build emits
   `dist/_headers` from it.
-- **Rotate the secret** with `pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET`
+- **Rotate the secret** with `pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET`
   (Worker secret store only — never in `.env`, never `VITE_`-prefixed).
 
 ## Tuning knobs
 
-- **Bot blocklist:** `BLOCKED_USER_AGENTS` in `worker/index.ts`.
+- **Bot blocklist:** `BLOCKED_USER_AGENTS` in `apps/edge/src/index.ts`.
 - **Rate limits:** `SITE_RATELIMIT` (240/60s) and `OAUTH_RATELIMIT` (12/60s) in
-  `wrangler.jsonc` (`period` must be `10` or `60`).
-- **OAuth body cap:** `MAX_OAUTH_BODY_BYTES` in `worker/index.ts`.
+  `apps/edge/wrangler.jsonc` (`period` must be `10` or `60`).
+- **OAuth body cap:** `MAX_OAUTH_BODY_BYTES` in `apps/edge/src/index.ts`.
 
 ## Deferred / not doing (by decision)
 

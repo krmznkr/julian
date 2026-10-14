@@ -1,0 +1,18 @@
+{
+  "name": "@julian/security",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Response hardening headers shared by the edge Worker and the web build.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@julian/config": "workspace:*"
+  }
+}

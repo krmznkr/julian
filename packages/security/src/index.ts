@@ -1,7 +1,7 @@
 // Single source of truth for the response hardening headers.
 //
-// The Worker applies them to every response, and the Vite build emits the same
-// map as `dist/_headers` (see `vite.config.ts`), so the two can never drift.
+// The edge Worker applies them to every response, and the web build emits the
+// same map as `dist/_headers` (see `apps/web/vite.config.ts`), so they can never drift.
 
 // Content-Security-Policy tuned to exactly what the app needs:
 //   - scripts/styles/assets are all same-origin (Vite output + bootstrap.js)

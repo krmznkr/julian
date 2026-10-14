@@ -4,10 +4,15 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
-    "public/bootstrap.js",
-    "src/routes/*.tsx",
-    "src/test/setup-dom.ts"
+    "apps/web/public/bootstrap.js",
+    "apps/web/src/routes/*.tsx",
+    "apps/web/src/test/setup-dom.ts",
+    "apps/web/vite.config.ts",
+    "apps/web/vitest.config.ts",
+    "apps/edge/src/index.ts",
+    "apps/edge/vitest.config.ts",
+    "packages/*/vitest.config.ts"
   ],
-  "ignorePatterns": ["index.html", ".github/**"],
+  "ignorePatterns": ["apps/web/index.html", ".github/**"],
   "ignoreDependencies": ["pino-pretty"]
 }
