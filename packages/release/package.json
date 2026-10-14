@@ -1,0 +1,19 @@
+{
+  "name": "@julian/release",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Build metadata (version, channel, commit) for every release channel.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@julian/config": "workspace:*"
+  }
+}

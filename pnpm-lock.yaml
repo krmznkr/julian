@@ -122,6 +122,9 @@ importers:
       '@julian/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@julian/release':
+        specifier: workspace:*
+        version: link:../../packages/release
       '@julian/security':
         specifier: workspace:*
         version: link:../../packages/security
@@ -176,6 +179,12 @@ importers:
       '@effect/vitest':
         specifier: 4.0.4
         version: 4.0.4(effect@4.0.4)(vitest@4.1.11)
+      '@julian/config':
+        specifier: workspace:*
+        version: link:../config
+
+  packages/release:
+    devDependencies:
       '@julian/config':
         specifier: workspace:*
         version: link:../config

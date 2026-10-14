@@ -18,6 +18,7 @@ export default [
       "apps/web/src/**/*.tsx",
       "packages/domain/src/**/*.ts",
       "packages/google/src/**/*.ts",
+      "packages/release/src/**/*.ts",
       "apps/edge/src/**/*.ts",
     ],
     ignores: ["**/node_modules/**", "**/dist/**", "**/build/**"],
