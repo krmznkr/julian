@@ -8,7 +8,8 @@
 //   2. whole-site rate limit per client IP              (guards.ts)
 //   3. /api/oauth/*: origin lock, tight rate limit,
 //      capped body, schema-validated grant, Google call (oauth.ts)
-//   4. everything else: static assets
+//   4. /version.json: build metadata of this deploy
+//   5. everything else: static assets
 // Any rejection is a tagged error (errors.ts) rendered by `toResponse`, and
 // every response leaves with the hardening headers from @julian/security.
 import { SECURITY_HEADERS } from "@julian/security";
@@ -53,6 +54,13 @@ export const toResponse = (error: EdgeError): Response => {
   }
 };
 
+export const VERSION_PATH = "/version.json";
+
+const serveVersion = Effect.fn("edge.version")(function* () {
+  const { build } = yield* WorkerEnv;
+  return json(build, 200);
+});
+
 const serveAsset = Effect.fn("edge.asset")(function* (request: Request) {
   const env = yield* WorkerEnv;
   // index.html fallback is handled by the assets binding's SPA not_found_handling.
@@ -62,9 +70,10 @@ const serveAsset = Effect.fn("edge.asset")(function* (request: Request) {
 export const handle = Effect.fn("edge.request")(function* (request: Request) {
   yield* rejectBots(request);
   yield* enforceSiteRateLimit(request);
-  return new URL(request.url).pathname.startsWith(OAUTH_PREFIX)
-    ? yield* handleOAuth(request)
-    : yield* serveAsset(request);
+  const { pathname } = new URL(request.url);
+  if (pathname.startsWith(OAUTH_PREFIX)) return yield* handleOAuth(request);
+  if (pathname === VERSION_PATH) return yield* serveVersion();
+  return yield* serveAsset(request);
 });
 
 // `fetchImpl` is the outbound fetch used for Google; tests pass a fake.
