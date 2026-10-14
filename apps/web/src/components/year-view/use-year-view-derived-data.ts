@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { buildEventKey, buildMonthSegments } from "@/domain";
+import { buildEventKey, buildMonthSegments } from "@julian/domain";
 import type { YearSourceFailure } from "@/components/year-view/year-view-ports";
-import type { CalendarEvent, CalendarSummary } from "@/domain";
+import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
 export function useYearViewDerivedData({
   calendars,

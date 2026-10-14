@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildDemoYear } from "@/components/landing/demo-data";
-import { buildMonthSegments } from "@/domain";
+import { buildMonthSegments } from "@julian/domain";
 
 const YEAR = 2026;
 const TODAY = new Date(YEAR, 7, 5);

@@ -6,10 +6,15 @@
 // span.
 import { Context, Effect, Layer, Option, Stream } from "effect";
 import { HttpClientRequest } from "effect/http";
-import { GoogleApiError, type GoogleApiFailure } from "@/lib/effect/errors";
-import * as S from "@/lib/effect/schemas";
-import { getEventBounds, toUtcDateOnly, type CalendarEvent, type CalendarSummary } from "@/domain";
-import { GoogleHttp } from "@/lib/effect/google-http";
+import { GoogleApiError, type GoogleApiFailure } from "./errors";
+import * as S from "./schemas";
+import {
+  getEventBounds,
+  toUtcDateOnly,
+  type CalendarEvent,
+  type CalendarSummary,
+} from "@julian/domain";
+import { GoogleHttp } from "./google-http";
 
 const CALENDAR_BASE = "https://www.googleapis.com/calendar/v3";
 

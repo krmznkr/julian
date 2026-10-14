@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useYearViewDerivedData } from "@/components/year-view/use-year-view-derived-data";
-import type { CalendarEvent, CalendarSummary } from "@/domain";
+import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
 const calendar: CalendarSummary = { id: "cal-1", summary: "Personal", accessRole: "owner" };
 

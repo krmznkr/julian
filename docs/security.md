@@ -17,12 +17,12 @@ Julian is a portfolio showcase linked from a resume/GitHub. It should be:
 
 ## Where it runs (account topology)
 
-| Thing | Value |
-| --- | --- |
-| Active account (hosts Julian) | `93527c9983d1c08638cb9c1de99f0450` (`krmznkr@gmail.com`, Google SSO) |
-| Active zone | `krmznkr.com` — `08ca23de1d0f3b5923e975f0ece74251`, **Free Website** plan |
-| Custom domain | `julian.krmznkr.com` (`workers_dev: false`, so no `*.workers.dev` URL) |
-| Deploy target in CI | `deploy.yml` → account `93527…` via `CLOUDFLARE_API_TOKEN` |
+| Thing                         | Value                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------- |
+| Active account (hosts Julian) | `93527c9983d1c08638cb9c1de99f0450` (`krmznkr@gmail.com`, Google SSO)      |
+| Active zone                   | `krmznkr.com` — `08ca23de1d0f3b5923e975f0ece74251`, **Free Website** plan |
+| Custom domain                 | `julian.krmznkr.com` (`workers_dev: false`, so no `*.workers.dev` URL)    |
+| Deploy target in CI           | `deploy.yml` → account `93527…` via `CLOUDFLARE_API_TOKEN`                |
 
 > A separate personal account (`c57b…`) holds an old `status: moved` copy of the
 > `krmznkr.com` zone plus unrelated projects. That copy is inert. Any dashboard
@@ -70,10 +70,10 @@ re-allows quick command-line checks.
 Native Workers rate limiting (no KV/DB, no billing), keyed by
 `CF-Connecting-IP`:
 
-| Binding | Limit | Scope |
-| --- | --- | --- |
-| `SITE_RATELIMIT` | 240 req / 60s | every request (volumetric abuse cap) |
-| `OAUTH_RATELIMIT` | 12 req / 60s | `/api/oauth/*` only (credential-exchange abuse) |
+| Binding           | Limit         | Scope                                           |
+| ----------------- | ------------- | ----------------------------------------------- |
+| `SITE_RATELIMIT`  | 240 req / 60s | every request (volumetric abuse cap)            |
+| `OAUTH_RATELIMIT` | 12 req / 60s  | `/api/oauth/*` only (credential-exchange abuse) |
 
 Over-limit returns `429`. `period` must be `10` or `60`. Limits are best-effort
 and enforced per Cloudflare location, which is fine for abuse mitigation.
@@ -99,16 +99,16 @@ Applied to every response by the Worker (`withSecurityHeaders`). The build also
 emits the same map as `dist/_headers`, a fallback in case `run_worker_first` is
 ever disabled:
 
-| Header | Value / purpose |
-| --- | --- |
-| `Content-Security-Policy` | locks sources to self + Google Calendar API / sign-in (see below) |
-| `Strict-Transport-Security` | `max-age=15552000; includeSubDomains` |
-| `X-Frame-Options` | `DENY` (+ CSP `frame-ancestors 'none'`) — anti-clickjacking |
-| `X-Content-Type-Options` | `nosniff` |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | disables camera/mic/geolocation/FLoC |
-| `Cross-Origin-Opener-Policy` | `same-origin` |
-| `X-Robots-Tag` | `noindex, nofollow` (see de-indexing) |
+| Header                       | Value / purpose                                                   |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `Content-Security-Policy`    | locks sources to self + Google Calendar API / sign-in (see below) |
+| `Strict-Transport-Security`  | `max-age=15552000; includeSubDomains`                             |
+| `X-Frame-Options`            | `DENY` (+ CSP `frame-ancestors 'none'`) — anti-clickjacking       |
+| `X-Content-Type-Options`     | `nosniff`                                                         |
+| `Referrer-Policy`            | `strict-origin-when-cross-origin`                                 |
+| `Permissions-Policy`         | disables camera/mic/geolocation/FLoC                              |
+| `Cross-Origin-Opener-Policy` | `same-origin`                                                     |
+| `X-Robots-Tag`               | `noindex, nofollow` (see de-indexing)                             |
 
 **CSP breakdown** (defined once in `packages/security/src/index.ts`):
 
@@ -136,7 +136,7 @@ Three layers:
    `index.html`.
 3. Cloudflare's **managed `robots.txt`** (zone feature) already `Disallow`s the
    major AI crawlers (GPTBot, ClaudeBot, CCBot, Bytespider, Google-Extended, …)
-   while allowing search crawl — which is required so crawlers actually *see* the
+   while allowing search crawl — which is required so crawlers actually _see_ the
    `noindex` and drop the page from the index.
 
 There is intentionally **no** custom `apps/web/public/robots.txt`: a blanket `Disallow: /`

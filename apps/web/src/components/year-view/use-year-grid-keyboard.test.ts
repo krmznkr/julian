@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { useYearGridKeyboard } from "@/components/year-view/use-year-grid-keyboard";
 import { MAX_YEAR, MIN_YEAR } from "@/components/year-view/constants";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";
-import type { CalendarEvent, EventSegment, MonthSegments } from "@/domain";
+import type { CalendarEvent, EventSegment, MonthSegments } from "@julian/domain";
 
 vi.mock("@/lib/open-event", () => ({
   openEventInGoogle: vi.fn<(event: CalendarEvent) => void>(),

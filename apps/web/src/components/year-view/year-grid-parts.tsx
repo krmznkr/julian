@@ -1,5 +1,5 @@
 import type { CSSProperties, MutableRefObject } from "react";
-import type { CalendarEvent, CalendarSummary, MonthSegments } from "@/domain";
+import type { CalendarEvent, CalendarSummary, MonthSegments } from "@julian/domain";
 import YearGridDayColumn from "@/components/year-view/year-grid-day-column";
 import MonthColumn from "@/components/year-view/month-column";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";

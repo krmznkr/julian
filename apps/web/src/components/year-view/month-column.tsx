@@ -2,7 +2,7 @@ import { memo } from "react";
 import MonthSegmentsLayer from "@/components/year-view/month-segments-layer";
 import { useYearViewSharedData } from "@/components/year-view/year-view-context";
 import { useRenderedSegments, useWeekendRows } from "@/components/year-view/use-month-column";
-import type { CalendarEvent, MonthSegments } from "@/domain";
+import type { CalendarEvent, MonthSegments } from "@julian/domain";
 
 function MonthColumn({
   month,

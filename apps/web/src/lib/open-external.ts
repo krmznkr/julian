@@ -4,7 +4,7 @@
 // single, injectable effect rather than touching `window.open` at call sites.
 import { Effect } from "effect";
 import { runFork } from "@/lib/effect/runtime";
-import { Navigation } from "@/lib/effect/navigation";
+import { Navigation } from "@julian/google/navigation";
 
 export function openExternal(url: string): void {
   runFork(Effect.flatMap(Navigation, (navigation) => navigation.openExternal(url)));

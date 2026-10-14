@@ -5,11 +5,11 @@
 // their `async`/`await` call sites unchanged, while errors surface as plain
 // `Error`s that still carry the tagged error's `_tag`/`status`.
 import { Effect } from "effect";
-import { toError } from "@/lib/effect/errors";
+import { toError } from "@julian/google/errors";
 import { runPromise, type AppServices } from "@/lib/effect/runtime";
-import type { CalendarEvent, CalendarSummary } from "@/domain";
-import { GoogleAuth, GoogleAuthShape } from "@/lib/effect/google-auth";
-import { GoogleCalendarApi, GoogleCalendarApiShape } from "@/lib/effect/google-calendar-api";
+import type { CalendarEvent, CalendarSummary } from "@julian/domain";
+import { GoogleAuth, GoogleAuthShape } from "@julian/google/google-auth";
+import { GoogleCalendarApi, GoogleCalendarApiShape } from "@julian/google/google-calendar-api";
 import { loadCalendarYear } from "@/lib/effect/calendar-year";
 
 // Run on the app runtime, then normalize to an `Error` that preserves the

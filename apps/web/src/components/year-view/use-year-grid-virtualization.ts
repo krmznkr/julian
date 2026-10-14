@@ -5,7 +5,7 @@ import {
   readMonthColumnWidth,
   useRafViewportListener,
 } from "@/components/year-view/month-scroll";
-import type { MonthSegments } from "@/domain";
+import type { MonthSegments } from "@julian/domain";
 
 /** Columns rendered beyond the viewport on each side, to hide scroll latency. */
 const OVERSCAN_COLUMNS = 2;

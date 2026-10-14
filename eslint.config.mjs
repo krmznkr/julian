@@ -13,14 +13,19 @@ export default [
     ],
   },
   {
-    files: ["apps/web/src/**/*.ts", "apps/web/src/**/*.tsx"],
+    files: [
+      "apps/web/src/**/*.ts",
+      "apps/web/src/**/*.tsx",
+      "packages/domain/src/**/*.ts",
+      "packages/google/src/**/*.ts",
+    ],
     ignores: ["**/node_modules/**", "**/dist/**", "**/build/**"],
     plugins: { functional },
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: `${import.meta.dirname}/apps/web`,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
@@ -35,7 +40,7 @@ export default [
     },
   },
   {
-    files: ["apps/edge/src/**/*.ts", "packages/*/src/**/*.ts"],
+    files: ["apps/edge/src/**/*.ts", "packages/security/src/**/*.ts"],
     languageOptions: { parser: tsParser },
   },
   {
@@ -57,7 +62,7 @@ export default [
     // (`Context.Service`). Both are declaration syntax rather than OO design —
     // no inheritance, no mutable instance state, no methods on the class — so
     // the rule is disabled for the Effect layer only, not the app at large.
-    files: ["apps/web/src/lib/effect/*.ts"],
+    files: ["apps/web/src/lib/effect/*.ts", "packages/google/src/**/*.ts"],
     rules: {
       "functional/no-classes": "off",
     },

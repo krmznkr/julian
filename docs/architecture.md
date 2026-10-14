@@ -177,7 +177,7 @@ flowchart TD
   derived --> grid --> columns --> layers
 ```
 
-The domain layer in `apps/web/src/domain/` owns date parsing, event normalization,
+The domain layer in `packages/domain/src/` owns date parsing, event normalization,
 composite event keys, year clipping, month segmentation, and greedy lane
 assignment. Components consume those results rather than duplicating calendar
 math.
@@ -291,7 +291,7 @@ client-secret pattern, and only then deploys.
 | Value                   | Local development                      | GitHub Actions                  | Worker runtime                       |
 | ----------------------- | -------------------------------------- | ------------------------------- | ------------------------------------ |
 | `VITE_GOOGLE_CLIENT_ID` | `.env` from `.env.example`             | Public value in deploy workflow | Embedded in static JS                |
-| `GOOGLE_CLIENT_ID`      | Wrangler variable                      | `apps/edge/wrangler.jsonc`                | Worker binding                       |
+| `GOOGLE_CLIENT_ID`      | Wrangler variable                      | `apps/edge/wrangler.jsonc`      | Worker binding                       |
 | `GOOGLE_CLIENT_SECRET`  | Optional local Wrangler secret         | Never supplied to build         | Encrypted Worker secret              |
 | `CLOUDFLARE_API_TOKEN`  | Operator environment for manual deploy | Repository secret               | Consumed by Wrangler, not the Worker |
 
@@ -313,17 +313,17 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 
 ## Where to change things
 
-| Change                                           | Primary files                                                                 |
-| ------------------------------------------------ | ----------------------------------------------------------------------------- |
-| OAuth scopes, token lifecycle, Google mapping    | `apps/web/src/lib/google-calendar.ts`                                                  |
-| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/index.ts`, `packages/security/src/index.ts`, `apps/edge/wrangler.jsonc` |
+| Change                                           | Primary files                                                                                   |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| OAuth scopes, token lifecycle, Google mapping    | `apps/web/src/lib/google-calendar.ts`                                                           |
+| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/index.ts`, `packages/security/src/index.ts`, `apps/edge/wrangler.jsonc`          |
 | Route structure and URL contract                 | `apps/web/src/router.tsx`, `apps/web/src/lib/year-view-url.ts`                                  |
-| Calendar math and event segmentation             | `apps/web/src/domain/`                                                                 |
+| Calendar math and event segmentation             | `packages/domain/src/`                                                                          |
 | Year-view state and orchestration                | `apps/web/src/components/year-view-reducer.ts`, `apps/web/src/components/year-view-core.tsx`    |
 | Where the year view gets data, focus, and writes | `apps/web/src/components/year-view/year-view-ports.ts`, `apps/web/src/components/year-view.tsx` |
 | Landing page and its scripted demo               | `apps/web/src/routes/landing-page.tsx`, `apps/web/src/components/landing/`                      |
-| Month rendering and virtualization               | `apps/web/src/components/year-view/`                                                   |
-| Build chunking and deployment                    | `apps/web/vite.config.ts`, `.github/workflows/deploy.yml`                              |
+| Month rendering and virtualization               | `apps/web/src/components/year-view/`                                                            |
+| Build chunking and deployment                    | `apps/web/vite.config.ts`, `.github/workflows/deploy.yml`                                       |
 
 ## Related documentation
 

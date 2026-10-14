@@ -8,7 +8,7 @@ import {
 } from "@/components/year-view-reducer";
 import { useYearViewData } from "@/components/year-view/use-year-view-data";
 import type { YearViewDataSource } from "@/components/year-view/year-view-ports";
-import type { CalendarEvent, CalendarSummary } from "@/domain";
+import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
 const calendar: CalendarSummary = { id: "cal-1", summary: "Personal", accessRole: "owner" };
 

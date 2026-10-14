@@ -1,5 +1,5 @@
-import { getEventBounds, parseEventBoundary } from "@/domain";
-import type { CalendarEvent, EventSegment } from "@/domain";
+import { getEventBounds, parseEventBoundary } from "@julian/domain";
+import type { CalendarEvent, EventSegment } from "@julian/domain";
 
 export function useChipStyle(
   segment: EventSegment,

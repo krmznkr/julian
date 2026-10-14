@@ -14,12 +14,14 @@ exchange and refresh.
 
 A pnpm workspace orchestrated by Turborepo:
 
-| Path                | Package            | Purpose                                                  |
-| ------------------- | ------------------ | -------------------------------------------------------- |
-| `apps/web`          | `@julian/web`      | The Vite/React calendar app                              |
-| `apps/edge`         | `@julian/edge`     | Cloudflare Worker: assets, OAuth proxy, protections      |
-| `packages/security` | `@julian/security` | Security headers shared by the Worker and the web build  |
-| `packages/config`   | `@julian/config`   | Shared TypeScript configuration                          |
+| Path                | Package            | Purpose                                                 |
+| ------------------- | ------------------ | ------------------------------------------------------- |
+| `apps/web`          | `@julian/web`      | The Vite/React calendar app                             |
+| `apps/edge`         | `@julian/edge`     | Cloudflare Worker: assets, OAuth proxy, protections     |
+| `packages/domain`   | `@julian/domain`   | Pure calendar logic: dates, events, year-grid layout    |
+| `packages/google`   | `@julian/google`   | Effect services for Google OAuth, Calendar, and Tasks   |
+| `packages/security` | `@julian/security` | Security headers shared by the Worker and the web build |
+| `packages/config`   | `@julian/config`   | Shared TypeScript configuration                         |
 
 Linting, formatting, and dead-code checks run once from the root across every
 package. Build, typecheck, and tests run per package through Turborepo, which
@@ -27,15 +29,15 @@ caches results that did not change.
 
 ## Commands
 
-| Command                 | Purpose                                         |
-| ----------------------- | ----------------------------------------------- |
-| `pnpm dev`              | Start the local Vite dev server                 |
-| `pnpm build`            | Build every package                             |
-| `pnpm typecheck`        | TypeScript + Effect diagnostics, every package  |
-| `pnpm test:run`         | Unit tests, every package                       |
-| `pnpm test:coverage`    | Unit tests with per-package coverage thresholds |
-| `pnpm test:tz:dates`    | Date tests across five time zones               |
-| `pnpm quality:static`   | Lint, format, dead code, functional rules, types |
+| Command               | Purpose                                          |
+| --------------------- | ------------------------------------------------ |
+| `pnpm dev`            | Start the local Vite dev server                  |
+| `pnpm build`          | Build every package                              |
+| `pnpm typecheck`      | TypeScript + Effect diagnostics, every package   |
+| `pnpm test:run`       | Unit tests, every package                        |
+| `pnpm test:coverage`  | Unit tests with per-package coverage thresholds  |
+| `pnpm test:tz:dates`  | Date tests across five time zones                |
+| `pnpm quality:static` | Lint, format, dead code, functional rules, types |
 
 Run one package's script with a filter, e.g. `pnpm --filter @julian/web preview`.
 

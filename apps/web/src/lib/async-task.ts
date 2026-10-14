@@ -4,7 +4,7 @@
 // of a raw Promise chain. The public API and console/report behaviour are kept
 // identical so callers (and tests) don't change.
 import { Cause, Effect } from "effect";
-import { AsyncTaskError } from "@/lib/effect/errors";
+import { AsyncTaskError } from "@julian/google/errors";
 import { runFork } from "@/lib/effect/runtime";
 
 type AsyncTaskReporter = false | ((error: Error) => void);

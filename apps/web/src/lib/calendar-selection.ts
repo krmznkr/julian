@@ -8,7 +8,7 @@
 // during render or initialization and cannot await; they run on a locally
 // provided storage layer, which is safe because that layer is synchronous.
 import { Effect, Option } from "effect";
-import { KeyValueStore, keyValueStoreLayer } from "@/lib/effect/key-value-store";
+import { KeyValueStore, keyValueStoreLayer } from "@julian/google/key-value-store";
 
 const HIDDEN_CALENDARS_KEY = "julian:hidden-calendar-ids";
 

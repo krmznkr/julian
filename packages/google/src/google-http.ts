@@ -10,11 +10,11 @@
 // jittered schedule because Google rate-limits aggressively.
 import { Context, Effect, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
-import { GoogleApiError, NotAuthenticatedError } from "@/lib/effect/errors";
-import { googleApiError } from "@/lib/effect/http-errors";
-import { okClientWithRetry, retryingClient } from "@/lib/effect/http-policy";
-import { AppConfig } from "@/lib/effect/config";
-import { TokenStore } from "@/lib/effect/token-store";
+import { GoogleApiError, NotAuthenticatedError } from "./errors";
+import { googleApiError } from "./http-errors";
+import { okClientWithRetry, retryingClient } from "./http-policy";
+import { AppConfig } from "./config";
+import { TokenStore } from "./token-store";
 
 // Schemas used at this boundary decode plain JSON, so they carry no decoding
 // services. Constraining that here keeps the services out of the `R` channel

@@ -5,8 +5,8 @@ import {
   isTimedMultiDayEvent,
   parseEventBoundary,
   type CalendarEvent,
-} from "@/domain";
-import { eventCalendarSpanDays, formatDateRange } from "@/components/year-helpers";
+} from "./index";
+import { eventCalendarSpanDays, formatDateRange } from "./format";
 
 const event = (start: string, end: string, allDay = false): CalendarEvent => ({
   id: "event",

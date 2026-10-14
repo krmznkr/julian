@@ -13,7 +13,7 @@ import type {
   YearViewPreferences,
   YearViewRouterPort,
 } from "@/components/year-view/year-view-ports";
-import type { CalendarEvent } from "@/domain";
+import type { CalendarEvent } from "@julian/domain";
 import type { YearViewSearch } from "@/lib/year-view-url";
 
 function todaySearch(today: Date): YearViewSearch {

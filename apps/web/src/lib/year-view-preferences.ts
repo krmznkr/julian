@@ -3,7 +3,7 @@
 // The React call sites read this during render, so a synchronous wrapper runs
 // the effect on a locally provided storage layer.
 import { Effect, Option } from "effect";
-import { KeyValueStore, keyValueStoreLayer } from "@/lib/effect/key-value-store";
+import { KeyValueStore, keyValueStoreLayer } from "@julian/google/key-value-store";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "julian.yearView.sidebarCollapsed";
 

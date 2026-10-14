@@ -1,0 +1,5 @@
+{
+  "extends": "@julian/config/tsconfig.base.json",
+  "compilerOptions": { "lib": ["ES2022", "ES2022.Intl"], "types": [] },
+  "include": ["src", "vitest.config.ts"]
+}

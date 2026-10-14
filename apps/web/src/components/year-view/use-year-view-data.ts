@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { YearViewAction } from "@/components/year-view-reducer";
 import type { YearViewInitialData } from "@/components/year-view/types";
 import type { YearViewDataSource } from "@/components/year-view/year-view-ports";
-import type { CalendarSummary } from "@/domain";
+import type { CalendarSummary } from "@julian/domain";
 
 export function useYearViewData({
   year,

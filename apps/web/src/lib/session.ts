@@ -4,7 +4,7 @@
 // network. Route guards need an answer before first paint, and "is there a
 // credential on this device at all" is enough to decide whether to show the
 // landing page — the year view re-checks properly once it mounts.
-import { STORAGE_KEYS } from "@/lib/effect/token-store";
+import { STORAGE_KEYS } from "@julian/google/token-store";
 
 export function hasStoredGoogleSession(): boolean {
   try {

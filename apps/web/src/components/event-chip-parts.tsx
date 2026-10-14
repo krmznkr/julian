@@ -1,9 +1,9 @@
 import { FileText, Repeat } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { TooltipContent } from "@/components/tooltip";
-import { formatDateRange } from "@/components/year-helpers";
+import { formatDateRange } from "@julian/domain";
 import { openExternal } from "@/lib/open-external";
-import type { CalendarEvent, CalendarSummary, EventSegment } from "@/domain";
+import type { CalendarEvent, CalendarSummary, EventSegment } from "@julian/domain";
 import { cn } from "@/lib/utils";
 
 export interface EventChipProps {

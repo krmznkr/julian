@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { SingleDayDisplay } from "./single-day-display";
-import { buildMonthSegments, type CalendarEvent } from "@/domain";
+import { buildMonthSegments, type CalendarEvent } from "@julian/domain";
 import { useChipStyle } from "@/components/use-event-chip";
 import { renderHook } from "@testing-library/react";
 

@@ -5,7 +5,7 @@ import {
   type SetStateAction,
   useContext,
 } from "react";
-import type { CalendarSummary } from "@/domain";
+import type { CalendarSummary } from "@julian/domain";
 
 type YearViewSharedDataContextValue = {
   calendars: ReadonlyArray<CalendarSummary>;
