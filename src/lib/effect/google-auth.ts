@@ -6,7 +6,7 @@
 // injected, so the redirect URL can be asserted in tests without stubbing
 // globals.
 import { Context, Effect, Layer, Option } from "effect";
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http";
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { AuthConfigError, GoogleApiError } from "@/lib/effect/errors";
 import { googleApiError } from "@/lib/effect/http-errors";
 import * as S from "@/lib/effect/schemas";

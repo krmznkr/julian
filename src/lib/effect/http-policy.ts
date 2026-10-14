@@ -10,7 +10,7 @@
 // call sites nonetheless go through this helper and apply the retry to the raw
 // client first, so the behaviour is identical and reviewable in one place.
 import { Effect, Schedule } from "effect";
-import { HttpClient, HttpClientError } from "effect/unstable/http";
+import { HttpClient, HttpClientError } from "effect/http";
 
 // Exponential with jitter: jitter matters because several tabs waking from
 // sleep would otherwise retry in lockstep against the same quota.

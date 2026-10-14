@@ -6,7 +6,7 @@
 // the structural property-sniffing (and the `unknown` casts it required) that
 // the previous implementation used to recover a status code.
 import { Effect } from "effect";
-import { HttpClientError } from "effect/unstable/http";
+import { HttpClientError } from "effect/http";
 import { GoogleApiError } from "@/lib/effect/errors";
 
 // Response-carrying reasons are exactly `StatusCodeError | DecodeError |
