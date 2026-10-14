@@ -4,6 +4,7 @@ import { CalendarList, CalendarListSkeleton } from "@/components/year-view/calen
 import { GoogleLoginButton } from "@/components/google-login-button";
 import type { CalendarSummary } from "@julian/domain";
 import { cn } from "@/lib/utils";
+import { BUILD_INFO, buildLabel } from "@/lib/build-info";
 
 export function SyncStatusBadge({
   syncBadge,
@@ -202,16 +203,22 @@ export function SidebarFooter({
   visibleEventsCount: number;
   year: number;
 }) {
-  if (visibleEventsCount <= 0) return null;
-
   return (
-    <div className="mt-4 pt-3 border-t border-border/40">
-      <div className="flex items-center justify-between px-1 text-xs text-muted-foreground/60">
-        <span>
-          {visibleEventsCount} {visibleEventsCount === 1 ? "event" : "events"}
-        </span>
-        <span>{year}</span>
-      </div>
+    <div className="mt-4 pt-3 border-t border-border/40 space-y-1">
+      {visibleEventsCount > 0 && (
+        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground/60">
+          <span>
+            {visibleEventsCount} {visibleEventsCount === 1 ? "event" : "events"}
+          </span>
+          <span>{year}</span>
+        </div>
+      )}
+      <p
+        className="px-1 text-[10px] text-muted-foreground/40 truncate"
+        title={`Julian ${BUILD_INFO.version} · ${BUILD_INFO.channel} · ${BUILD_INFO.commit}`}
+      >
+        {buildLabel(BUILD_INFO)}
+      </p>
     </div>
   );
 }
