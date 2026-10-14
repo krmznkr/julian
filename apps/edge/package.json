@@ -7,12 +7,13 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && effect-language-service diagnostics --project tsconfig.json --strict --severity error,warning --format text",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@julian/security": "workspace:*"
+    "@julian/security": "workspace:*",
+    "effect": "4.0.4"
   },
   "devDependencies": {
     "@julian/config": "workspace:*",

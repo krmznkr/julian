@@ -1,280 +1,91 @@
 // Cloudflare Worker for julian.krmznkr.com.
 //
-// It serves the static SPA (via the ASSETS binding) and exposes two OAuth
-// endpoints that perform the Google token exchange server-side. This keeps the
-// client secret out of the browser bundle — the frontend only ever posts the
-// PKCE code / refresh token here, and this Worker adds the secret.
+// It serves the static SPA (via the ASSETS binding) and proxies the Google OAuth
+// token exchange so the client secret never reaches the browser.
 //
-// Security posture (portfolio showcase, shared by direct link only):
-//   - Every response carries hardening headers (CSP, HSTS, nosniff, no-frame,
-//     and X-Robots-Tag noindex so nothing gets indexed even outside robots.txt).
-//   - The OAuth proxy only answers same-site browser requests (Origin allowlist)
-//     and rejects oversized bodies, so drive-by bots can't spam Google through it.
-
+// The request pipeline is one Effect program:
+//   1. drop known scrapers and scripting clients        (guards.ts)
+//   2. whole-site rate limit per client IP              (guards.ts)
+//   3. /api/oauth/*: origin lock, tight rate limit,
+//      capped body, schema-validated grant, Google call (oauth.ts)
+//   4. everything else: static assets
+// Any rejection is a tagged error (errors.ts) rendered by `toResponse`, and
+// every response leaves with the hardening headers from @julian/security.
 import { SECURITY_HEADERS } from "@julian/security";
-
-// The native Workers rate-limiting binding: limit({ key }) -> { success }.
-interface RateLimiter {
-  limit(options: { key: string }): Promise<{ success: boolean }>;
-}
-
-interface Env {
-  ASSETS: { fetch(request: Request): Promise<Response> };
-  GOOGLE_CLIENT_ID: string;
-  GOOGLE_CLIENT_SECRET: string;
-  SITE_RATELIMIT: RateLimiter;
-  OAUTH_RATELIMIT: RateLimiter;
-}
-
-// Aggressive SEO/scraper/AI bots and generic scripting clients that add load
-// and ignore robots.txt. Matched case-insensitively as substrings of the UA.
-// Well-behaved browsers and social link-preview bots (LinkedIn/Slack/etc.) are
-// intentionally NOT here, so sharing the link from a resume still works.
-const BLOCKED_USER_AGENTS = [
-  "ahrefsbot",
-  "semrushbot",
-  "mj12bot",
-  "dotbot",
-  "petalbot",
-  "bytespider",
-  "dataforseobot",
-  "blexbot",
-  "barkrowler",
-  "zoominfobot",
-  "serpstatbot",
-  "megaindex",
-  "seekbot",
-  "gigabot",
-  "python-requests",
-  "scrapy",
-  "go-http-client",
-  "libwww-perl",
-  "java/",
-  "curl/",
-  "wget/",
-  "masscan",
-  "zgrab",
-  "nikto",
-  "sqlmap",
-];
-
-const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
-
-// Only the app's own origins may call the OAuth proxy. Anything else (curl,
-// scrapers, cross-site pages) is rejected before we ever talk to Google.
-const ALLOWED_ORIGINS = new Set([
-  "https://julian.krmznkr.com",
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://127.0.0.1:3000",
-  "http://127.0.0.1:5173",
-]);
-
-// OAuth JSON bodies are tiny; anything larger is abuse or a bug.
-const MAX_OAUTH_BODY_BYTES = 4096;
+import { Effect, Layer } from "effect";
+import { FetchHttpClient } from "effect/http";
+import { WorkerEnv, workerEnvLayer, type Env } from "./env";
+import type { EdgeError } from "./errors";
+import { enforceSiteRateLimit, rejectBots } from "./guards";
+import { OAUTH_PREFIX, handleOAuth } from "./oauth";
 
 // Copies a response and layers the hardening headers on top. Existing headers
 // (content-type, cache-control from the assets binding, etc.) are preserved.
-function withSecurityHeaders(response: Response): Response {
+export const withSecurityHeaders = (response: Response): Response => {
   const headers = new Headers(response.headers);
-  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
-    headers.set(key, value);
-  }
+  Object.entries(SECURITY_HEADERS).forEach(([key, value]) => headers.set(key, value));
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers,
   });
-}
+};
 
-function json(data: unknown, status = 200): Response {
-  return withSecurityHeaders(
-    new Response(JSON.stringify(data), {
-      status,
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    }),
+const json = (data: unknown, status: number): Response =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+
+export const toResponse = (error: EdgeError): Response => {
+  switch (error._tag) {
+    case "BlockedClient":
+      return new Response("Forbidden", { status: 403 });
+    case "SiteRateLimited":
+      return new Response("Too Many Requests", { status: 429 });
+    case "OAuthRejected":
+      return json(
+        error.description === undefined
+          ? { error: error.error }
+          : { error: error.error, error_description: error.description },
+        error.status,
+      );
+  }
+};
+
+const serveAsset = Effect.fn("edge.asset")(function* (request: Request) {
+  const env = yield* WorkerEnv;
+  // index.html fallback is handled by the assets binding's SPA not_found_handling.
+  return yield* Effect.promise(() => env.assets.fetch(request));
+});
+
+export const handle = Effect.fn("edge.request")(function* (request: Request) {
+  yield* rejectBots(request);
+  yield* enforceSiteRateLimit(request);
+  return new URL(request.url).pathname.startsWith(OAUTH_PREFIX)
+    ? yield* handleOAuth(request)
+    : yield* serveAsset(request);
+});
+
+// `fetchImpl` is the outbound fetch used for Google; tests pass a fake.
+export const serve = (
+  request: Request,
+  env: Env,
+  fetchImpl: typeof globalThis.fetch = globalThis.fetch,
+): Promise<Response> =>
+  handle(request).pipe(
+    Effect.catch((error) => Effect.succeed(toResponse(error))),
+    Effect.map(withSecurityHeaders),
+    Effect.provide(
+      Layer.mergeAll(
+        workerEnvLayer(env),
+        FetchHttpClient.layer,
+        Layer.succeed(FetchHttpClient.Fetch, fetchImpl),
+      ),
+    ),
+    Effect.runPromise,
   );
-}
-
-// Forwards a token request to Google with the server-held client credentials
-// and passes Google's response (body + status) straight back to the caller.
-async function exchangeWithGoogle(body: URLSearchParams): Promise<Response> {
-  try {
-    const res = await fetch(GOOGLE_TOKEN_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body,
-    });
-    return withSecurityHeaders(
-      new Response(res.body, {
-        status: res.status,
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      }),
-    );
-  } catch {
-    return json(
-      { error: "upstream_unavailable", error_description: "Could not reach Google" },
-      502,
-    );
-  }
-}
-
-async function handleTokenExchange(body: Record<string, unknown>, env: Env): Promise<Response> {
-  const { code, code_verifier, redirect_uri } = body;
-  if (
-    typeof code !== "string" ||
-    !code ||
-    typeof code_verifier !== "string" ||
-    !code_verifier ||
-    typeof redirect_uri !== "string" ||
-    !redirect_uri
-  ) {
-    return json(
-      { error: "invalid_request", error_description: "Missing code/code_verifier/redirect_uri" },
-      400,
-    );
-  }
-  return exchangeWithGoogle(
-    new URLSearchParams({
-      client_id: env.GOOGLE_CLIENT_ID,
-      client_secret: env.GOOGLE_CLIENT_SECRET,
-      code,
-      code_verifier,
-      grant_type: "authorization_code",
-      redirect_uri,
-    }),
-  );
-}
-
-async function handleRefresh(body: Record<string, unknown>, env: Env): Promise<Response> {
-  const { refresh_token } = body;
-  if (typeof refresh_token !== "string" || !refresh_token) {
-    return json({ error: "invalid_request", error_description: "Missing refresh_token" }, 400);
-  }
-  return exchangeWithGoogle(
-    new URLSearchParams({
-      client_id: env.GOOGLE_CLIENT_ID,
-      client_secret: env.GOOGLE_CLIENT_SECRET,
-      refresh_token,
-      grant_type: "refresh_token",
-    }),
-  );
-}
-
-// Count streamed bytes too: Content-Length may be absent or untrusted.
-async function readOAuthBody(request: Request): Promise<Record<string, unknown> | Response> {
-  const reader = request.body?.getReader();
-  if (!reader) return json({ error: "invalid_request" }, 400);
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      size += value.byteLength;
-      if (size > MAX_OAUTH_BODY_BYTES) {
-        await reader.cancel();
-        return json({ error: "payload_too_large" }, 413);
-      }
-      chunks.push(value);
-    }
-    const bytes = new Uint8Array(size);
-    let offset = 0;
-    for (const chunk of chunks) {
-      bytes.set(chunk, offset);
-      offset += chunk.byteLength;
-    }
-    const body: unknown = JSON.parse(new TextDecoder().decode(bytes));
-    if (body === null || typeof body !== "object" || Array.isArray(body)) {
-      return json({ error: "invalid_request" }, 400);
-    }
-    return body as Record<string, unknown>;
-  } catch {
-    return json({ error: "bad_request", error_description: "Invalid JSON body" }, 400);
-  } finally {
-    reader.releaseLock();
-  }
-}
-
-// Gate the OAuth proxy: same-site browser POSTs only, with a sane body size.
-// Returns an error Response to short-circuit, or null to proceed.
-function rejectDisallowedOAuthRequest(request: Request): Response | null {
-  if (request.method !== "POST") {
-    return json({ error: "method_not_allowed" }, 405);
-  }
-  const origin = request.headers.get("Origin");
-  if (!origin || !ALLOWED_ORIGINS.has(origin)) {
-    return json({ error: "forbidden", error_description: "Origin not allowed" }, 403);
-  }
-  const contentLength = Number(request.headers.get("Content-Length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > MAX_OAUTH_BODY_BYTES) {
-    return json({ error: "payload_too_large" }, 413);
-  }
-  return null;
-}
-
-// Best-effort client identity for bot filtering / rate limiting. Cloudflare
-// always sets CF-Connecting-IP at the edge; fall back keeps things working
-// under `wrangler dev` where the header may be absent.
-function clientIp(request: Request): string {
-  return request.headers.get("CF-Connecting-IP") ?? "0.0.0.0";
-}
-
-// Blocks obvious non-human scrapers by User-Agent. A missing UA is treated as a
-// bot too — real browsers always send one. Returns a 403 Response or null.
-function rejectBadBot(request: Request): Response | null {
-  const ua = (request.headers.get("User-Agent") ?? "").toLowerCase();
-  if (ua === "") {
-    return withSecurityHeaders(new Response("Forbidden", { status: 403 }));
-  }
-  if (BLOCKED_USER_AGENTS.some((bot) => ua.includes(bot))) {
-    return withSecurityHeaders(new Response("Forbidden", { status: 403 }));
-  }
-  return null;
-}
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-
-    // 1. Drop known scrapers/scripting clients before doing any real work.
-    const botRejection = rejectBadBot(request);
-    if (botRejection) return botRejection;
-
-    // 2. Whole-site rate limit per client IP (volumetric abuse protection).
-    const ip = clientIp(request);
-    const { success: withinSiteLimit } = await env.SITE_RATELIMIT.limit({ key: ip });
-    if (!withinSiteLimit) {
-      return withSecurityHeaders(new Response("Too Many Requests", { status: 429 }));
-    }
-
-    if (url.pathname.startsWith("/api/oauth/")) {
-      const rejected = rejectDisallowedOAuthRequest(request);
-      if (rejected) return rejected;
-      // 3. Extra, much tighter rate limit on the credential-exchange endpoint.
-      const { success: withinOAuthLimit } = await env.OAUTH_RATELIMIT.limit({ key: ip });
-      if (!withinOAuthLimit) {
-        return json({ error: "rate_limited", error_description: "Too many requests" }, 429);
-      }
-      if (!env.GOOGLE_CLIENT_SECRET) {
-        return json(
-          { error: "server_misconfigured", error_description: "GOOGLE_CLIENT_SECRET is not set" },
-          500,
-        );
-      }
-      if (url.pathname !== "/api/oauth/token" && url.pathname !== "/api/oauth/refresh") {
-        return json({ error: "not_found" }, 404);
-      }
-      const body = await readOAuthBody(request);
-      if (body instanceof Response) return body;
-      return url.pathname === "/api/oauth/token"
-        ? handleTokenExchange(body, env)
-        : handleRefresh(body, env);
-    }
-
-    // Everything else is the static SPA (index.html fallback handled by the
-    // assets binding's single-page-application not_found_handling).
-    const assetResponse = await env.ASSETS.fetch(request);
-    return withSecurityHeaders(assetResponse);
-  },
+  fetch: (request: Request, env: Env): Promise<Response> => serve(request, env),
 };

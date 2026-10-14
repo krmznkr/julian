@@ -99,7 +99,9 @@ Each phase is one or more PRs, merged green, deployable on its own.
 - [ ] Google services as Tags + Layers; tagged errors; retry `Schedule`.
 - [ ] React runtime + query/mutation hooks; delete `async-task.ts`.
 - [ ] `session.ts`, storage, config as services.
-- [ ] Worker rewritten on `@effect/platform` HttpRouter with middleware.
+- [x] Worker rewritten as one Effect pipeline: `WorkerEnv` service, tagged
+      rejections, `Schema`-validated grants, `HttpClient` for Google, `Redacted`
+      secret. (A full `HttpRouter` was overkill for two routes.)
 - [ ] Demo player as an Effect script tested with `TestClock`.
 
 ### Phase 4: Product

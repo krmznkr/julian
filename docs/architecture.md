@@ -316,7 +316,7 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 | Change                                           | Primary files                                                                                   |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | OAuth scopes, token lifecycle, Google mapping    | `apps/web/src/lib/google-calendar.ts`                                                           |
-| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/index.ts`, `packages/security/src/index.ts`, `apps/edge/wrangler.jsonc`          |
+| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/*.ts`, `packages/security/src/index.ts`, `apps/edge/wrangler.jsonc`              |
 | Route structure and URL contract                 | `apps/web/src/router.tsx`, `apps/web/src/lib/year-view-url.ts`                                  |
 | Calendar math and event segmentation             | `packages/domain/src/`                                                                          |
 | Year-view state and orchestration                | `apps/web/src/components/year-view-reducer.ts`, `apps/web/src/components/year-view-core.tsx`    |
