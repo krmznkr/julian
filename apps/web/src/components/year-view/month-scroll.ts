@@ -31,13 +31,14 @@ export function scrollMonthIntoView(
   container: HTMLElement,
   monthElement: HTMLElement | null | undefined,
   monthIndex: number,
+  behavior: ScrollBehavior = "smooth",
 ): void {
   const left = monthElement
     ? monthElement.offsetLeft - (container.clientWidth - monthElement.offsetWidth) / 2
     : monthIndex * (readMonthColumnWidth() + MONTH_GAP_PX) -
       (container.clientWidth - readMonthColumnWidth()) / 2;
 
-  container.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  container.scrollTo({ left: Math.max(0, left), behavior });
 }
 
 /**
