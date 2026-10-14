@@ -5,7 +5,7 @@
 // interrupted fiber never resumes to deliver a stale result, and interruption
 // reaches in-flight requests through the HTTP client's `AbortSignal`.
 import { Effect, type Fiber } from "effect";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 export function useLatestFiber() {
   const current = useRef<Fiber.Fiber<void, never> | null>(null);
@@ -28,5 +28,5 @@ export function useLatestFiber() {
 
   useEffect(() => interrupt, [interrupt]);
 
-  return { run, interrupt };
+  return useMemo(() => ({ run, interrupt }), [run, interrupt]);
 }
