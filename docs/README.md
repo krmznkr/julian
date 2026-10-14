@@ -11,6 +11,7 @@ flowchart LR
   architecture["Architecture<br/>system and data flows"]
   security["Security<br/>controls + smoke tests"]
   followups["Follow-ups<br/>known gaps + decisions"]
+  releasing["Releasing<br/>versions + channels"]
   community["CONTRIBUTING / SUPPORT / SECURITY<br/>project interaction"]
 
   readme --> dev
@@ -18,13 +19,14 @@ flowchart LR
   architecture --> security
   security --> followups
   readme --> community
+  readme --> releasing
 
   classDef entry fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:2px
   classDef howto fill:#dcfce7,stroke:#16a34a,color:#14532d
   classDef explain fill:#ede9fe,stroke:#7c3aed,color:#3b0764
   classDef action fill:#fef3c7,stroke:#d97706,color:#78350f
   class readme entry
-  class dev,community howto
+  class dev,community,releasing howto
   class architecture,security explain
   class followups action
 ```
@@ -35,6 +37,7 @@ flowchart LR
 | [`development.md`](development.md)         | You are setting up OAuth locally, running checks, or changing application data flow                    |
 | [`architecture.md`](architecture.md)       | You need system context, request/OAuth/data flows, browser storage, deployment, or failure behavior    |
 | [`security.md`](security.md)               | You are changing the Worker boundary, OAuth handling, rate limits, headers, or production verification |
+| [`releasing.md`](releasing.md)             | You are cutting a release, deploying a channel, or rolling back                                        |
 | [`follow-ups.md`](follow-ups.md)           | You need current gaps, gotchas, tuning decisions, or explicitly deferred work                          |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | You are preparing a change                                                                             |
 | [`../SECURITY.md`](../SECURITY.md)         | You need to report a vulnerability privately                                                           |

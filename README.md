@@ -29,10 +29,10 @@ use their own origin plus `/auth/callback`; the configured development callbacks
 are `http://localhost:5173/auth/callback` and
 `http://localhost:3000/auth/callback`.
 
-Pushes to `main` deploy automatically: the Deploy GitHub Actions workflow
-builds, verifies no client secret leaked into `dist/`, and publishes the
-Worker with wrangler using the `CLOUDFLARE_API_TOKEN` repository secret.
-For manual deploys:
+Production deploys only from release tags: release-please opens a release PR,
+and merging it tags `vX.Y.Z` and rolls the Worker out gradually. Every PR gets
+a preview version and `main` ships nightly to `julian-nightly.krmznkr.com`. See
+[`docs/releasing.md`](docs/releasing.md). For a break-glass manual deploy:
 
 ```bash
 pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET
@@ -42,6 +42,8 @@ pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET
 ## Documentation
 
 - [`docs/README.md`](docs/README.md) — documentation map and ownership.
+- [`docs/releasing.md`](docs/releasing.md) — versioning, release channels,
+  rollout, and rollback.
 - [`docs/architecture.md`](docs/architecture.md) — system context, edge request
   pipeline, OAuth sequence, calendar/task data flow, browser storage,
   deployment, and failure behavior.

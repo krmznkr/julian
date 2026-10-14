@@ -282,20 +282,22 @@ load-bearing control.
 flowchart LR
   pr["Pull request / main push"]
   ci["CI<br/>install → typecheck → tests → build"]
-  main["Push to main"]
-  prodBuild["Production Vite build<br/>public Google client ID"]
+  trigger["PR preview / nightly cron /<br/>release tag"]
+  prodBuild["Channel Vite build<br/>public Google client ID + version"]
   secretScan["Fail if dist contains<br/>a GOCSPX client secret"]
-  wrangler["Wrangler deploy"]
+  wrangler["Wrangler upload / deploy"]
   worker["Cloudflare Worker<br/>assets + apps/edge/src/index.ts"]
 
   pr --> ci
-  ci --> main --> prodBuild --> secretScan --> wrangler --> worker
+  trigger --> prodBuild --> secretScan --> wrangler --> worker
 ```
 
 The build produces split chunks for React, TanStack Router, Radix, icons, and
-other vendors. CI runs type checks, tests, and a build. The deployment workflow
-builds again with the public OAuth client ID, scans the output for a Google
-client-secret pattern, and only then deploys.
+other vendors. CI runs type checks, tests, and a build. Each release channel
+(preview, nightly, stable) builds again with the public OAuth client ID and its
+version metadata, scans the output for a Google client-secret pattern, and only
+then uploads or deploys. Channels, gradual rollout and rollback are described in
+[`releasing.md`](releasing.md).
 
 ### Configuration by phase
 
@@ -335,7 +337,7 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 | Where the year view gets data, focus, and writes | `apps/web/src/components/year-view/year-view-ports.ts`, `apps/web/src/components/year-view/google-ports.ts` |
 | Landing page and its scripted demo               | `apps/web/src/routes/landing-page.tsx`, `apps/web/src/components/landing/`                      |
 | Month rendering and virtualization               | `apps/web/src/components/year-view/`                                                            |
-| Build chunking and deployment                    | `apps/web/vite.config.ts`, `.github/workflows/deploy.yml`                                       |
+| Build chunking and deployment                    | `apps/web/vite.config.ts`, `.github/actions/build-web`, `.github/workflows/deploy-stable.yml`                                       |
 
 ## Related documentation
 
