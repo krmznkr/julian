@@ -23,9 +23,9 @@ export default defineConfig({
       // any regression at all.
       thresholds: {
         lines: 48,
-        functions: 38,
+        functions: 42,
         branches: 36,
-        statements: 47,
+        statements: 48,
       },
     },
   },
