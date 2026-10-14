@@ -1,0 +1,57 @@
+name: Build web
+description: >
+  Install, build the web app for one release channel, refuse a bundle that
+  contains the Google client secret, and expose the build metadata.
+
+inputs:
+  channel:
+    description: stable | nightly | preview
+    required: true
+  pr-number:
+    description: Pull request number (preview channel only)
+    required: false
+    default: ""
+
+outputs:
+  version:
+    description: App version string for this build
+    value: ${{ steps.info.outputs.version }}
+  channel:
+    value: ${{ steps.info.outputs.channel }}
+  commit:
+    value: ${{ steps.info.outputs.commit }}
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v6.1.0
+      with:
+        version: 10.33.0
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24.15.0
+        cache: pnpm
+    - shell: bash
+      run: pnpm install --frozen-lockfile
+    - id: info
+      shell: bash
+      env:
+        APP_CHANNEL: ${{ inputs.channel }}
+        APP_PR_NUMBER: ${{ inputs.pr-number }}
+      run: node packages/release/src/cli.ts | tee -a "$GITHUB_OUTPUT"
+    # The client ID is a public OAuth identifier; the confidential secret lives
+    # only in the Worker secret store.
+    - shell: bash
+      env:
+        APP_CHANNEL: ${{ inputs.channel }}
+        APP_PR_NUMBER: ${{ inputs.pr-number }}
+        VITE_GOOGLE_CLIENT_ID: 151900009012-fevbjvlejmju4lva9brr5lmufp5q4g0s.apps.googleusercontent.com
+      run: pnpm build
+    # The Google client secret must never appear in the static bundle.
+    - name: Verify no client secret in dist
+      shell: bash
+      run: |
+        if grep -rqE 'GOCSPX-[A-Za-z0-9_-]+' apps/web/dist/; then
+          echo "ERROR: a client secret was found in apps/web/dist/ — aborting deploy." >&2
+          exit 1
+        fi
