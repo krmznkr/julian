@@ -6,6 +6,7 @@ import type { YearViewInitialData } from "@/components/year-view/types";
 import type {
   YearViewDataSource,
   YearViewEventApi,
+  YearViewLoadResult,
   YearViewPreferences,
   YearViewRouterPort,
 } from "@/components/year-view/year-view-ports";
@@ -14,23 +15,30 @@ import {
   getStoredSidebarCollapsedPreference,
   storeSidebarCollapsedPreference,
 } from "@/lib/year-view-preferences";
-import {
-  createEvent,
-  deleteEvent,
-  isAuthenticated,
-  loadGoogleYearData,
-  updateEvent,
-} from "@/lib/google-calendar";
+import { Effect } from "effect";
+import { GoogleAuth } from "@julian/google/google-auth";
+import { GoogleCalendarApi } from "@julian/google/google-calendar-api";
+import { loadCalendarYear } from "@/lib/effect/calendar-year";
+import { provideApp } from "@/lib/effect/runtime";
 import { useNavigate, useSearch } from "@/lib/router";
 
-const EMPTY_YEAR = {
+const EMPTY_YEAR: YearViewLoadResult = {
   calendars: [],
   selectedCalendarIds: [],
   events: [],
   failures: [],
-} as const;
+};
 
-const googleEventApi: YearViewEventApi = { createEvent, updateEvent, deleteEvent };
+const googleEventApi: YearViewEventApi = {
+  createEvent: (calendar, input) =>
+    provideApp(Effect.flatMap(GoogleCalendarApi, (api) => api.createEvent(calendar, input))),
+  updateEvent: (calendarId, eventId, input) =>
+    provideApp(
+      Effect.flatMap(GoogleCalendarApi, (api) => api.updateEvent(calendarId, eventId, input)),
+    ),
+  deleteEvent: (calendarId, eventId) =>
+    provideApp(Effect.flatMap(GoogleCalendarApi, (api) => api.deleteEvent(calendarId, eventId))),
+};
 
 const storedPreferences: YearViewPreferences = {
   getSidebarCollapsed: getStoredSidebarCollapsedPreference,
@@ -40,7 +48,14 @@ const storedPreferences: YearViewPreferences = {
 const googleDataSource: YearViewDataSource = {
   // No dummy data: until Google Calendar is connected the view is empty and the
   // sidebar just offers the Connect button.
-  load: async (year) => ((await isAuthenticated()) ? loadGoogleYearData(year) : EMPTY_YEAR),
+  load: (year) =>
+    provideApp(
+      Effect.gen(function* () {
+        const auth = yield* GoogleAuth;
+        if (!(yield* auth.isAuthenticated)) return EMPTY_YEAR;
+        return yield* loadCalendarYear(year);
+      }),
+    ),
   persistSelection: saveSelectedCalendarIdsSync,
 };
 

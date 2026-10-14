@@ -56,9 +56,15 @@ export type AppServices = Layer.Success<typeof AppLayer>;
 // services (the HTTP client, the token store) are built once.
 const appRuntime = ManagedRuntime.make(AppLayer);
 
-// Run an Effect on the app runtime and return a Promise. On failure this
-// rejects with the *original* error value (the squashed `Cause`) rather than a
-// wrapper, so callers can recover typed error metadata at the React boundary.
+// Resolve the app services from the runtime and provide them, leaving an
+// Effect with no requirements. Ports hand these to React hooks, which fork
+// them as ordinary fibers they can interrupt; the layer is still built once.
+export const provideApp = <A, E>(effect: Effect.Effect<A, E, AppServices>): Effect.Effect<A, E> =>
+  Effect.flatMap(appRuntime.contextEffect, (context) => Effect.provideContext(effect, context));
+
+// The Promise boundary, for the few call sites React drives with a Promise
+// (route pages and click handlers). On failure this rejects with the original
+// typed error, which is an `Error` carrying its `_tag` and message.
 export function runPromise<A, E>(effect: Effect.Effect<A, E, AppServices>): Promise<A> {
   return appRuntime.runPromiseExit(effect).then((exit) => {
     if (Exit.isSuccess(exit)) return exit.value;

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { Effect } from "effect";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import {
   createInitialState,
@@ -7,20 +8,30 @@ import {
   type YearViewState,
 } from "@/components/year-view-reducer";
 import { useYearViewData } from "@/components/year-view/use-year-view-data";
-import type { YearViewDataSource } from "@/components/year-view/year-view-ports";
+import type {
+  YearViewDataSource,
+  YearViewFailure,
+  YearViewLoadResult,
+} from "@/components/year-view/year-view-ports";
 import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
 const calendar: CalendarSummary = { id: "cal-1", summary: "Personal", accessRole: "owner" };
 
+const failure = (message: string): YearViewFailure => ({ _tag: "TestFailure", message });
+
 function pendingLoad() {
-  type Data = Awaited<ReturnType<YearViewDataSource["load"]>>;
-  let resolve!: (data: Data) => void;
+  let resolve!: (data: YearViewLoadResult) => void;
   let reject!: (error: Error) => void;
-  const promise = new Promise<Data>((onResolve, onReject) => {
+  const promise = new Promise<YearViewLoadResult>((onResolve, onReject) => {
     resolve = onResolve;
     reject = onReject;
   });
-  return { promise, resolve, reject };
+  const interrupted = vi.fn<() => void>();
+  const effect = Effect.tryPromise({
+    try: () => promise,
+    catch: (error) => failure((error as Error).message),
+  }).pipe(Effect.onInterrupt(() => Effect.sync(interrupted)));
+  return { effect, resolve, reject, interrupted };
 }
 
 const event: CalendarEvent = {
@@ -73,7 +84,7 @@ describe("useYearViewData", () => {
       events: [event],
       failures: [],
     };
-    const load = vi.fn<YearViewDataSource["load"]>().mockResolvedValue(data);
+    const load = vi.fn<YearViewDataSource["load"]>().mockReturnValue(Effect.succeed(data));
     const source = { load, persistSelection: vi.fn<YearViewDataSource["persistSelection"]>() };
     const dispatch = vi.fn<(action: YearViewAction) => void>();
     const view = renderHook(
@@ -103,12 +114,13 @@ describe("useYearViewData", () => {
       failures: [],
     };
     const source = {
-      load: (year: number) => (year === 2026 ? old.promise : Promise.resolve(current)),
+      load: (year: number) => (year === 2026 ? old.effect : Effect.succeed(current)),
       persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
     };
     const view = setup(source);
     view.rerender({ year: 2027 });
     await waitFor(() => expect(view.state.current.events).toEqual(current.events));
+    expect(old.interrupted).toHaveBeenCalledTimes(1);
     await act(async () => old.resolve({ ...current, events: [event] }));
     expect(view.state.current.events).toEqual(current.events);
   });
@@ -124,8 +136,8 @@ describe("useYearViewData", () => {
     const source = {
       load: vi
         .fn<YearViewDataSource["load"]>()
-        .mockReturnValueOnce(old.promise)
-        .mockResolvedValue(data),
+        .mockReturnValueOnce(old.effect)
+        .mockReturnValue(Effect.succeed(data)),
       persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
     };
     const view = setup(source);
@@ -138,7 +150,7 @@ describe("useYearViewData", () => {
   it("preserves a selection made while a refresh is pending", async () => {
     const pending = pendingLoad();
     const view = setup({
-      load: () => pending.promise,
+      load: () => pending.effect,
       persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
     });
     view.result.current.updateSelectedCalendars([]);
@@ -156,10 +168,11 @@ describe("useYearViewData", () => {
   it("does not dispatch after unmount", async () => {
     const pending = pendingLoad();
     const view = setup({
-      load: () => pending.promise,
+      load: () => pending.effect,
       persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
     });
     view.unmount();
+    expect(pending.interrupted).toHaveBeenCalledTimes(1);
     const count = view.actions.length;
     await act(async () =>
       pending.resolve({ calendars: [], selectedCalendarIds: [], events: [], failures: [] }),
@@ -170,7 +183,7 @@ describe("useYearViewData", () => {
   it("applies a successful load", async () => {
     const source: YearViewDataSource = {
       load: () =>
-        Promise.resolve({
+        Effect.succeed({
           calendars: [calendar],
           selectedCalendarIds: ["cal-1"],
           events: [event],
@@ -192,7 +205,7 @@ describe("useYearViewData", () => {
     // blank the year or discard the visitor's calendar selection — the error in
     // the sidebar is feedback enough.
     const source: YearViewDataSource = {
-      load: () => Promise.reject(new Error("network down")),
+      load: () => Effect.fail(failure("network down")),
       persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
     };
 
@@ -213,7 +226,7 @@ describe("useYearViewData", () => {
 
   it("stops the refreshing indicator whether the load succeeds or fails", async () => {
     const source: YearViewDataSource = {
-      load: () => Promise.reject(new Error("boom")),
+      load: () => Effect.fail(failure("boom")),
       persistSelection: vi.fn<YearViewDataSource["persistSelection"]>(),
     };
 
@@ -227,7 +240,7 @@ describe("useYearViewData", () => {
     const persistSelection = vi.fn<YearViewDataSource["persistSelection"]>();
     const source: YearViewDataSource = {
       load: () =>
-        Promise.resolve({
+        Effect.succeed({
           calendars: [calendar],
           selectedCalendarIds: ["cal-1"],
           events: [],
