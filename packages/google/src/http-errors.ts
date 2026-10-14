@@ -7,7 +7,7 @@
 // the previous implementation used to recover a status code.
 import { Effect } from "effect";
 import { HttpClientError } from "effect/http";
-import { GoogleApiError } from "./errors";
+import { GoogleApiError, NotAuthenticatedError } from "./errors";
 
 // Response-carrying reasons are exactly `StatusCodeError | DecodeError |
 // EmptyBodyError`; everything else never saw a response.
@@ -37,3 +37,16 @@ export const googleApiError =
           }),
       ),
     );
+
+// Google answers 401 when the access token was revoked or otherwise rejected.
+// That is a sign-in problem, not an API failure, so it surfaces as the same
+// typed error as having no token at all.
+export const unauthorizedAsNotAuthenticated = <A, R>(
+  effect: Effect.Effect<A, GoogleApiError, R>,
+): Effect.Effect<A, GoogleApiError | NotAuthenticatedError, R> =>
+  effect.pipe(
+    Effect.catchIf(
+      (error) => error.status === 401,
+      () => Effect.fail(new NotAuthenticatedError({ message: "Google rejected the access token" })),
+    ),
+  );

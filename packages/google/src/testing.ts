@@ -12,7 +12,7 @@ import { FetchHttpClient } from "effect/http";
 import { AppConfigShape, appConfigLayerWith } from "./config";
 import { keyValueStoreMemoryLayer } from "./key-value-store";
 import { NavigationCall, recordingNavigationLayer } from "./navigation";
-import { tokenStoreLayer } from "./token-store";
+import { STORAGE_KEYS, tokenStoreLayer } from "./token-store";
 import { googleHttpLayer } from "./google-http";
 import { googleAuthLayer } from "./google-auth";
 import { googleCalendarApiLayer } from "./google-calendar-api";
@@ -100,3 +100,42 @@ export const layer = (options: {
     googleAuthLayer.pipe(Layer.provide(credentials)),
   ).pipe(Layer.provide(googleHttpLayer), Layer.provideMerge(credentials));
 };
+
+// Stored credentials for a signed-in user whose access token is still fresh.
+export const validTokenStorage = (): Readonly<Record<string, string>> => ({
+  [STORAGE_KEYS.accessToken]: "token",
+  [STORAGE_KEYS.expiresAt]: String(Date.now() + 120_000),
+});
+
+// Stored credentials whose access token has expired but can be refreshed.
+export const expiredTokenStorage = (): Readonly<Record<string, string>> => ({
+  [STORAGE_KEYS.accessToken]: "old",
+  [STORAGE_KEYS.expiresAt]: String(Date.now() - 1_000),
+  [STORAGE_KEYS.refreshToken]: "refresh",
+});
+
+// Assemble a fresh graph for one test case, with retries off unless asked for.
+export const makeTestEnv = (options: {
+  readonly responses: ReadonlyArray<Response | (() => Response)>;
+  readonly storage?: Readonly<Record<string, string>>;
+  readonly config?: Partial<AppConfigShape>;
+}) =>
+  Effect.gen(function* () {
+    const fetch = yield* makeFetchStub(options.responses);
+    const navigations = yield* Ref.make<ReadonlyArray<NavigationCall>>([]);
+    return {
+      fetch,
+      navigations,
+      layer: layer({
+        fetch,
+        navigations,
+        storage: options.storage,
+        // Absolute, because outside a browser there is no origin to resolve against.
+        config: {
+          retryTimes: 0,
+          proxyBaseUrl: "http://localhost:3000/api/oauth",
+          ...options.config,
+        },
+      }),
+    };
+  });
