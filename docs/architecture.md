@@ -13,7 +13,7 @@ flowchart LR
 
   subgraph edge["Cloudflare edge"]
     worker["Julian Worker<br/>security gateway + OAuth proxy"]
-    assets["Static Vite assets"]
+    assets["Static assets<br/>marketing pages + app"]
     siteLimit["Site rate limiter"]
     oauthLimit["OAuth rate limiter"]
   end
@@ -57,7 +57,9 @@ flowchart TD
   oauthRate{"Within 12 OAuth requests / 60s?"}
   endpoint{"Endpoint"}
   google["Google token endpoint"]
+  site{"Path"}
   asset["ASSETS.fetch<br/>SPA fallback enabled"]
+  root{"julian_session<br/>cookie?"}
   headers["Add CSP, HSTS, noindex,<br/>frame and content-type protections"]
 
   request --> bot
@@ -65,7 +67,12 @@ flowchart TD
   bot -->|"yes"| site
   site -->|"no"| limited["429"]
   site -->|"yes"| oauth
-  oauth -->|"no"| asset --> headers
+  oauth -->|"no"| site
+  site -->|"/"| root
+  root -->|"yes"| year["302 /{yyyy}"] --> headers
+  root -->|"no"| asset
+  site -->|"/year/*"| legacy["301 to /{yyyy}…"] --> headers
+  site -->|"anything else"| asset --> headers
   oauth -->|"yes"| origin
   origin -->|"no"| reject["4xx JSON response"]
   origin -->|"yes"| oauthRate
@@ -155,9 +162,9 @@ flowchart TD
   main["main.tsx"]
   providers["CoreProviders<br/>theme + i18n"]
   router["TanStack Router"]
-  routes["Landing · Year · OAuth callback · Lab"]
+  routes["Year · Demo · OAuth callback · Lab"]
   live["YearView<br/>live container"]
-  demo["DemoYearView<br/>landing container"]
+  demo["DemoYearView<br/>demo container"]
   core["YearViewCore"]
   state["useYearViewState<br/>data reducer + UI reducer"]
   data["useYearViewData<br/>loads through the data source port"]
@@ -187,7 +194,7 @@ math.
 `YearViewCore` holds the entire year view but no opinion about where its data
 and its focus live. Three ports in
 `apps/web/src/components/year-view/year-view-ports.ts` supply that, so the same component
-serves both the signed-in app and the landing page:
+serves both the signed-in app and the demo:
 
 | Port                  | Live container (`year-view/google-ports.ts`) | Demo container (`landing/demo-year-view.tsx`) |
 | --------------------- | ------------------------------------------- | --------------------------------------------- |
@@ -204,12 +211,13 @@ one, unmounting interrupts whatever is running, and the effect dispatches its
 own result, so an interrupted fiber can never write stale data. Interruption
 also aborts the in-flight `fetch` through the HTTP client's `AbortSignal`.
 
-The landing page therefore demonstrates the product by running it, not by
+The demo therefore demonstrates the product by running it, not by
 reimplementing it — a lookalike would drift from the real view on every change.
 
 ### Landing demo
 
-The landing page is labelled "Demo · Sample data". A three-step tour opens
+The marketing home links to `/demo`; it cannot frame the demo because every
+response forbids framing. The demo page is labelled "Demo · Sample data". A three-step tour opens
 today, creates a sample event, and opens commands. It runs once in under 15
 seconds. "Try it now" stops it immediately; "Add sample event" opens the same
 form as the N shortcut; "Reset demo" starts a fresh in-memory session.
@@ -243,17 +251,28 @@ to another year. Refreshing the page or resetting the demo discards them.
 
 ### Route behavior
 
-| Route            | Purpose                                                                                 |
-| ---------------- | --------------------------------------------------------------------------------------- |
-| `/`              | Public landing page; redirects to the year view when a Google session is already stored |
-| `/year/$year`    | Lazy-loaded year view; the current year redirects to a URL containing today's month/day |
-| `/auth/callback` | Validates OAuth state and exchanges the single-use code                                 |
-| `/lab`           | Component/design experimentation                                                        |
+One domain serves two builds. The marketing pages are static HTML from
+`apps/marketing`; everything else is the React app.
 
-The `/` guard reads `localStorage` synchronously via `apps/web/src/lib/session.ts` rather
-than awaiting `isAuthenticated()`, so a returning visitor never sees the pitch
-flash before the redirect. The year view still performs the full authenticated
-check once it mounts.
+| Route                         | Served by | Purpose                                                                    |
+| ----------------------------- | --------- | -------------------------------------------------------------------------- |
+| `/`                           | Worker    | Marketing home, or `302 /{yyyy}` when the `julian_session` cookie is set   |
+| `/home`, `/privacy`, `/terms` | marketing | Static pages, no JavaScript                                                |
+| `/{yyyy}`                     | app       | Lazy-loaded year view; the current year adds today's month/day to the URL  |
+| `/{yyyy}/{mm}`                | app       | Redirects to `/{yyyy}?month=mm&day=1`                                      |
+| `/year/*`                     | Worker    | `301` to the same path without `/year`, query kept (legacy bookmarks)      |
+| `/demo`, `/demo/{yyyy}`       | app       | The real year view on sample data; `/demo` opens the current year          |
+| `/auth/callback`              | app       | Validates OAuth state and exchanges the single-use code                    |
+| `/api/oauth/*`                | Worker    | Token exchange and refresh                                                 |
+| `/lab`                        | app       | Component/design experimentation                                           |
+
+`julian_session` (`packages/security/src/session-hint.ts`) is a hint, not a
+credential: its value is `1`, it is set after a successful sign-in (and whenever
+the year view confirms a stored session), and cleared on logout. The `/`
+response varies by cookie, so it is `private, no-store`. The year view still
+performs the full authenticated check once it mounts. Under the Vite servers,
+which do not run the Worker, the app's own `/` route redirects to the year or
+the demo from `localStorage` instead, and `/year/*` redirects client-side.
 
 Search parameters hold the focused month/day so the selected date is linkable.
 The Worker serves `index.html` for unknown asset paths, allowing client-side
@@ -292,8 +311,12 @@ flowchart LR
   trigger --> prodBuild --> secretScan --> wrangler --> worker
 ```
 
-The build produces split chunks for React, TanStack Router, Radix, icons, and
-other vendors. CI runs type checks, tests, and a build. Each release channel
+`apps/marketing` builds first (Turborepo orders it as a dependency of
+`@julian/web`); the web build then copies its pages and `_marketing/` assets
+into `apps/web/dist`, the Worker's single assets directory. Workers static
+assets serves `home.html` at `/home`, so no second binding or routing table is
+needed, and the client-secret scan covers both sites. The web build produces
+split chunks for React, TanStack Router, Radix, icons, and other vendors. CI runs type checks, tests, and a build. Each release channel
 (preview, nightly, stable) builds again with the public OAuth client ID and its
 version metadata, scans the output for a Google client-secret pattern, and only
 then uploads or deploys. Channels, gradual rollout and rollback are described in
@@ -335,9 +358,11 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 | Calendar math and event segmentation             | `packages/domain/src/`                                                                          |
 | Year-view state and orchestration                | `apps/web/src/components/year-view-reducer.ts`, `apps/web/src/components/year-view-core.tsx`    |
 | Where the year view gets data, focus, and writes | `apps/web/src/components/year-view/year-view-ports.ts`, `apps/web/src/components/year-view/google-ports.ts` |
-| Landing page and its scripted demo               | `apps/web/src/routes/landing-page.tsx`, `apps/web/src/components/landing/`                      |
+| Demo page and its scripted tour                  | `apps/web/src/routes/demo-page.tsx`, `apps/web/src/components/landing/`                         |
+| Marketing, privacy, and terms pages              | `apps/marketing/*.html`, `apps/marketing/src/partials.ts`                                       |
+| `/` routing, legacy redirects, session hint      | `apps/edge/src/site.ts`, `packages/security/src/session-hint.ts`                                |
 | Month rendering and virtualization               | `apps/web/src/components/year-view/`                                                            |
-| Build chunking and deployment                    | `apps/web/vite.config.ts`, `.github/actions/build-web`, `.github/workflows/deploy-stable.yml`                                       |
+| Build chunking, asset assembly, and deployment   | `apps/web/vite.config.ts`, `.github/actions/build-web`, `.github/workflows/deploy-stable.yml`   |
 
 ## Related documentation
 
