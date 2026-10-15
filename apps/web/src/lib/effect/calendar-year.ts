@@ -1,17 +1,17 @@
 // Keep usable sources and report each failed calendar or task list.
 import { Effect } from "effect";
 import { resolveSelectedCalendarIds } from "@/lib/calendar-selection";
-import type { AppError, GoogleApiFailure } from "@/lib/effect/errors";
+import type { AppError, GoogleApiFailure } from "@julian/google/errors";
 import {
   toUtcDateOnly,
   TASKS_CALENDAR_COLOR,
   TASKS_CALENDAR_ID,
   type CalendarEvent,
   type CalendarSummary,
-} from "@/domain";
-import { GoogleCalendarApi } from "@/lib/effect/google-calendar-api";
-import { GoogleTasks, type GoogleTasksShape } from "@/lib/effect/google-tasks";
-import { AppConfig } from "@/lib/effect/config";
+} from "@julian/domain";
+import { GoogleCalendarApi } from "@julian/google/google-calendar-api";
+import { GoogleTasks, type GoogleTasksShape } from "@julian/google/google-tasks";
+import { AppConfig } from "@julian/google/config";
 
 export interface YearData {
   readonly calendars: ReadonlyArray<CalendarSummary>;

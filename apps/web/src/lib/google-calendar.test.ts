@@ -8,14 +8,14 @@
 import { describe, expect } from "vitest";
 import { it } from "@effect/vitest";
 import { Effect, Option, Ref } from "effect";
-import { STORAGE_KEYS } from "@/lib/effect/token-store";
-import { GoogleApiError } from "@/lib/effect/errors";
-import * as TestEnv from "@/lib/effect/testing";
-import { KeyValueStore } from "@/lib/effect/key-value-store";
-import { NavigationCall } from "@/lib/effect/navigation";
-import { GoogleAuth } from "@/lib/effect/google-auth";
-import { GoogleCalendarApi } from "@/lib/effect/google-calendar-api";
-import { GoogleTasks } from "@/lib/effect/google-tasks";
+import { STORAGE_KEYS } from "@julian/google/token-store";
+import { GoogleApiError } from "@julian/google/errors";
+import * as TestEnv from "@julian/google/testing";
+import { KeyValueStore } from "@julian/google/key-value-store";
+import { NavigationCall } from "@julian/google/navigation";
+import { GoogleAuth } from "@julian/google/google-auth";
+import { GoogleCalendarApi } from "@julian/google/google-calendar-api";
+import { GoogleTasks } from "@julian/google/google-tasks";
 import { loadCalendarYear } from "@/lib/effect/calendar-year";
 
 const validToken = {

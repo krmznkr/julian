@@ -7,14 +7,14 @@
 // globals.
 import { Context, Effect, Layer, Option } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
-import { AuthConfigError, GoogleApiError } from "@/lib/effect/errors";
-import { googleApiError } from "@/lib/effect/http-errors";
-import * as S from "@/lib/effect/schemas";
-import { STORAGE_KEYS } from "@/lib/effect/token-store";
-import { AppConfig } from "@/lib/effect/config";
-import { KeyValueStore } from "@/lib/effect/key-value-store";
-import { Navigation } from "@/lib/effect/navigation";
-import { TokenStore } from "@/lib/effect/token-store";
+import { AuthConfigError, GoogleApiError } from "./errors";
+import { googleApiError } from "./http-errors";
+import * as S from "./schemas";
+import { STORAGE_KEYS } from "./token-store";
+import { AppConfig } from "./config";
+import { KeyValueStore } from "./key-value-store";
+import { Navigation } from "./navigation";
+import { TokenStore } from "./token-store";
 
 const PKCE_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
 

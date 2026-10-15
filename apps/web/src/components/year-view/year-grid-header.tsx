@@ -5,7 +5,7 @@ import {
 } from "@/components/year-view/constants";
 import { monthColumnTemplateColumns, visibleYearEventLaneMap } from "./month-grid-layout";
 import { cn } from "@/lib/utils";
-import type { MonthSegments } from "@/domain";
+import type { MonthSegments } from "@julian/domain";
 
 export default function YearGridHeader({
   isCurrentYear,

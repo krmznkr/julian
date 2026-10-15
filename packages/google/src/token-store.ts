@@ -1,11 +1,11 @@
 import { Context, Effect, Layer, Option, Semaphore } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
-import { GoogleApiError } from "@/lib/effect/errors";
-import { googleApiError } from "@/lib/effect/http-errors";
-import { retryingClient } from "@/lib/effect/http-policy";
-import * as S from "@/lib/effect/schemas";
-import { AppConfig } from "@/lib/effect/config";
-import { KeyValueStore } from "@/lib/effect/key-value-store";
+import { GoogleApiError } from "./errors";
+import { googleApiError } from "./http-errors";
+import { retryingClient } from "./http-policy";
+import * as S from "./schemas";
+import { AppConfig } from "./config";
+import { KeyValueStore } from "./key-value-store";
 
 // Refresh this far ahead of the real expiry so an in-flight request cannot
 // straddle the boundary.

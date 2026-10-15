@@ -18,7 +18,7 @@ import {
 import { MAX_YEAR, MIN_YEAR } from "@/components/year-view/constants";
 import { focusSignature } from "@/lib/year-view-url";
 import { openDayInGoogleCalendar, openEventInGoogle } from "@/lib/open-event";
-import type { CalendarEvent, MonthSegments } from "@/domain";
+import type { CalendarEvent, MonthSegments } from "@julian/domain";
 
 /** How long the destination cell stays highlighted after a jump. */
 const DATE_CHANGE_FEEDBACK_MS = 700;

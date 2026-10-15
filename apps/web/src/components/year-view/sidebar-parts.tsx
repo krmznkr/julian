@@ -2,7 +2,7 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CalendarList, CalendarListSkeleton } from "@/components/year-view/calendar-list";
 import { GoogleLoginButton } from "@/components/google-login-button";
-import type { CalendarSummary } from "@/domain";
+import type { CalendarSummary } from "@julian/domain";
 import { cn } from "@/lib/utils";
 
 export function SyncStatusBadge({

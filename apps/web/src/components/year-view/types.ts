@@ -1,4 +1,4 @@
-import type { CalendarEvent, CalendarSummary, EventSegment } from "@/domain";
+import type { CalendarEvent, CalendarSummary, EventSegment } from "@julian/domain";
 
 export type YearViewInitialData = {
   readonly calendars: ReadonlyArray<CalendarSummary>;

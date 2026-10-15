@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { isWeekend } from "@/components/year-helpers";
+import { isWeekend } from "@julian/domain";
 import { DAYS_IN_GRID } from "@/components/year-view/constants";
 import { visibleYearEventLaneMap } from "@/components/year-view/month-grid-layout";
-import { isWritableCalendar, parseEventBoundary } from "@/domain";
-import type { CalendarEvent, CalendarSummary, EventSegment, MonthSegments } from "@/domain";
+import { isWritableCalendar, parseEventBoundary } from "@julian/domain";
+import type { CalendarEvent, CalendarSummary, EventSegment, MonthSegments } from "@julian/domain";
 
 export type RenderedBar = {
   segment: EventSegment;

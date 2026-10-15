@@ -73,6 +73,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@julian/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@julian/google':
+        specifier: workspace:*
+        version: link:../../packages/google
       '@tanstack/react-router':
         specifier: 1.170.21
         version: 1.170.21(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -148,6 +154,25 @@ importers:
         version: 8.3.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.1)
 
   packages/config: {}
+
+  packages/domain:
+    devDependencies:
+      '@julian/config':
+        specifier: workspace:*
+        version: link:../config
+
+  packages/google:
+    dependencies:
+      '@julian/domain':
+        specifier: workspace:*
+        version: link:../domain
+      effect:
+        specifier: 4.0.4
+        version: 4.0.4
+    devDependencies:
+      '@julian/config':
+        specifier: workspace:*
+        version: link:../config
 
   packages/security:
     devDependencies:

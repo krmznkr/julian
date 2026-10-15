@@ -10,7 +10,7 @@ import {
   normalizeEvent,
   type CalendarEvent,
   type CalendarSummary,
-} from "@/domain";
+} from "@julian/domain";
 
 const PERSONAL = "demo-personal";
 const WORK = "demo-work";

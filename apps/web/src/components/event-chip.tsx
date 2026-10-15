@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import { Tooltip, TooltipTrigger } from "@/components/tooltip";
-import { eventCalendarSpanDays, formatDateRange, formatTimeRange } from "@/components/year-helpers";
+import { eventCalendarSpanDays, formatDateRange, formatTimeRange } from "@julian/domain";
 import { useChipStyle, useEventLabels } from "@/components/use-event-chip";
 import {
   type EventChipProps,

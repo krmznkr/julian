@@ -3,7 +3,7 @@
 // previous event ends, so overlapping blocks sit beside one another while
 // non-overlapping blocks can expand back into the same column.
 
-import type { EventSegment } from "@/domain";
+import type { EventSegment } from "@julian/domain";
 
 export function visibleYearEventLaneMap(segments: ReadonlyArray<EventSegment>) {
   const visible = segments

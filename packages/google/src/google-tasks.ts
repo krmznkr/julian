@@ -4,9 +4,9 @@
 // them behind their own service means a Tasks outage cannot change how calendar
 // events are fetched, and the aggregation layer decides how to degrade.
 import { Context, Effect, Layer, Option, Stream } from "effect";
-import type { GoogleApiFailure } from "@/lib/effect/errors";
-import * as S from "@/lib/effect/schemas";
-import { GoogleHttp } from "@/lib/effect/google-http";
+import type { GoogleApiFailure } from "./errors";
+import * as S from "./schemas";
+import { GoogleHttp } from "./google-http";
 
 const TASKS_BASE = "https://www.googleapis.com/tasks/v1";
 

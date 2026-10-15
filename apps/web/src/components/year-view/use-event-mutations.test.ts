@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useEventMutations } from "./use-event-mutations";
-import type { CalendarEvent } from "@/domain";
+import type { CalendarEvent } from "@julian/domain";
 import type { YearViewAction } from "@/components/year-view-reducer";
 import type { YearViewEventApi } from "./year-view-ports";
 

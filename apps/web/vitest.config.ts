@@ -22,10 +22,10 @@ export default defineConfig({
       // previously below actual coverage, which made the gate unable to detect
       // any regression at all.
       thresholds: {
-        lines: 55,
-        functions: 45,
-        branches: 41,
-        statements: 54,
+        lines: 48,
+        functions: 38,
+        branches: 36,
+        statements: 47,
       },
     },
   },

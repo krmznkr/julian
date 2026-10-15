@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { orderByDurationDesc, useRenderedSegments } from "@/components/year-view/use-month-column";
-import { buildEventKey, buildMonthSegments, type CalendarEvent } from "@/domain";
+import { buildEventKey, buildMonthSegments, type CalendarEvent } from "@julian/domain";
 
 function evt(overrides: Partial<CalendarEvent> & { id: string; start: string; end: string }) {
   const event: CalendarEvent = {

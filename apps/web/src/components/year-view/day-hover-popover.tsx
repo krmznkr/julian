@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { DISPLAY_TIME_ZONE, formatDateRange, formatTimeRange } from "@/components/year-helpers";
+import { DISPLAY_TIME_ZONE, formatDateRange, formatTimeRange } from "@julian/domain";
 import type { DayPanelAnchorRect } from "@/components/year-view/use-month-day-panel";
 import type { DayEventItem } from "@/components/year-view/use-month-column";
 import { useYearViewSharedData } from "@/components/year-view/year-view-context";

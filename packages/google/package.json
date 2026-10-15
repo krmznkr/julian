@@ -1,0 +1,20 @@
+{
+  "name": "@julian/google",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Effect services for Google OAuth, Calendar, and Tasks, with live and test layers.",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit && effect-language-service diagnostics --project tsconfig.json --strict --severity error,warning --format text"
+  },
+  "dependencies": {
+    "@julian/domain": "workspace:*",
+    "effect": "4.0.4"
+  },
+  "devDependencies": {
+    "@julian/config": "workspace:*"
+  }
+}

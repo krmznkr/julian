@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import type { YearViewAction } from "@/components/year-view-reducer";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";
 import type { YearViewEventApi } from "@/components/year-view/year-view-ports";
-import type { CalendarEvent, CalendarSummary } from "@/domain";
+import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
 export type MutationSlot<T> = {
   readonly target: T | null;

@@ -4,7 +4,7 @@ import {
   yearViewReducer,
   type YearViewState,
 } from "@/components/year-view-reducer";
-import type { CalendarEvent, CalendarSummary } from "@/domain";
+import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
 const calendar: CalendarSummary = { id: "cal-1", summary: "Personal", accessRole: "owner" };
 const otherCalendar: CalendarSummary = { id: "cal-2", summary: "Work", accessRole: "reader" };

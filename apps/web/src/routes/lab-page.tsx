@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import MonthColumn from "@/components/year-view/month-column";
 import { TooltipProvider } from "@/components/tooltip";
 import { YearViewSharedDataProvider } from "@/components/year-view/year-view-context";
-import { buildEventKey, buildMonthSegments, type CalendarEvent } from "@/domain";
+import { buildEventKey, buildMonthSegments, type CalendarEvent } from "@julian/domain";
 
 const calendar = {
   id: "sample",

@@ -1,5 +1,5 @@
 import { Checkbox } from "@/components/ui/checkbox";
-import type { CalendarSummary } from "@/domain";
+import type { CalendarSummary } from "@julian/domain";
 import { cn } from "@/lib/utils";
 
 export function CalendarListSkeleton() {

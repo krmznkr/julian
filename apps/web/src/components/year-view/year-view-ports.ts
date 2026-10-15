@@ -4,7 +4,7 @@
 // stored calendar-selection preference. The landing page plugs in local state,
 // a fixture year and an in-memory event store, which is what lets the marketing
 // site run the *real* year view instead of a lookalike.
-import type { CalendarEvent, CalendarSummary } from "@/domain";
+import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 import type { YearViewSearch } from "@/lib/year-view-url";
 
 /** Where the year view reads and writes its focus (month / day / details open). */

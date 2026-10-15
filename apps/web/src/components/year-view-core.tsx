@@ -32,7 +32,7 @@ import type {
   YearViewPreferences,
   YearViewRouterPort,
 } from "@/components/year-view/year-view-ports";
-import { getDefaultWritableCalendar, isWritableCalendar, type CalendarEvent } from "@/domain";
+import { getDefaultWritableCalendar, isWritableCalendar, type CalendarEvent } from "@julian/domain";
 import { useI18n } from "@/i18n/context";
 
 /**

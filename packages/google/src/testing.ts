@@ -9,14 +9,14 @@
 // makes the transport an ordinary, per-test dependency.
 import { Effect, Layer, Ref } from "effect";
 import { FetchHttpClient } from "effect/http";
-import { AppConfigShape, appConfigLayerWith } from "@/lib/effect/config";
-import { keyValueStoreMemoryLayer } from "@/lib/effect/key-value-store";
-import { NavigationCall, recordingNavigationLayer } from "@/lib/effect/navigation";
-import { tokenStoreLayer } from "@/lib/effect/token-store";
-import { googleHttpLayer } from "@/lib/effect/google-http";
-import { googleAuthLayer } from "@/lib/effect/google-auth";
-import { googleCalendarApiLayer } from "@/lib/effect/google-calendar-api";
-import { googleTasksLayer } from "@/lib/effect/google-tasks";
+import { AppConfigShape, appConfigLayerWith } from "./config";
+import { keyValueStoreMemoryLayer } from "./key-value-store";
+import { NavigationCall, recordingNavigationLayer } from "./navigation";
+import { tokenStoreLayer } from "./token-store";
+import { googleHttpLayer } from "./google-http";
+import { googleAuthLayer } from "./google-auth";
+import { googleCalendarApiLayer } from "./google-calendar-api";
+import { googleTasksLayer } from "./google-tasks";
 
 export interface RecordedRequest {
   readonly url: string;

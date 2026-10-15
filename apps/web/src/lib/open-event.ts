@@ -1,6 +1,6 @@
-import { TASKS_CALENDAR_ID } from "@/domain";
+import { TASKS_CALENDAR_ID } from "@julian/domain";
 import { openExternal } from "@/lib/open-external";
-import type { CalendarEvent } from "@/domain";
+import type { CalendarEvent } from "@julian/domain";
 
 // Clicking an event opens it in Google rather than an in-app panel. Calendar
 // events have an exact htmlLink; Google Tasks expose no per-task deep link, so

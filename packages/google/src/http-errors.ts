@@ -7,7 +7,7 @@
 // the previous implementation used to recover a status code.
 import { Effect } from "effect";
 import { HttpClientError } from "effect/http";
-import { GoogleApiError } from "@/lib/effect/errors";
+import { GoogleApiError } from "./errors";
 
 // Response-carrying reasons are exactly `StatusCodeError | DecodeError |
 // EmptyBodyError`; everything else never saw a response.
