@@ -87,3 +87,7 @@ next-env.d.ts
 **/.*.bun-build
 .turbo/
 .alchemy/
+
+# wrangler local state and secrets
+.wrangler/
+.dev.vars*
