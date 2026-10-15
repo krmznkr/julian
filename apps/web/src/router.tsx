@@ -78,7 +78,7 @@ const indexRoute = createRoute({
           search: today.search,
           replace: true,
         })
-      : redirect({ to: "/demo/$year", params: { year: String(today.year) }, replace: true });
+      : redirect({ to: "/demo", replace: true });
   },
 });
 
@@ -133,12 +133,32 @@ const legacyYearRoute = createRoute({
   },
 });
 
+// The marketing site links here without knowing the current year.
+const demoIndexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/demo",
+  beforeLoad: () => {
+    const today = todayFocus();
+    throw redirect({
+      to: "/demo/$year",
+      params: { year: String(today.year) },
+      search: today.search,
+      replace: true,
+    });
+  },
+});
+
 const demoRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/demo/$year",
   validateSearch: (search: Record<string, unknown>): YearViewSearch => parseYearViewSearch(search),
-  beforeLoad: ({ params }) => {
-    requireYear(params.year);
+  beforeLoad: ({ location, params }) => {
+    const year = requireYear(params.year);
+    const today = todayFocus();
+    const search = location.search as Record<string, unknown>;
+    if (year === today.year && !search.month && !search.day) {
+      throw redirect({ to: "/demo/$year", params: { year: params.year }, search: today.search });
+    }
   },
   component: DemoRouteComponent,
   errorComponent: ({ error, reset }: ErrorComponentProps) => (
@@ -163,6 +183,7 @@ const routeTree = rootRoute.addChildren([
   yearRoute,
   yearMonthRoute,
   legacyYearRoute,
+  demoIndexRoute,
   demoRoute,
   authCallbackRoute,
   labRoute,

@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@julian/config": "workspace:*",
+    "@julian/marketing": "workspace:*",
     "@effect/vitest": "4.0.4",
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",

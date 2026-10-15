@@ -5,8 +5,13 @@
   // Version preview URLs (<alias>-julian.<subdomain>.workers.dev) back the PR previews.
   "preview_urls": true,
   "main": "src/index.ts",
+  // One directory holds both sites: the web build with the prerendered
+  // marketing pages copied in (home.html, privacy.html, terms.html, served at
+  // /home, /privacy, /terms). Unknown paths fall back to the app's index.html.
+  // The nightly env inherits this block.
   "assets": {
     "directory": "../web/dist",
+    "html_handling": "auto-trailing-slash",
     "not_found_handling": "single-page-application",
     "binding": "ASSETS",
     // Route every request through the Worker first so its bot filter and rate

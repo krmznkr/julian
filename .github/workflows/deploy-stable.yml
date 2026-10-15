@@ -81,7 +81,8 @@ jobs:
           for attempt in 1 2 3 4 5; do
             served=$(curl -fsS -A "$SMOKE_UA" -H "$override" "$PRODUCTION_URL/version.json" | jq -r .version) || served=""
             if [ "$served" = "$EXPECTED" ] \
-              && curl -fsS -A "$SMOKE_UA" -H "$override" "$PRODUCTION_URL/" | grep -q '<div id="root"'; then
+              && curl -fsS -A "$SMOKE_UA" -H "$override" "$PRODUCTION_URL/" | grep -q 'class="site-header"' \
+              && curl -fsS -A "$SMOKE_UA" -H "$override" "$PRODUCTION_URL/demo" | grep -q '<div id="root"'; then
               echo "Smoke test passed on attempt $attempt"
               exit 0
             fi

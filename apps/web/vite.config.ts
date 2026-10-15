@@ -1,3 +1,4 @@
+import { cpSync, existsSync } from "node:fs";
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
@@ -15,8 +16,22 @@ const securityHeadersFile = (): Plugin => ({
   },
 });
 
+// The marketing pages (@julian/marketing, built first by Turborepo) ship in the
+// same assets directory, so the Worker serves both from one binding.
+const marketingPages = (): Plugin => ({
+  name: "julian:marketing-pages",
+  apply: "build",
+  writeBundle(options) {
+    const source = resolvePath("../marketing/dist");
+    if (!existsSync(source)) {
+      this.error("apps/marketing/dist is missing: build @julian/marketing first.");
+    }
+    cpSync(source, options.dir ?? resolvePath("dist"), { recursive: true });
+  },
+});
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), securityHeadersFile()],
+  plugins: [react(), tailwindcss(), securityHeadersFile(), marketingPages()],
   define: buildDefines,
   envDir: resolvePath("../.."),
   envPrefix: ["VITE_"],
