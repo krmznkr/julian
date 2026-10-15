@@ -30,6 +30,7 @@ describe("event mutations", () => {
         eventApi: {
           updateEvent,
           createEvent: vi.fn<YearViewEventApi["createEvent"]>(),
+          moveEvent: vi.fn<YearViewEventApi["moveEvent"]>(),
           deleteEvent: vi.fn<YearViewEventApi["deleteEvent"]>(),
         },
         targetCalendar: { id: "c1", summary: "Personal" },
@@ -67,6 +68,7 @@ describe("event mutations", () => {
         eventApi: {
           createEvent: vi.fn<YearViewEventApi["createEvent"]>(),
           updateEvent: vi.fn<YearViewEventApi["updateEvent"]>(),
+          moveEvent: vi.fn<YearViewEventApi["moveEvent"]>(),
           deleteEvent: vi.fn<YearViewEventApi["deleteEvent"]>(),
           ...eventApi,
         },

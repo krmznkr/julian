@@ -104,6 +104,19 @@ function useDemoStore(year: number) {
             ]),
           );
         }),
+      moveEvent: (calendarId, eventId, dates) =>
+        Effect.sync(() => {
+          eventsRef.current = Object.fromEntries(
+            Object.entries(eventsRef.current).map(([key, events]) => [
+              key,
+              events.map((event) =>
+                event.id === eventId && event.calendarId === calendarId
+                  ? { ...event, ...dates }
+                  : event,
+              ),
+            ]),
+          );
+        }),
       deleteEvent: (calendarId, eventId) =>
         Effect.sync(() => {
           eventsRef.current = Object.fromEntries(

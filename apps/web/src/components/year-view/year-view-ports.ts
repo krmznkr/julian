@@ -65,6 +65,12 @@ export type YearViewEventApi = {
     eventId: string,
     input: { title: string },
   ) => Effect.Effect<void, YearViewFailure>;
+  /** Reschedules an all-day event; dates are `YYYY-MM-DD`, `end` exclusive. */
+  readonly moveEvent: (
+    calendarId: string,
+    eventId: string,
+    dates: { start: string; end: string },
+  ) => Effect.Effect<void, YearViewFailure>;
   readonly deleteEvent: (
     calendarId: string,
     eventId: string,

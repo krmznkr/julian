@@ -25,6 +25,8 @@ import YearGrid from "@/components/year-view/year-grid";
 import { useYearViewData } from "@/components/year-view/use-year-view-data";
 import EventFormDialog from "@/components/year-view/event-form-dialog";
 import DeleteEventDialog from "@/components/year-view/delete-event-dialog";
+import MoveEventDialog from "@/components/year-view/move-event-dialog";
+import { useEventMove } from "@/components/year-view/use-event-move";
 import { YearRefreshNotice } from "@/components/year-view/shared-components";
 import type { YearViewInitialData } from "@/components/year-view/types";
 import type {
@@ -166,6 +168,8 @@ export default function YearViewCore({
     focusYearGrid,
   });
 
+  const eventMove = useEventMove({ eventApi, dispatch });
+
   const onToggleSidebar = useCallback(() => {
     const collapsed = !state.sidebarCollapsed;
     dispatch({ type: "SIDEBAR_COLLAPSED_CHANGED", collapsed });
@@ -295,6 +299,21 @@ export default function YearViewCore({
           >
             <div className="flex h-full w-full flex-1 min-h-0 flex-col">
               <div className="relative h-full">
+                {eventMove.error && (
+                  <div
+                    role="alert"
+                    className="absolute left-1/2 top-4 z-40 flex max-w-[90%] -translate-x-1/2 items-center gap-3 rounded-lg border border-destructive/40 bg-background px-4 py-2 text-sm shadow-lg"
+                  >
+                    <span>{eventMove.error}</span>
+                    <button
+                      type="button"
+                      onClick={eventMove.dismissError}
+                      className="text-xs underline underline-offset-2"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
                 {isRefreshing && state.hasHydratedData && (
                   <div className="pointer-events-none absolute right-4 top-4 z-20">
                     <YearRefreshNotice label="Loading events..." />
@@ -317,10 +336,12 @@ export default function YearViewCore({
                   focusTodaySignal={focusTodaySignal}
                   keyboardHelpOpen={keyboardHelpOpen}
                   commandPaletteOpen={commandPaletteOpen}
-                  mutationDialogOpen={mutations.anyDialogOpen}
+                  mutationDialogOpen={mutations.anyDialogOpen || eventMove.target !== null}
                   canModifyEvent={canModifyEvent}
                   onRequestCreateEvent={mutations.create.open}
                   onRequestEditEvent={mutations.edit.open}
+                  onRequestMoveEvent={eventMove.open}
+                  onMoveEvent={eventMove.move}
                   onRequestDeleteEvent={mutations.remove.open}
                   onKeyboardHelpOpenChange={setKeyboardHelpOpen}
                   onRegisterFocusYearGrid={registerFocusYearGrid}
@@ -362,6 +383,12 @@ export default function YearViewCore({
             error={mutations.edit.error}
             onSubmit={mutations.submitEdit}
             onOpenChange={mutations.edit.setOpen}
+            restoreFocus={focusYearGrid}
+          />
+          <MoveEventDialog
+            event={eventMove.target}
+            onMove={eventMove.move}
+            onClose={eventMove.close}
             restoreFocus={focusYearGrid}
           />
           <DeleteEventDialog

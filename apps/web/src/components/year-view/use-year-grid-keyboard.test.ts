@@ -110,6 +110,7 @@ function setup(overrides: Partial<Props> = {}) {
     canModifyEvent: vi.fn<Props["canModifyEvent"]>(() => true),
     onRequestCreateEvent: vi.fn<Props["onRequestCreateEvent"]>(),
     onRequestEditEvent: vi.fn<Props["onRequestEditEvent"]>(),
+    onRequestMoveEvent: vi.fn<Props["onRequestMoveEvent"]>(),
     onRequestDeleteEvent: vi.fn<Props["onRequestDeleteEvent"]>(),
     onHelpOpenChange: vi.fn<Props["onHelpOpenChange"]>(),
     onRegisterFocusGrid: vi.fn<Props["onRegisterFocusGrid"]>(),
@@ -617,6 +618,24 @@ describe("useYearGridKeyboard — mutation shortcuts", () => {
 
     expect(canModifyEvent).toHaveBeenCalledWith(LONG_EVENT);
     expect(onRequestEditEvent).not.toHaveBeenCalled();
+  });
+
+  it("m asks to move the selected all-day event", () => {
+    const { onRequestMoveEvent } = setup();
+
+    press(" ", { code: "Space" });
+    press("m");
+
+    expect(onRequestMoveEvent).toHaveBeenCalledWith(LONG_EVENT);
+  });
+
+  it("m does nothing for a read-only event", () => {
+    const { onRequestMoveEvent } = setup({ canModifyEvent: () => false });
+
+    press(" ", { code: "Space" });
+    press("m");
+
+    expect(onRequestMoveEvent).not.toHaveBeenCalled();
   });
 
   it("Meta+Backspace deletes the selected event when the dialog is open", () => {

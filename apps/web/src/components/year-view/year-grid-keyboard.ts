@@ -183,6 +183,7 @@ export const YEAR_GRID_SHORTCUTS = [
   { keys: "Shift Enter", action: "Open day in Google Calendar" },
   { keys: "N", action: "Create an event on the active day" },
   { keys: "E", action: "Edit the selected event (in day details)" },
+  { keys: "M", action: "Move the selected all-day event to another day (in day details)" },
   { keys: "⌘⌫", action: "Delete the selected event (in day details)" },
   { keys: "Escape", action: "Close day details" },
   { keys: "T", action: "Jump to today" },
