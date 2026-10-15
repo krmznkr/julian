@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "./env";
-import { serve } from "./index";
+import { serve } from "./pipeline";
 
 const ORIGIN = "https://julian.krmznkr.com";
 
