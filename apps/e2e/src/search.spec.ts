@@ -4,8 +4,9 @@ test("/ searches the year, highlights matches, and Escape clears", async ({ demo
   const grid = yearGrid(page);
   const before = await grid.getByRole("button").count();
 
-  await page.keyboard.press("/");
   const search = page.getByRole("searchbox", { name: "Search events" });
+  await expect(search).toHaveAttribute("placeholder", "Search  /");
+  await page.keyboard.press("/");
   await expect(search).toBeFocused();
   await search.fill("lisbon");
 
