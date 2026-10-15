@@ -87,7 +87,7 @@ Every PR runs these in CI; coverage thresholds are per package and only go up.
 
 ## Run locally
 
-Prerequisites: Node 24 and [pnpm](https://pnpm.io) 10.
+Prerequisites: Node 24.15.0 and [pnpm](https://pnpm.io) 10.33.0.
 
 ```bash
 git clone https://github.com/krmznkr/julian.git

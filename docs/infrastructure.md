@@ -23,7 +23,7 @@ flowchart LR
 | ----------------------------------------------------------------- | ---------------------- | ------------------------------ |
 | Workers `julian` and `julian-nightly`                             | `infra/src/config.ts`  | wrangler (`deploy`/`versions`) |
 | Assets (`../web/dist`, `run_worker_first`, SPA fallback)          | `infra/src/config.ts`  | wrangler                       |
-| `SITE_RATELIMIT` (240/60s), `OAUTH_RATELIMIT` (12/60s)            | `infra/src/config.ts`  | wrangler                       |
+| `SITE_RATELIMIT` (240/60s), `OAUTH_RATELIMIT` (12/60s), per Worker | `infra/src/config.ts`  | wrangler                       |
 | `GOOGLE_CLIENT_ID` var                                            | `infra/src/config.ts`  | wrangler                       |
 | `GOOGLE_CLIENT_SECRET` secret                                     | name only, never value | `wrangler secret put`          |
 | Custom domains `julian.krmznkr.com`, `julian-nightly.krmznkr.com` | `infra/src/config.ts`  | wrangler                       |
@@ -56,8 +56,9 @@ drifts from the config, so `pnpm test:coverage` catches a forgotten regenerate.
   the same account, so local runs and CI see the same state. The store's auth
   token lives in a Cloudflare Secrets Store, not in the repo.
 - **Adoption:** the zone already exists, so it is declared with
-  `adopt(true)`: the first apply takes it over instead of creating it, and
-  removing it from the stack never deletes it.
+  `adopt(true)`: the first apply takes it over instead of creating it. It also
+  carries an explicit `RemovalPolicy.retain()`, so removing it from the stack
+  never deletes it.
 - **No destroy:** no workflow runs `alchemy destroy`. Do not run it by hand
   against `prod`.
 
@@ -67,12 +68,15 @@ drifts from the config, so `pnpm test:coverage` catches a forgotten regenerate.
 | --------------------- | ----------------------------------------------------------- | ------------------------------- |
 | `infra.yml` → `plan`  | PRs touching `infra/`, `apps/edge/`, the lockfile; dispatch | `alchemy plan`                  |
 | `infra.yml` → `apply` | Manual dispatch with `apply: true` (`production` env)       | `alchemy deploy --yes`          |
-| `deploy-stable.yml`   | Release                                                     | `alchemy deploy`, then wrangler |
-| `nightly.yml`         | Nightly schedule                                            | `alchemy deploy`, then wrangler |
+| `deploy-stable.yml`   | Release (`production` env)                                  | `alchemy deploy`, then wrangler |
+| `nightly.yml`         | Nightly schedule (`nightly` env)                            | wrangler only, never Alchemy    |
 
-Every Alchemy step is gated on the repository variable `ALCHEMY_ENABLED ==
-'true'`, so nothing runs until the owner bootstraps the state store. Fork PRs
-and runs without `CLOUDFLARE_API_TOKEN` skip the plan instead of failing.
+Production infrastructure is applied only from a release tag or a manual
+`infra.yml` apply; both run in the shared `alchemy-prod` concurrency group, so
+two applies never race on the state. Every Alchemy step is gated on the
+repository variable `ALCHEMY_ENABLED == 'true'`, so nothing runs until the owner
+bootstraps the state store. The plan job uses `CLOUDFLARE_PREVIEW_TOKEN`; fork
+PRs and runs without it skip the plan instead of failing.
 
 ## Validating offline
 
@@ -82,16 +86,23 @@ wrangler file. `alchemy plan` needs a token.
 
 ## One-time owner steps
 
-1. **Widen the Cloudflare API token** stored as the `CLOUDFLARE_API_TOKEN`
-   repository secret (account `93527…`) to also cover Zone Read, Zone Settings
-   Edit, Bot Management Edit, Workers Scripts Edit and Secrets Store Edit (the
-   last two are for the state store). `pnpm --filter @julian/infra exec alchemy
-cloudflare token` can create one interactively.
-2. **Bootstrap the state store** once from a laptop with that token:
+1. **Widen the Cloudflare deploy token** (`CLOUDFLARE_API_TOKEN`, account
+   `93527…`) to cover Workers Scripts Edit, Workers Routes Edit and DNS Edit on
+   zone `krmznkr.com` (custom domains), Zone Read, Zone Settings Edit, Bot
+   Management Edit and Secrets Store Edit (the state store).
+   `pnpm --filter @julian/infra exec alchemy cloudflare token` can create one
+   interactively. Store it as an **environment secret** on the `production` and
+   `nightly` GitHub environments and remove the repository-level secret, so only
+   deploy jobs can read it.
+2. **Create the least-privilege `CLOUDFLARE_PREVIEW_TOKEN`** repository secret
+   for PR previews and plans: Workers Scripts Edit, Account Settings Read, Zone
+   Read, Bot Management Read and Secrets Store Read. No DNS, route or zone-settings
+   edit.
+3. **Bootstrap the state store** once from a laptop with that token:
    `CLOUDFLARE_ACCOUNT_ID=93527c9983d1c08638cb9c1de99f0450 pnpm --filter
 @julian/infra exec alchemy cloudflare bootstrap`.
-3. **Check the adoption plan:** `pnpm --filter @julian/infra run plan`. It should
+4. **Check the adoption plan:** `pnpm --filter @julian/infra run plan`. It should
    show the zone adopted and bot management updated in place, nothing created
    or deleted.
-4. **Apply once:** `pnpm --filter @julian/infra run deploy`.
-5. **Turn CI on:** set the repository variable `ALCHEMY_ENABLED` to `true`.
+5. **Apply once:** `pnpm --filter @julian/infra run deploy`.
+6. **Turn CI on:** set the repository variable `ALCHEMY_ENABLED` to `true`.

@@ -37,7 +37,8 @@ no path to an unexpected bill.
 `assets.run_worker_first = true` in `apps/edge/wrangler.jsonc` (rendered from
 `infra/src/config.ts`) forces **every** request —
 including static assets, which normally bypass the Worker — through
-`apps/edge/src/index.ts`, a single Effect pipeline where every rejection is a
+`apps/edge/src/pipeline.ts` (entry module: `apps/edge/src/index.ts`, which may
+only have a default export), a single Effect pipeline where every rejection is a
 tagged error rendered in one place (`toResponse`). Order of checks:
 
 ```
@@ -45,14 +46,17 @@ request
   → 1. bot filter        (bad/empty User-Agent → 403)
   → 2. site rate limit   (per IP, 240 / 60s → 429)
   → 3a. /api/oauth/*      → origin lock → oauth rate limit (12 / 60s) → Google
-  → 3b. everything else   → ASSETS.fetch (SPA) + security headers
+  → 3b. /version.json     → build metadata of this deploy
+  → 3c. everything else   → ASSETS.fetch (SPA) + security headers; a missing
+                            file (`/nope.js`, `/_headers`, `/.env`) requested
+                            outside a navigation gets a real 404
 ```
 
 ## Controls
 
 ### 1. Bot filtering — `apps/edge/src/guards.ts`
 
-`rejectBadBot()` returns `403` when the `User-Agent`:
+`rejectBots()` returns `403` when the `User-Agent`:
 
 - is **empty/missing** (real browsers always send one), or
 - contains any entry in `BLOCKED_USER_AGENTS` (case-insensitive substring):
@@ -77,6 +81,9 @@ Native Workers rate limiting (no KV/DB, no billing), keyed by
 | `SITE_RATELIMIT`  | 240 req / 60s | every request (volumetric abuse cap)            |
 | `OAUTH_RATELIMIT` | 12 req / 60s  | `/api/oauth/*` only (credential-exchange abuse) |
 
+Production and nightly use separate namespace IDs (`1001`/`1002` and
+`2001`/`2002`), so nightly traffic never spends production's budget.
+
 Over-limit returns `429`. `period` must be `10` or `60`. Limits are best-effort
 and enforced per Cloudflare location, which is fine for abuse mitigation.
 
@@ -87,14 +94,21 @@ name, so no code change is needed.
 ### 3. OAuth proxy lock-down — `apps/edge/src/oauth.ts`
 
 `/api/oauth/token` and `/api/oauth/refresh` proxy the Google token exchange so
-the client secret stays server-side. `rejectDisallowedOAuthRequest()` enforces:
+the client secret stays server-side. `checkRequest()` enforces:
 
 - `POST` only (else `405`).
-- `Origin` header must be in `ALLOWED_ORIGINS` (prod + localhost dev), else `403`
-  — blocks cross-site and no-origin (curl/bot) callers.
+- `Origin` header must be one of `allowedOrigins(channel)`, else `403`:
+  `https://julian.krmznkr.com` and `https://julian-nightly.krmznkr.com`, plus the
+  `localhost`/`127.0.0.1` dev servers (Vite on 3000 or 5173, `wrangler dev` on 8787) only when
+  `APP_CHANNEL` is `dev` (local `wrangler dev`). Stable, nightly and preview
+  deploys never accept a local origin.
+- The origin lock is **not authentication**: it stops cross-site pages in a
+  browser, but any non-browser client can forge `Origin`. The rate limit and
+  Google's own checks (PKCE, refresh-token validity) are what bound abuse.
 - `Content-Length` ≤ `MAX_OAUTH_BODY_BYTES` (4 KB), else `413`.
 
-**If you add a new dev/preview origin,** add it to `ALLOWED_ORIGINS`.
+**If you add a new deployed or dev origin,** add it to `DEPLOYED_ORIGINS` or
+`LOCAL_ORIGINS` in `apps/edge/src/oauth.ts`.
 
 ### 4. Security headers — `packages/security/src/index.ts`
 

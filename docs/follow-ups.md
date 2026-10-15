@@ -8,12 +8,27 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 - [ ] **Authorize the nightly OAuth redirect.** In Google Cloud project
       `krmznkr-julian`, add `https://julian-nightly.krmznkr.com/auth/callback`
       to the OAuth client's redirect URIs and
-      `https://julian-nightly.krmznkr.com` to its JavaScript origins. The
-      Worker already allows the origin.
-- [ ] **Set the nightly Worker secret** once, before the first nightly:
-      `pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET --env nightly`.
-- [ ] **Tag the baseline release.** Push `v0.1.5` on the current `main` so
-      release-please starts its changelog there instead of the whole history.
+      `https://julian-nightly.krmznkr.com` to its JavaScript origins. Blocked:
+      the Cloud console requires 2-step verification on `krmznkr@gmail.com`,
+      which must be enabled first. The Worker already allows the origin. While
+      this is open, nightly sign-in ends in `redirect_uri_mismatch` at Google.
+- [ ] **Authorize the local `127.0.0.1` callbacks** (same client):
+      `http://127.0.0.1:3000/auth/callback` and
+      `http://127.0.0.1:8787/auth/callback`, with their origins. See
+      [`development.md`](development.md#local-oauth).
+- [ ] **Scope the Cloudflare tokens.** Move `CLOUDFLARE_API_TOKEN` to the
+      `production` and `nightly` environment secrets, drop the repository copy,
+      and create the least-privilege `CLOUDFLARE_PREVIEW_TOKEN` for previews and
+      plans. Until then previews and plans skip. Scopes in
+      [`infrastructure.md`](infrastructure.md#one-time-owner-steps).
+- [ ] **Check the nightly custom domain.** `julian-nightly.krmznkr.com` is a
+      Worker custom domain (`custom_domain: true`), so the first successful
+      nightly deploy creates its DNS record and certificate; that needs the
+      deploy token's DNS and Workers Routes edit on the zone. Confirm it
+      resolves after the next nightly.
+- [x] **Set the nightly Worker secret.** `nightly.yml` now copies the
+      `GOOGLE_CLIENT_SECRET` GitHub secret into the nightly Worker on every run.
+- [x] **Tag the baseline release.** `v0.1.5` marks the release-please baseline.
 - [ ] **Create the `production` and `nightly` GitHub environments** (optional
       protection rules) used by the deploy workflows.
 - [ ] **Turn on Cloudflare as code.** Widen the API token, bootstrap the Alchemy
@@ -51,8 +66,9 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 
 - **New browser-side external API call?** Add its origin to `connect-src` in
   `packages/security/src/index.ts`, or CSP will block it.
-- **New dev/preview origin for OAuth?** Add it to `ALLOWED_ORIGINS` in
-  `apps/edge/src/oauth.ts`.
+- **New deployed or dev origin for OAuth?** Add it to `DEPLOYED_ORIGINS` or
+  `LOCAL_ORIGINS` in `apps/edge/src/oauth.ts` (local origins only work on the
+  `dev` channel).
 - **Dashboard work** must be done while logged into account **`93527…`**
   (`krmznkr@gmail.com`, Google SSO) — not the personal `c57b…` account.
 - **CSP has one source**, `packages/security/src/index.ts`; the build emits
@@ -63,8 +79,8 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 ## Tuning knobs
 
 - **Bot blocklist:** `BLOCKED_USER_AGENTS` in `apps/edge/src/guards.ts`.
-- **Rate limits:** `SITE_RATELIMIT` (240/60s) and `OAUTH_RATELIMIT` (12/60s) in
-  `infra/src/config.ts` (`period` must be `10` or `60`); regenerate
+- **Rate limits:** `SITE_RATELIMIT` (240/60s) and `OAUTH_RATELIMIT` (12/60s),
+  with separate namespaces for nightly, in `infra/src/config.ts` (`period` must be `10` or `60`); regenerate
   `apps/edge/wrangler.jsonc` with `pnpm --filter @julian/infra wrangler:generate`.
 - **OAuth body cap:** `MAX_OAUTH_BODY_BYTES` in `apps/edge/src/oauth.ts`.
 

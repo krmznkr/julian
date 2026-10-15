@@ -64,19 +64,36 @@ Inputs are the env vars `APP_CHANNEL`, `APP_PR_NUMBER` and optionally
 
 All deploy paths share `.github/actions/build-web`, which builds for a channel
 and **fails if a `GOCSPX-` client secret appears in `apps/web/dist`**, the single
-assets directory that holds both the app and the marketing pages. They
-authenticate with the `CLOUDFLARE_API_TOKEN` secret against account
-`93527c9983d1c08638cb9c1de99f0450`.
+assets directory that holds both the app and the marketing pages. They run
+against account `93527c9983d1c08638cb9c1de99f0450` with two tokens:
+
+| Secret                      | Scope                                  | Used by                                              |
+| --------------------------- | -------------------------------------- | ---------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`      | full deploy token (see infrastructure) | jobs in the `production` and `nightly` environments  |
+| `CLOUDFLARE_PREVIEW_TOKEN`  | least privilege, no zone or DNS edit   | `preview.yml`, the `infra.yml` plan                  |
+
+Jobs without their token skip with a notice instead of failing. The owner
+should store `CLOUDFLARE_API_TOKEN` as an **environment** secret on
+`production` and `nightly` (and delete the repository-level copy), and create
+`CLOUDFLARE_PREVIEW_TOKEN` as a repository secret with only Workers Scripts
+Edit and Account Settings Read on account `93527…`, plus Zone Read and Bot
+Management Read if the Alchemy plan should run.
+
+CI also boots the Worker with `wrangler dev` against the fresh build
+(`scripts/smoke-edge.sh`) and checks `/version.json` and `/` for a 200 with the
+security headers, which catches entry-module errors that only workerd reports.
 
 ### Preview (every PR)
 
 `.github/workflows/preview.yml` runs `wrangler versions upload --preview-alias
 pr-<N>`: a new version of the production Worker that receives no traffic, reachable
 at its preview URL. The workflow comments that URL on the PR and updates the
-comment on later pushes. Fork PRs and runs without `CLOUDFLARE_API_TOKEN` skip.
+comment on later pushes. Fork PRs and runs without `CLOUDFLARE_PREVIEW_TOKEN`
+skip.
 
-Previews run on a `workers.dev` origin that is not in `ALLOWED_ORIGINS`, so
-Google sign-in fails there by design; the demo works.
+Previews run on a `workers.dev` origin that the OAuth origin lock does not
+allow (`apps/edge/src/oauth.ts`), so Google sign-in fails there by design; the
+demo works.
 
 ### Nightly (03:00 UTC)
 
@@ -85,6 +102,13 @@ still points at the last `nightly-*` tag. Otherwise it deploys the Worker env
 `nightly` (Worker `julian-nightly`, custom domain
 `julian-nightly.krmznkr.com`), tags `nightly-YYYYMMDD` and publishes a GitHub
 prerelease. A second run on the same day replaces that day's nightly.
+
+Before deploying it copies the `GOOGLE_CLIENT_SECRET` GitHub secret into the
+nightly Worker (`wrangler secret put --env nightly`, piped from the environment,
+never printed); without that secret it warns and deploys anyway. Nightly never
+applies the Alchemy stack: production infrastructure changes only through
+**Deploy stable** or a manual **Infra** apply, which share the `alchemy-prod`
+concurrency group.
 
 ### Stable (release PR merged)
 
@@ -98,9 +122,14 @@ prerelease. A second run on the same day replaces that day's nightly.
    must report the new version; `/` must serve the marketing page and `/demo` the
    app shell), then promotes it
    to **100%**. Any failure puts 100% back on the previous version.
+4. The previous version is the one with the largest traffic share in
+   `wrangler deployments status`. When there is none (a first deploy), the
+   release goes straight to 100%, is smoke-tested there, and has no automatic
+   rollback target.
 
 Pushing to `main` no longer deploys production. To redeploy a release by hand,
-run **Deploy stable** from the Actions tab with its tag.
+run **Deploy stable** from the Actions tab with its tag. The workflow rejects
+any ref that is not a `vX.Y.Z` tag.
 
 ## Rollback
 
@@ -117,5 +146,7 @@ is what every release changes.
 
 ## Break-glass manual deploy
 
-`./scripts/deploy-web.sh` builds as `dev`, runs the same secret check and runs
-`wrangler deploy` straight to production. Use it only when Actions is down.
+`./scripts/deploy-web.sh` builds as `stable` (override with `APP_CHANNEL`), runs
+the same secret check and runs `wrangler deploy` with the matching `APP_*` vars.
+It deploys straight to **100%** of production, with no canary and no automatic
+rollback, and prints a warning saying so. Use it only when Actions is down.
