@@ -2,6 +2,7 @@
 // component the signed-in app renders, wired to local state and an in-memory
 // event store instead of the router and Google.
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { Effect } from "effect";
 import YearViewCore from "@/components/year-view-core";
 import { DemoHud } from "@/components/landing/demo-hud";
 import { buildDemoYear } from "@/components/landing/demo-data";
@@ -37,19 +38,20 @@ function useDemoStore(year: number) {
 
   const dataSource = useMemo<YearViewDataSource>(
     () => ({
-      load: (targetYear): Promise<YearViewLoadResult> => {
-        if (!eventsRef.current[targetYear])
-          eventsRef.current = {
-            ...eventsRef.current,
-            [targetYear]: buildDemoYear(targetYear, today).events,
+      load: (targetYear) =>
+        Effect.sync((): YearViewLoadResult => {
+          if (!eventsRef.current[targetYear])
+            eventsRef.current = {
+              ...eventsRef.current,
+              [targetYear]: buildDemoYear(targetYear, today).events,
+            };
+          return {
+            calendars: seed.calendars,
+            selectedCalendarIds: selectionRef.current,
+            events: eventsRef.current[targetYear],
+            failures: [],
           };
-        return Promise.resolve({
-          calendars: seed.calendars,
-          selectedCalendarIds: selectionRef.current,
-          events: eventsRef.current[targetYear],
-          failures: [],
-        });
-      },
+        }),
       // Remembered for this visit only; nothing is written to disk.
       persistSelection: (_availableIds, selectedIds) => {
         selectionRef.current = [...selectedIds];
@@ -60,61 +62,62 @@ function useDemoStore(year: number) {
 
   const eventApi = useMemo<YearViewEventApi>(
     () => ({
-      createEvent: (calendar, input) => {
-        nextIdRef.current += 1;
-        // All-day ends are exclusive, so a one-day event ends the next morning.
-        const [y, m, d] = input.date.split("-").map(Number);
-        const endDate = new Date(y ?? 0, (m ?? 1) - 1, (d ?? 1) + 1);
-        const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
-        const created: CalendarEvent = {
-          id: `demo-local-${nextIdRef.current}`,
-          title: input.title,
-          description: null,
-          start: input.date,
-          end,
-          allDay: true,
-          isTimed: false,
-          calendarId: calendar.id,
-          calendarColor: calendar.backgroundColor ?? null,
-          calendarSummary: calendar.summary,
-          htmlLink: null,
-        };
-        // Re-adding the same title on the same day replaces the earlier copy.
-        const targetYear = Number(input.date.slice(0, 4));
-        const existing = eventsRef.current[targetYear] ?? buildDemoYear(targetYear, today).events;
-        eventsRef.current = {
-          ...eventsRef.current,
-          [targetYear]: [
-            ...existing.filter(
-              (event) => !(event.title === created.title && event.start === created.start),
-            ),
-            created,
-          ],
-        };
-        return Promise.resolve(created);
-      },
-      updateEvent: (calendarId, eventId, input) => {
-        eventsRef.current = Object.fromEntries(
-          Object.entries(eventsRef.current).map(([key, events]) => [
-            key,
-            events.map((event) =>
-              event.id === eventId && event.calendarId === calendarId
-                ? { ...event, title: input.title }
-                : event,
-            ),
-          ]),
-        );
-        return Promise.resolve();
-      },
-      deleteEvent: (calendarId, eventId) => {
-        eventsRef.current = Object.fromEntries(
-          Object.entries(eventsRef.current).map(([key, events]) => [
-            key,
-            events.filter((event) => !(event.id === eventId && event.calendarId === calendarId)),
-          ]),
-        );
-        return Promise.resolve();
-      },
+      createEvent: (calendar, input) =>
+        Effect.sync(() => {
+          nextIdRef.current += 1;
+          // All-day ends are exclusive, so a one-day event ends the next morning.
+          const [y, m, d] = input.date.split("-").map(Number);
+          const endDate = new Date(y ?? 0, (m ?? 1) - 1, (d ?? 1) + 1);
+          const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+          const created: CalendarEvent = {
+            id: `demo-local-${nextIdRef.current}`,
+            title: input.title,
+            description: null,
+            start: input.date,
+            end,
+            allDay: true,
+            isTimed: false,
+            calendarId: calendar.id,
+            calendarColor: calendar.backgroundColor ?? null,
+            calendarSummary: calendar.summary,
+            htmlLink: null,
+          };
+          // Re-adding the same title on the same day replaces the earlier copy.
+          const targetYear = Number(input.date.slice(0, 4));
+          const existing = eventsRef.current[targetYear] ?? buildDemoYear(targetYear, today).events;
+          eventsRef.current = {
+            ...eventsRef.current,
+            [targetYear]: [
+              ...existing.filter(
+                (event) => !(event.title === created.title && event.start === created.start),
+              ),
+              created,
+            ],
+          };
+          return created;
+        }),
+      updateEvent: (calendarId, eventId, input) =>
+        Effect.sync(() => {
+          eventsRef.current = Object.fromEntries(
+            Object.entries(eventsRef.current).map(([key, events]) => [
+              key,
+              events.map((event) =>
+                event.id === eventId && event.calendarId === calendarId
+                  ? { ...event, title: input.title }
+                  : event,
+              ),
+            ]),
+          );
+        }),
+      deleteEvent: (calendarId, eventId) =>
+        Effect.sync(() => {
+          eventsRef.current = Object.fromEntries(
+            Object.entries(eventsRef.current).map(([key, events]) => [
+              key,
+              events.filter((event) => !(event.id === eventId && event.calendarId === calendarId)),
+            ]),
+          );
+        }),
     }),
     [today],
   );

@@ -11,7 +11,7 @@
 import { Context, Effect, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { GoogleApiError, NotAuthenticatedError } from "./errors";
-import { googleApiError } from "./http-errors";
+import { googleApiError, unauthorizedAsNotAuthenticated } from "./http-errors";
 import { okClientWithRetry, retryingClient } from "./http-policy";
 import { AppConfig } from "./config";
 import { TokenStore } from "./token-store";
@@ -93,6 +93,7 @@ export const googleHttpLayer: Layer.Layer<
           .pipe(
             Effect.flatMap(HttpClientResponse.schemaBodyJson(schema)),
             googleApiError(operation, message),
+            unauthorizedAsNotAuthenticated,
           );
       },
     );
@@ -106,6 +107,9 @@ export const googleHttpLayer: Layer.Layer<
 
         const ok = response.status >= 200 && response.status < 300;
         if (ok || (tolerate?.includes(response.status) ?? false)) return;
+        if (response.status === 401) {
+          return yield* new NotAuthenticatedError({ message: "Google rejected the access token" });
+        }
 
         return yield* new GoogleApiError({
           operation,

@@ -8,13 +8,16 @@
     "./*": "./src/*.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit && effect-language-service diagnostics --project tsconfig.json --strict --severity error,warning --format text"
+    "typecheck": "tsc --noEmit && effect-language-service diagnostics --project tsconfig.json --strict --severity error,warning --format text",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@julian/domain": "workspace:*",
     "effect": "4.0.4"
   },
   "devDependencies": {
-    "@julian/config": "workspace:*"
+    "@julian/config": "workspace:*",
+    "@effect/vitest": "4.0.4"
   }
 }

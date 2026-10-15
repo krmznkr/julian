@@ -1,7 +1,9 @@
 import { useCallback, useRef, useState } from "react";
+import { Effect } from "effect";
 import type { YearViewAction } from "@/components/year-view-reducer";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";
-import type { YearViewEventApi } from "@/components/year-view/year-view-ports";
+import type { YearViewEventApi, YearViewFailure } from "@/components/year-view/year-view-ports";
+import { useLatestFiber } from "@/lib/effect/use-latest-fiber";
 import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
 export type MutationSlot<T> = {
@@ -15,7 +17,7 @@ export type MutationSlot<T> = {
 };
 
 type MutationSlotInternals<T> = MutationSlot<T> & {
-  readonly run: (perform: (target: T) => Promise<void>, fallbackMessage: string) => Promise<void>;
+  readonly run: (perform: (target: T) => Effect.Effect<void, YearViewFailure>) => void;
 };
 
 function useMutationSlot<T>(onSettled: () => void): MutationSlotInternals<T> {
@@ -40,24 +42,34 @@ function useMutationSlot<T>(onSettled: () => void): MutationSlotInternals<T> {
     [onSettled],
   );
 
+  // The write runs as a fiber owned by this slot, so unmounting the view
+  // interrupts it (and its request) instead of settling into a dead dialog.
+  const fiber = useLatestFiber();
   const run = useCallback(
-    async (perform: (current: T) => Promise<void>, fallbackMessage: string) => {
+    (perform: (current: T) => Effect.Effect<void, YearViewFailure>) => {
       if (target === null || inFlight.current) return;
       inFlight.current = true;
       setSubmitting(true);
       setError(null);
-      try {
-        await perform(target);
-        setTarget(null);
-        onSettled();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : fallbackMessage);
-      } finally {
-        inFlight.current = false;
-        setSubmitting(false);
-      }
+      fiber.run(
+        perform(target).pipe(
+          Effect.match({
+            onSuccess: () => {
+              setTarget(null);
+              onSettled();
+            },
+            onFailure: (failure) => setError(failure.message),
+          }),
+          Effect.ensuring(
+            Effect.sync(() => {
+              inFlight.current = false;
+              setSubmitting(false);
+            }),
+          ),
+        ),
+      );
     },
-    [onSettled, target],
+    [fiber, onSettled, target],
   );
 
   return { target, isOpen: target !== null, submitting, error, open, setOpen, run };
@@ -97,37 +109,44 @@ export function useEventMutations({
 
   const submitCreate = useCallback(
     (title: string) =>
-      create.run(async (cell) => {
-        if (targetCalendar === null) return;
-        const event = await eventApi.createEvent(targetCalendar, {
-          title,
-          date: toDateKey(year, cell),
-        });
-        dispatch({ type: "EVENT_CREATED", event });
-      }, "Failed to create event"),
+      create.run((cell) =>
+        targetCalendar === null
+          ? Effect.void
+          : eventApi
+              .createEvent(targetCalendar, { title, date: toDateKey(year, cell) })
+              .pipe(Effect.map((event) => dispatch({ type: "EVENT_CREATED", event }))),
+      ),
     [create, dispatch, eventApi, targetCalendar, year],
   );
 
   const submitEdit = useCallback(
     (title: string) =>
-      edit.run(async (event) => {
-        await eventApi.updateEvent(event.calendarId, event.id, { title });
-        dispatch({
-          type: "EVENT_UPDATED",
-          id: event.id,
-          calendarId: event.calendarId,
-          changes: { title },
-        });
-      }, "Failed to update event"),
+      edit.run((event) =>
+        eventApi.updateEvent(event.calendarId, event.id, { title }).pipe(
+          Effect.map(() =>
+            dispatch({
+              type: "EVENT_UPDATED",
+              id: event.id,
+              calendarId: event.calendarId,
+              changes: { title },
+            }),
+          ),
+        ),
+      ),
     [dispatch, edit, eventApi],
   );
 
   const confirmDelete = useCallback(
     () =>
-      remove.run(async (event) => {
-        await eventApi.deleteEvent(event.calendarId, event.id);
-        dispatch({ type: "EVENT_DELETED", id: event.id, calendarId: event.calendarId });
-      }, "Failed to delete event"),
+      remove.run((event) =>
+        eventApi
+          .deleteEvent(event.calendarId, event.id)
+          .pipe(
+            Effect.map(() =>
+              dispatch({ type: "EVENT_DELETED", id: event.id, calendarId: event.calendarId }),
+            ),
+          ),
+      ),
     [dispatch, eventApi, remove],
   );
 

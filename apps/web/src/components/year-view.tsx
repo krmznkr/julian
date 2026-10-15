@@ -1,47 +1,26 @@
 // The authenticated year view: the shared core wired to the real router, the
-// Google Calendar API and the persisted calendar-selection preference.
+// Google Calendar ports and the persisted sidebar preference.
 import { useCallback, useMemo } from "react";
 import YearViewCore from "@/components/year-view-core";
 import type { YearViewInitialData } from "@/components/year-view/types";
+import { makeGoogleDataSource, makeGoogleEventApi } from "@/components/year-view/google-ports";
 import type {
-  YearViewDataSource,
-  YearViewEventApi,
   YearViewPreferences,
   YearViewRouterPort,
 } from "@/components/year-view/year-view-ports";
-import { saveSelectedCalendarIdsSync } from "@/lib/calendar-selection";
 import {
   getStoredSidebarCollapsedPreference,
   storeSidebarCollapsedPreference,
 } from "@/lib/year-view-preferences";
-import {
-  createEvent,
-  deleteEvent,
-  isAuthenticated,
-  loadGoogleYearData,
-  updateEvent,
-} from "@/lib/google-calendar";
+import { provideApp } from "@/lib/effect/runtime";
 import { useNavigate, useSearch } from "@/lib/router";
 
-const EMPTY_YEAR = {
-  calendars: [],
-  selectedCalendarIds: [],
-  events: [],
-  failures: [],
-} as const;
-
-const googleEventApi: YearViewEventApi = { createEvent, updateEvent, deleteEvent };
+const googleDataSource = makeGoogleDataSource(provideApp);
+const googleEventApi = makeGoogleEventApi(provideApp);
 
 const storedPreferences: YearViewPreferences = {
   getSidebarCollapsed: getStoredSidebarCollapsedPreference,
   setSidebarCollapsed: storeSidebarCollapsedPreference,
-};
-
-const googleDataSource: YearViewDataSource = {
-  // No dummy data: until Google Calendar is connected the view is empty and the
-  // sidebar just offers the Connect button.
-  load: async (year) => ((await isAuthenticated()) ? loadGoogleYearData(year) : EMPTY_YEAR),
-  persistSelection: saveSelectedCalendarIdsSync,
 };
 
 export default function YearView({

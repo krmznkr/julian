@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DEMO_SCRIPT, type DemoContext } from "./demo-script";
-import { chord, pressChord, sleep, typeInto } from "./demo-input";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Effect } from "effect";
+import { useLatestFiber } from "@/lib/effect/use-latest-fiber";
+import { DEMO_SCRIPT, playDemo, type DemoContext } from "./demo-script";
+import { chord, pressChord, typeInto } from "./demo-input";
 
 export type DemoPlayerState = {
   readonly status: "playing" | "interactive" | "finished";
@@ -21,23 +23,25 @@ export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): Dem
   const [caption, setCaption] = useState(DEMO_SCRIPT[0].caption);
   const [step, setStep] = useState(0);
   const [runId, setRunId] = useState(0);
-  const controllerRef = useRef<AbortController | null>(null);
+  // The tour runs as one fiber: taking control or replaying interrupts it
+  // mid-sleep, so no further keys are pressed.
+  const tour = useLatestFiber();
   const focusGrid = useCallback(() => {
     rootRef.current
       ?.querySelector<HTMLElement>("[data-year-grid-root]")
       ?.focus({ preventScroll: true });
   }, [rootRef]);
   const takeControl = useCallback(() => {
-    controllerRef.current?.abort();
+    tour.interrupt();
     setStatus("interactive");
-  }, []);
+  }, [tour]);
   const replay = useCallback(() => {
-    controllerRef.current?.abort();
+    tour.interrupt();
     setStep(0);
     setCaption(DEMO_SCRIPT[0].caption);
     setStatus("playing");
     setRunId((id) => id + 1);
-  }, []);
+  }, [tour]);
   const addEvent = useCallback(() => {
     takeControl();
     focusGrid();
@@ -46,9 +50,6 @@ export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): Dem
 
   useEffect(() => {
     if (status !== "playing") return;
-    const controller = new AbortController();
-    controllerRef.current = controller;
-    const { signal } = controller;
     const stopOnInput = (event: Event) => {
       if (event.isTrusted) takeControl();
     };
@@ -67,54 +68,35 @@ export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): Dem
     );
     if (rootRef.current) observer.observe(rootRef.current);
     const ctx: DemoContext = {
-      signal,
-      wait: (ms) => sleep(ms, signal),
-      press: async (spec, holdMs = 400) => {
-        if (signal.aborted) return;
-        pressChord(chord(spec));
-        await sleep(holdMs, signal);
-      },
-      type: async (selector, text) => {
-        if (signal.aborted) return;
-        const input = document.querySelector<HTMLInputElement>(selector);
-        if (input) await typeInto(input, text, { signal, perCharMs: 25 });
-      },
-      submitDialog: async () => {
-        if (signal.aborted) return;
+      press: (spec, holdMs = 400) =>
+        Effect.sync(() => pressChord(chord(spec))).pipe(Effect.andThen(Effect.sleep(holdMs))),
+      type: (selector, text) =>
+        Effect.suspend(() => {
+          const input = document.querySelector<HTMLInputElement>(selector);
+          return input ? typeInto(input, text, 25) : Effect.void;
+        }),
+      submitDialog: Effect.sync(() =>
         document
           .querySelector<HTMLFormElement>("[data-slot='dialog-content'] form")
-          ?.requestSubmit();
-        await sleep(400, signal);
-      },
+          ?.requestSubmit(),
+      ).pipe(Effect.andThen(Effect.sleep(400))),
+      focusGrid: Effect.sync(focusGrid),
+      beginBeat: (index, beat) =>
+        Effect.sync(() => {
+          setStep(index);
+          setCaption(beat.caption);
+        }),
     };
-    const run = async () => {
-      await sleep(300, signal);
-      if (signal.aborted) return;
-      // Replays begin with a closed overlay and the grid focused.
-      pressChord(chord("Escape"));
-      await sleep(50, signal);
-      if (signal.aborted) return;
-      focusGrid();
-      await DEMO_SCRIPT.reduce(async (previous, beat, index) => {
-        await previous;
-        if (signal.aborted) return;
-        setStep(index);
-        setCaption(beat.caption);
-        await beat.run(ctx);
-        await sleep(400, signal);
-      }, Promise.resolve());
-      if (!signal.aborted) setStatus("finished");
-    };
-    void run();
+    tour.run(playDemo(ctx).pipe(Effect.andThen(Effect.sync(() => setStatus("finished")))));
     return () => {
-      controller.abort();
+      tour.interrupt();
       observer.disconnect();
       window.removeEventListener("keydown", stopOnInput, true);
       window.removeEventListener("pointerdown", stopOnInput, true);
       window.removeEventListener("touchstart", stopOnInput, true);
       document.removeEventListener("visibilitychange", stopWhenHidden);
     };
-  }, [focusGrid, rootRef, runId, status, takeControl]);
+  }, [focusGrid, rootRef, runId, status, takeControl, tour]);
 
   return useMemo(
     () => ({ status, caption, step, replay, takeControl, addEvent }),

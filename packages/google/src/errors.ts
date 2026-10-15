@@ -4,7 +4,7 @@
 // the error payloads are schema-described: they can be encoded/decoded, they
 // carry operation labels for diagnosis, and they stay discriminable in the
 // Effect error channel instead of becoming untyped thrown values.
-import { Data, Schema } from "effect";
+import { Schema } from "effect";
 
 // A network/API failure while talking to Google (or the OAuth Worker proxy).
 // `operation` labels the boundary that failed, which is what makes a report
@@ -33,52 +33,7 @@ export class AuthConfigError extends Schema.TaggedError<AuthConfigError>()(
   { message: Schema.String },
 ) {}
 
-// A fire-and-forget task started from React failed; `cause` is the original error.
-export class AsyncTaskError extends Data.TaggedError("AsyncTaskError")<{ readonly cause: Error }> {}
-
 export type AppError = GoogleApiError | NotAuthenticatedError | AuthConfigError;
 
 // The failure set every authenticated Google API call can produce.
 export type GoogleApiFailure = GoogleApiError | NotAuthenticatedError;
-
-// A plain `Error` that still carries the tagged-error metadata (`_tag` and,
-// when relevant, HTTP `status`). React code keeps catching `Error`s, while
-// callers that care can branch on `error.tag === "Google.NotAuthenticated"`.
-export class AppErrorLike extends Error {
-  readonly tag: string | undefined;
-  readonly status: number | undefined;
-
-  constructor(message: string, options?: { tag?: string; status?: number; cause?: unknown }) {
-    super(message, options?.cause === undefined ? undefined : { cause: options.cause });
-    this.name = options?.tag ?? "AppErrorLike";
-    this.tag = options?.tag;
-    this.status = options?.status;
-  }
-}
-
-const isAppError = (error: unknown): error is AppError =>
-  error instanceof GoogleApiError ||
-  error instanceof NotAuthenticatedError ||
-  error instanceof AuthConfigError;
-
-// Collapse an app error (or unknown defect) into an `Error` for React code that
-// still speaks in Errors, preserving `_tag`/`status` when present.
-//
-// This is a narrow, typed check against our own error classes rather than the
-// previous structural `_tag`/`status` property sniffing, which required
-// unchecked casts through `unknown`.
-export function toError(error: unknown): Error {
-  if (error instanceof AppErrorLike) return error;
-
-  if (isAppError(error)) {
-    return new AppErrorLike(error.message, {
-      tag: error._tag,
-      status: error instanceof GoogleApiError ? error.status : undefined,
-      cause: error,
-    });
-  }
-
-  if (error instanceof Error) return error;
-
-  return new AppErrorLike(typeof error === "string" ? error : "Unknown error", { cause: error });
-}

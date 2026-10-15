@@ -189,12 +189,20 @@ and its focus live. Three ports in
 `apps/web/src/components/year-view/year-view-ports.ts` supply that, so the same component
 serves both the signed-in app and the landing page:
 
-| Port                  | Live container (`year-view.tsx`)            | Demo container (`landing/demo-year-view.tsx`) |
+| Port                  | Live container (`year-view/google-ports.ts`) | Demo container (`landing/demo-year-view.tsx`) |
 | --------------------- | ------------------------------------------- | --------------------------------------------- |
 | `YearViewRouterPort`  | TanStack Router search params               | local `useState`                              |
 | `YearViewDataSource`  | Google Calendar + stored calendar selection | generated fixture year, in memory             |
 | `YearViewEventApi`    | Google create/update/delete                 | in-memory store                               |
 | `YearViewPreferences` | `localStorage` sidebar preference           | in-memory ref                                 |
+
+Loads and writes are `Effect` values with no requirements and a typed failure
+(a `_tag` and a message). The live ports get the app services from the shared
+`ManagedRuntime` through `provideApp`; the demo ports are `Effect.sync`. The
+hooks fork each one through `useLatestFiber`: a newer load interrupts the older
+one, unmounting interrupts whatever is running, and the effect dispatches its
+own result, so an interrupted fiber can never write stale data. Interruption
+also aborts the in-flight `fetch` through the HTTP client's `AbortSignal`.
 
 The landing page therefore demonstrates the product by running it, not by
 reimplementing it — a lookalike would drift from the real view on every change.
@@ -206,7 +214,10 @@ today, creates a sample event, and opens commands. It runs once in under 15
 seconds. "Try it now" stops it immediately; "Add sample event" opens the same
 form as the N shortcut; "Reset demo" starts a fresh in-memory session.
 
-`demo-input.ts` dispatches keyboard events through the application's handlers.
+The tour in `demo-script.ts` is an Effect program: each pause is an
+`Effect.sleep`, the player runs it as one fiber and interrupts it to hand over
+control, and its tests drive the timeline with `TestClock`. `demo-input.ts`
+dispatches keyboard events through the application's handlers.
 Any trusted input, including a login click, cancels the tour before the action
 continues. A hidden tab or scrolling away also cancels it. Touch devices,
 small screens, and reduced-motion preferences start in interactive mode.
@@ -305,6 +316,7 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 | ------------------------- | ----------------------------------------------- | ---------------------------------------- |
 | No stored Google token    | Empty calendar view with a connect action       | Start OAuth                              |
 | Expired access token      | Automatic refresh through Worker                | Reconnect if refresh fails               |
+| Revoked token (401)       | Load or write reports a not-authenticated error | Reconnect                                |
 | One calendar fetch fails  | Other calendars and tasks still render          | Retry/reload calendars                   |
 | One task list fails       | Other task lists still render                   | Retry/reload                             |
 | OAuth proxy misconfigured | Callback or refresh reports failure             | Restore Worker secret/config             |
@@ -315,12 +327,12 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 
 | Change                                           | Primary files                                                                                   |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| OAuth scopes, token lifecycle, Google mapping    | `apps/web/src/lib/google-calendar.ts`                                                           |
+| OAuth scopes, token lifecycle, Google mapping    | `packages/google/src/`                                                                          |
 | Edge routing, OAuth allowlist, security headers  | `apps/edge/src/*.ts`, `packages/security/src/index.ts`, `apps/edge/wrangler.jsonc`              |
 | Route structure and URL contract                 | `apps/web/src/router.tsx`, `apps/web/src/lib/year-view-url.ts`                                  |
 | Calendar math and event segmentation             | `packages/domain/src/`                                                                          |
 | Year-view state and orchestration                | `apps/web/src/components/year-view-reducer.ts`, `apps/web/src/components/year-view-core.tsx`    |
-| Where the year view gets data, focus, and writes | `apps/web/src/components/year-view/year-view-ports.ts`, `apps/web/src/components/year-view.tsx` |
+| Where the year view gets data, focus, and writes | `apps/web/src/components/year-view/year-view-ports.ts`, `apps/web/src/components/year-view/google-ports.ts` |
 | Landing page and its scripted demo               | `apps/web/src/routes/landing-page.tsx`, `apps/web/src/components/landing/`                      |
 | Month rendering and virtualization               | `apps/web/src/components/year-view/`                                                            |
 | Build chunking and deployment                    | `apps/web/vite.config.ts`, `.github/workflows/deploy.yml`                                       |

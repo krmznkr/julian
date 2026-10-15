@@ -3,6 +3,7 @@
 // The year view listens for keydown on `window` and never checks `isTrusted`,
 // so dispatching events here drives the *real* application logic — the same
 // code path a visitor's own keyboard would take. Nothing is simulated.
+import { Effect, Random } from "effect";
 
 export type KeyChord = {
   readonly key: string;
@@ -107,24 +108,6 @@ export function pressChord(input: KeyChord) {
   target.dispatchEvent(new KeyboardEvent("keyup", init));
 }
 
-export function sleep(ms: number, signal?: AbortSignal) {
-  return new Promise<void>((resolve) => {
-    if (signal?.aborted) {
-      resolve();
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      signal?.removeEventListener("abort", onAbort);
-      resolve();
-    }, ms);
-    function onAbort() {
-      window.clearTimeout(timer);
-      resolve();
-    }
-    signal?.addEventListener("abort", onAbort, { once: true });
-  });
-}
-
 // React tracks the last value it wrote on the DOM node, so assigning `.value`
 // directly is swallowed as a no-op change. Going through the prototype setter
 // is the supported way to make a controlled input observe an external write.
@@ -136,19 +119,16 @@ function setInputValue(input: HTMLInputElement, value: string) {
 }
 
 /** Types character by character, at a speed that reads as human rather than robotic. */
-export async function typeInto(
-  input: HTMLInputElement,
-  text: string,
-  { signal, perCharMs = 55 }: { signal?: AbortSignal; perCharMs?: number } = {},
-) {
-  await [...text].reduce(
-    (chain, _char, index) =>
-      chain.then(async () => {
-        if (signal?.aborted || !input.isConnected) return;
+export const typeInto = (input: HTMLInputElement, text: string, perCharMs = 55) =>
+  Effect.forEach(
+    [...text],
+    (_char, index) =>
+      Effect.gen(function* () {
+        if (!input.isConnected) return;
         setInputValue(input, text.slice(0, index + 1));
         // Jitter keeps the rhythm from sounding mechanical.
-        await sleep(perCharMs + Math.round(Math.random() * 40), signal);
+        const jitter = yield* Random.nextIntBetween(0, 40);
+        yield* Effect.sleep(perCharMs + jitter);
       }),
-    Promise.resolve(),
+    { discard: true },
   );
-}

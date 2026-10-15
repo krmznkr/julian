@@ -4,6 +4,7 @@
 // stored calendar-selection preference. The landing page plugs in local state,
 // a fixture year and an in-memory event store, which is what lets the marketing
 // site run the *real* year view instead of a lookalike.
+import type { Effect } from "effect";
 import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 import type { YearViewSearch } from "@/lib/year-view-url";
 
@@ -11,6 +12,15 @@ import type { YearViewSearch } from "@/lib/year-view-url";
 export type YearViewRouterPort = {
   readonly search: YearViewSearch;
   readonly navigate: (target: { year: number; search: YearViewSearch; replace: boolean }) => void;
+};
+
+/**
+ * Why a load or a write failed. Every adapter's typed errors carry a tag and a
+ * message for the user; the year view needs nothing more from them.
+ */
+export type YearViewFailure = {
+  readonly _tag: string;
+  readonly message: string;
 };
 
 export type YearSourceFailure = {
@@ -30,9 +40,14 @@ export type YearViewLoadResult = {
   readonly failures: ReadonlyArray<YearSourceFailure>;
 };
 
-/** Where the year view gets its calendars and events, and where hidden calendars are remembered. */
+/**
+ * Where the year view gets its calendars and events, and where hidden calendars
+ * are remembered. Loads and writes are Effects with no requirements, so the
+ * year view runs them as fibers it can interrupt when a load is superseded or
+ * the view unmounts.
+ */
 export type YearViewDataSource = {
-  readonly load: (year: number) => Promise<YearViewLoadResult>;
+  readonly load: (year: number) => Effect.Effect<YearViewLoadResult, YearViewFailure>;
   readonly persistSelection: (
     availableIds: ReadonlyArray<string>,
     selectedIds: ReadonlyArray<string>,
@@ -44,13 +59,16 @@ export type YearViewEventApi = {
   readonly createEvent: (
     calendar: Pick<CalendarSummary, "id" | "summary" | "backgroundColor">,
     input: { title: string; date: string },
-  ) => Promise<CalendarEvent>;
+  ) => Effect.Effect<CalendarEvent, YearViewFailure>;
   readonly updateEvent: (
     calendarId: string,
     eventId: string,
     input: { title: string },
-  ) => Promise<void>;
-  readonly deleteEvent: (calendarId: string, eventId: string) => Promise<void>;
+  ) => Effect.Effect<void, YearViewFailure>;
+  readonly deleteEvent: (
+    calendarId: string,
+    eventId: string,
+  ) => Effect.Effect<void, YearViewFailure>;
 };
 
 /**
