@@ -10,7 +10,8 @@
 // malformed OAuth URL at click time.
 import { Config, Context, Effect, Layer } from "effect";
 
-const DEFAULT_SCOPES: ReadonlyArray<string> = [
+// Exported so the privacy page lists exactly what sign-in requests.
+export const GOOGLE_SCOPES: ReadonlyArray<string> = [
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/tasks.readonly",
@@ -62,7 +63,7 @@ export const appConfigLayer: Layer.Layer<AppConfig> = Layer.effect(
       clientId,
       redirectUri,
       proxyBaseUrl,
-      scopes: DEFAULT_SCOPES,
+      scopes: GOOGLE_SCOPES,
       retryTimes,
       apiConcurrency,
     });
@@ -75,7 +76,7 @@ export const appConfigLayerWith = (overrides?: Partial<AppConfigShape>): Layer.L
     clientId: "test-client-id",
     redirectUri: "http://localhost:3000/auth/callback",
     proxyBaseUrl: "/api/oauth",
-    scopes: DEFAULT_SCOPES,
+    scopes: GOOGLE_SCOPES,
     retryTimes: 0,
     apiConcurrency: 8,
     ...overrides,

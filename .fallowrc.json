@@ -11,8 +11,14 @@
     "apps/web/vitest.config.ts",
     "apps/edge/src/index.ts",
     "apps/edge/vitest.config.ts",
+    "apps/marketing/src/styles.css",
+    "apps/marketing/vite.config.ts",
+    "apps/marketing/vitest.config.ts",
     "packages/*/vitest.config.ts"
   ],
   "ignorePatterns": ["apps/web/index.html", ".github/**"],
-  "ignoreDependencies": ["pino-pretty"]
+  "ignoreDependencies": [
+    "pino-pretty",
+    "@julian/marketing"
+  ]
 }

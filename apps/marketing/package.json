@@ -1,0 +1,19 @@
+{
+  "name": "@julian/marketing",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The Julian marketing site: landing, privacy and terms pages prerendered to static HTML.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@julian/config": "workspace:*",
+    "@julian/google": "workspace:*",
+    "vite": "8.3.4"
+  }
+}
