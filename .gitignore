@@ -40,8 +40,7 @@ yarn-error.log*
 
 # local tooling metadata
 .agents/
-.claude/*
-!.claude/settings.json
+.claude/
 .cursor/
 .agent/
 .cline/
@@ -87,3 +86,7 @@ next-env.d.ts
 **/.*.bun-build
 .turbo/
 .alchemy/
+
+# wrangler local state and secrets
+.wrangler/
+.dev.vars*

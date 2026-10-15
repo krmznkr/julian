@@ -22,14 +22,10 @@ test("the marketing pages ship no JavaScript", async ({ page }) => {
 
 test("the privacy page lists the requested Google scopes", async ({ page }) => {
   await page.goto("/privacy");
-  for (const scope of [
-    "calendar.readonly",
-    "calendar.events",
-    "tasks.readonly",
-    "userinfo.email",
-  ]) {
+  for (const scope of ["calendar.readonly", "calendar.events", "tasks.readonly"]) {
     await expect(page.getByText(`https://www.googleapis.com/auth/${scope}`)).toBeVisible();
   }
+  await expect(page.getByText("userinfo.email")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "GitHub" })).toHaveAttribute(
     "href",
     "https://github.com/krmznkr/julian/issues",

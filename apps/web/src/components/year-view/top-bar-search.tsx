@@ -1,5 +1,5 @@
 import { Search, X } from "lucide-react";
-import type { KeyboardEvent } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { useYearViewContext } from "@/components/year-view/year-view-context";
 
 /** Filters the year by event text. "/" focuses it; Escape clears it. */
@@ -7,6 +7,10 @@ export function TopBarSearch() {
   const { searchQuery, setSearchQuery, searchInputRef, searchMatchCount, focusYearGrid } =
     useYearViewContext();
   const active = searchQuery.trim() !== "";
+  // The "/" shortcut means nothing without a keyboard.
+  const [placeholder] = useState(() =>
+    window.matchMedia("(pointer: coarse)").matches ? "Search" : "Search  /",
+  );
 
   const clear = () => {
     setSearchQuery("");
@@ -37,7 +41,7 @@ export function TopBarSearch() {
         onKeyDown={onKeyDown}
         aria-label="Search events"
         aria-keyshortcuts="/"
-        placeholder="Search  /"
+        placeholder={placeholder}
         className="h-8 w-28 rounded-lg border border-border/60 bg-muted/30 pl-7 pr-7 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:w-40 [&::-webkit-search-cancel-button]:hidden"
       />
       {active ? (

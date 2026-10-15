@@ -16,14 +16,13 @@ export const SCOPE_PURPOSES: Readonly<Record<string, string>> = {
     "create, rename, move, and delete events when you ask it to",
   "https://www.googleapis.com/auth/tasks.readonly":
     "show your incomplete Google Tasks with due dates (read-only)",
-  "https://www.googleapis.com/auth/userinfo.email": "show which Google account is connected",
 };
 
 const escapeHtml = (text: string) =>
   text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
 const header = `<header class="site-header">
-  <a class="brand" href="/home" aria-label="Julian home"><img src="/icon.svg" alt="" width="28" height="28" />Julian</a>
+  <a class="brand" href="/home" aria-label="Julian home"><svg width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M8 32C14.2667 21.6 22.9333 16 32 16C41.0667 16 49.7333 21.6 56 32C49.7333 42.4 41.0667 48 32 48C22.9333 48 14.2667 42.4 8 32Z" stroke="currentColor" stroke-width="4.75" stroke-linecap="round" stroke-linejoin="round" /><circle cx="32" cy="32" r="8.25" fill="currentColor" /></svg>Julian</a>
   <nav aria-label="Main">
     <a href="/demo">Live demo</a>
     <a href="${REPOSITORY_URL}">Source</a>

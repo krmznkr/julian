@@ -11,8 +11,12 @@ export default Alchemy.Stack(
   "julian",
   { providers: Cloudflare.providers(), state: Cloudflare.state() },
   Effect.gen(function* () {
-    // Pre-existing zone: adopted, and retained if ever removed from the stack.
-    const zone = yield* Cloudflare.Zone.Zone("Zone", { name: ZONE_NAME }).pipe(adopt(true));
+    // Pre-existing zone: adopted, and retained if ever removed from the stack
+    // (Zone already defaults to retain; this keeps it explicit).
+    const zone = yield* Cloudflare.Zone.Zone("Zone", { name: ZONE_NAME }).pipe(
+      adopt(true),
+      Alchemy.RemovalPolicy.retain(),
+    );
 
     // Cloudflare's managed robots.txt (already on): keeps AI crawlers out while
     // search crawlers can still read the noindex header.

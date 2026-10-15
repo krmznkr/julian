@@ -264,7 +264,7 @@ to another year. Refreshing the page or resetting the demo discards them.
   multi-day events use lanes; busy all-day cells show a `+N` button. Clicking an
   event selects it in the day panel. Opening Google is an explicit action from
   the details panel.
-- The component examples at `/lab` use the same date and rendering code.
+- The component examples at `/lab` (dev server only) use the same date and rendering code.
 
 ### Route behavior
 
@@ -275,13 +275,14 @@ One domain serves two builds. The marketing pages are static HTML from
 | ----------------------------- | --------- | ------------------------------------------------------------------------- |
 | `/`                           | Worker    | Marketing home, or `302 /{yyyy}` when the `julian_session` cookie is set  |
 | `/home`, `/privacy`, `/terms` | marketing | Static pages, no JavaScript                                               |
-| `/{yyyy}`                     | app       | Lazy-loaded year view; the current year adds today's month/day to the URL |
+| `/{yyyy}`                     | app       | Lazy-loaded year view; the current year adds today's month/day to the URL. Signed out, it offers sign-in or the demo |
 | `/{yyyy}/{mm}`                | app       | Redirects to `/{yyyy}?month=mm&day=1`                                     |
 | `/year/*`                     | Worker    | `301` to the same path without `/year`, query kept (legacy bookmarks)     |
 | `/demo`, `/demo/{yyyy}`       | app       | The real year view on sample data; `/demo` opens the current year         |
+| `/demo/{yyyy}/{mm}`           | app       | Redirects to `/demo/{yyyy}?month=mm&day=1`                                |
 | `/auth/callback`              | app       | Validates OAuth state and exchanges the single-use code                   |
 | `/api/oauth/*`                | Worker    | Token exchange and refresh                                                |
-| `/lab`                        | app       | Component/design experimentation                                          |
+| `/lab`                        | app       | Component/design experimentation; dev server only, absent from builds     |
 
 `julian_session` (`packages/security/src/session-hint.ts`) is a hint, not a
 credential: its value is `1`, it is set after a successful sign-in (and whenever
@@ -292,8 +293,9 @@ which do not run the Worker, the app's own `/` route redirects to the year or
 the demo from `localStorage` instead, and `/year/*` redirects client-side.
 
 Search parameters hold the focused month/day so the selected date is linkable.
-The Worker serves `index.html` for unknown asset paths, allowing client-side
-routes to load directly.
+The Worker serves `index.html` for unknown paths on navigations, allowing
+client-side routes to load directly. A non-navigation request for a missing file
+(`/nope.js`, `/_headers`, `/.env`) gets a plain `404` instead.
 
 ## Browser storage
 
@@ -322,7 +324,7 @@ flowchart LR
   prodBuild["Channel Vite build<br/>public Google client ID + version"]
   secretScan["Fail if dist contains<br/>a GOCSPX client secret"]
   wrangler["Wrangler upload / deploy"]
-  worker["Cloudflare Worker<br/>assets + apps/edge/src/index.ts"]
+  worker["Cloudflare Worker<br/>assets + apps/edge/src/pipeline.ts"]
 
   pr --> ci
   trigger --> prodBuild --> secretScan --> wrangler --> worker

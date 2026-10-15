@@ -4,9 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { renderHeadersFile } from "@julian/security";
-import { buildDefines } from "./build-defines";
+import { buildDefines } from "./build-defines.ts";
 
-const resolvePath = (...parts: string[]) => path.resolve(__dirname, ...parts);
+const resolvePath = (...parts: string[]) => path.resolve(import.meta.dirname, ...parts);
 
 const securityHeadersFile = (): Plugin => ({
   name: "julian:security-headers",

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 4173;
+const PORT = Number(process.env.E2E_PORT ?? 4173);
 const baseURL = `http://127.0.0.1:${PORT}`;
 const isCI = Boolean(process.env.CI);
 

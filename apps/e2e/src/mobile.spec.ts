@@ -38,6 +38,7 @@ test("the calendars drawer opens on demand and stays out of the tab order", asyn
 
 test("search works from the touch keyboard", async ({ demo: page }) => {
   const search = page.getByRole("searchbox", { name: "Search events" });
+  await expect(search).toHaveAttribute("placeholder", "Search");
   await search.tap();
   await search.fill("lisbon");
   await expect(yearGrid(page).locator("mark").first()).toHaveText(/lisbon/i);

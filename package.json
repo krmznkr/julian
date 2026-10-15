@@ -1,6 +1,12 @@
 {
   "name": "julian",
   "version": "0.1.5",
+  "description": "A full-year view for Google Calendar, built for multi-day events.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/krmznkr/julian.git"
+  },
   "private": true,
   "type": "module",
   "scripts": {
@@ -50,12 +56,17 @@
   "packageManager": "pnpm@10.33.0",
   "pnpm": {
     "onlyBuiltDependencies": [
-      "fallow"
+      "esbuild",
+      "fallow",
+      "workerd"
     ],
     "overrides": {
       "@effect/platform-node-shared": "4.0.4",
+      "@hono/node-server@<1.19.10": "^1.19.10",
       "deepmerge-ts@<8.0.0": "^8.0.0",
       "esbuild@<0.28.1": "^0.28.1",
+      "hono@<4.12.25": "^4.12.25",
+      "lodash@<4.18.0": "^4.18.0",
       "sharp@<0.35.5": "^0.35.5",
       "tinypool@<2.1.2": "^2.1.2",
       "undici@<7.29.1": "^7.29.1"

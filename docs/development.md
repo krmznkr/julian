@@ -7,8 +7,8 @@ exchange and refresh.
 
 ## Requirements
 
-- Node 24
-- pnpm 10
+- Node 24.15.0 (pinned in `package.json` `engines` and `mise.toml`)
+- pnpm 10.33.0
 
 ## Repository layout
 
@@ -23,6 +23,7 @@ A pnpm workspace orchestrated by Turborepo:
 | `packages/domain`   | `@julian/domain`    | Pure calendar logic: dates, events, year-grid layout    |
 | `packages/google`   | `@julian/google`    | Effect services for Google OAuth, Calendar, and Tasks   |
 | `packages/security` | `@julian/security`  | Security headers and the session-hint cookie            |
+| `packages/release`  | `@julian/release`   | Version and channel metadata for each build             |
 | `packages/config`   | `@julian/config`    | Shared TypeScript configuration                         |
 
 Linting, formatting, and dead-code checks run once from the root across every
@@ -58,7 +59,8 @@ pnpm test:e2e
 pnpm test:lighthouse
 ```
 
-- **Playwright** serves `apps/web/dist` with `vite preview` on port 4173 and
+- **Playwright** serves `apps/web/dist` with `vite preview` on port 4173
+  (override with `E2E_PORT`) and
   covers the marketing pages, the URL scheme, the demo, grid keyboard navigation,
   search, moving events by drag and keyboard, the one-page print, creating/renaming/deleting an
   event, the theme toggle, and a Pixel 7 viewport with touch input. The clock is pinned so the
@@ -88,23 +90,41 @@ cp .env.example .env
 pnpm dev
 ```
 
-The Vite server is fixed to `http://127.0.0.1:3000`. Google OAuth must list the
-matching origin and `http://127.0.0.1:3000/auth/callback` redirect.
+The Vite dev server is fixed to `http://127.0.0.1:3000`. Open it at that exact
+address: Google treats `http://localhost:3000` and `http://127.0.0.1:3000` as
+different origins, and the redirect URI is derived from the address in the
+browser bar.
 
-Vite serves the browser application only; it does not run `apps/edge/src/index.ts`.
-The OAuth token exchange therefore requires the Worker proxy. Use the deployed
-application for an ordinary end-to-end OAuth check, or build and run Wrangler
-locally with its local-secret mechanism when specifically testing the Worker.
-The confidential Google client secret is never a Vite variable and must not be
-committed or given a `VITE_` prefix.
+Vite serves the browser application only; it does not run the Worker
+(`apps/edge`), so the token exchange at `/api/oauth/*` has nothing to answer it
+there. For a full local sign-in, run the built app under the Worker:
+
+```bash
+printf 'GOOGLE_CLIENT_SECRET=%s\n' "<secret>" > apps/edge/.dev.vars   # git-ignored
+pnpm build
+pnpm --filter @julian/edge dev        # wrangler dev on http://127.0.0.1:8787
+```
+
+Local `wrangler dev` runs with `APP_CHANNEL=dev`, the only channel whose origin
+lock accepts `localhost` and `127.0.0.1`. The confidential client secret is
+never a Vite variable and must not be committed or given a `VITE_` prefix.
 
 The Google Cloud project is `krmznkr-julian`. `VITE_GOOGLE_CLIENT_ID` is public
-by design; `GOOGLE_CLIENT_SECRET` lives only in the personal 1Password vault and
-the Cloudflare Worker secret store. Registered callbacks: production
-`https://julian.krmznkr.com/auth/callback` and development
-`http://localhost:5173/auth/callback` and `http://localhost:3000/auth/callback`.
-The nightly callback is a pending manual step in
-[`follow-ups.md`](follow-ups.md).
+by design; `GOOGLE_CLIENT_SECRET` lives only in the personal 1Password vault,
+the Cloudflare Worker secret store and the `GOOGLE_CLIENT_SECRET` GitHub secret
+(used by the nightly deploy). The OAuth client must list each origin you use as
+a JavaScript origin and its `/auth/callback` as a redirect URI:
+
+| Where                  | Origin                               | Redirect URI                                       |
+| ---------------------- | ------------------------------------ | -------------------------------------------------- |
+| Production             | `https://julian.krmznkr.com`         | `https://julian.krmznkr.com/auth/callback`         |
+| Nightly                | `https://julian-nightly.krmznkr.com` | `https://julian-nightly.krmznkr.com/auth/callback` |
+| `wrangler dev`         | `http://127.0.0.1:8787`              | `http://127.0.0.1:8787/auth/callback`              |
+| Vite dev (start only)  | `http://127.0.0.1:3000`              | `http://127.0.0.1:3000/auth/callback`              |
+
+Registered today: production, plus `http://localhost:5173/auth/callback` and
+`http://localhost:3000/auth/callback` from earlier setups. The nightly and
+`127.0.0.1` entries are pending manual steps in [`follow-ups.md`](follow-ups.md).
 
 ## Data and state
 

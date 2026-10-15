@@ -20,30 +20,46 @@ on:
 permissions:
   contents: read
 
+# Shared by every workflow that applies the production Alchemy state.
 concurrency:
-  group: deploy-stable
+  group: alchemy-prod
   cancel-in-progress: false
 
 env:
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  CLOUDFLARE_ACCOUNT_ID: 93527c9983d1c08638cb9c1de99f0450
+  REF: ${{ inputs.ref }}
   PRODUCTION_URL: https://julian.krmznkr.com
   # The Worker's bot filter rejects curl's default user agent.
   SMOKE_UA: "Mozilla/5.0 (compatible; julian-release-smoke)"
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require a release tag
+        run: |
+          if ! [[ "$REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::ref must be a release tag like v1.2.3, got '$REF'"
+            exit 1
+          fi
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: production
       url: https://julian.krmznkr.com
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 93527c9983d1c08638cb9c1de99f0450
     defaults:
       run:
         working-directory: apps/edge
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ env.REF }}
       - id: build
         uses: ./.github/actions/build-web
         with:
@@ -54,29 +70,49 @@ jobs:
         if: vars.ALCHEMY_ENABLED == 'true'
         working-directory: infra
         run: pnpm exec alchemy deploy --stage prod --yes --no-input
+      # The version with the largest traffic share; none on a first deploy.
       - name: Find the version currently serving production
         id: current
         run: |
-          id=$(pnpm exec wrangler deployments status --json | jq -r '.versions[0].version_id')
+          status=$(pnpm exec wrangler deployments status --json 2>/dev/null || true)
+          id=$(jq -r '(.versions // []) | max_by(.percentage) | .version_id // empty' <<<"${status:-null}" 2>/dev/null || true)
+          if [ -z "$id" ]; then
+            echo "::notice::No previous version found; the release will go straight to 100% with no rollback target."
+          fi
           echo "version_id=$id" >> "$GITHUB_OUTPUT"
       - name: Upload the new version
         id: upload
+        env:
+          VERSION: ${{ steps.build.outputs.version }}
+          COMMIT: ${{ steps.build.outputs.commit }}
         run: |
           pnpm exec wrangler versions upload \
-            --tag "${{ inputs.ref }}" \
-            --message "Release ${{ inputs.ref }}" \
-            --var "APP_VERSION:${{ steps.build.outputs.version }}" \
+            --tag "$REF" \
+            --message "Release $REF" \
+            --var "APP_VERSION:$VERSION" \
             --var "APP_CHANNEL:stable" \
-            --var "APP_COMMIT:${{ steps.build.outputs.commit }}" | tee upload.log
+            --var "APP_COMMIT:$COMMIT" | tee upload.log
           id=$(grep -oE 'Worker Version ID: [0-9a-f-]+' upload.log | awk '{print $4}')
           test -n "$id"
           echo "version_id=$id" >> "$GITHUB_OUTPUT"
       - name: Route 10% of traffic to the new version
+        if: steps.current.outputs.version_id != ''
+        env:
+          NEW_VERSION_ID: ${{ steps.upload.outputs.version_id }}
+          OLD_VERSION_ID: ${{ steps.current.outputs.version_id }}
         run: |
           pnpm exec wrangler versions deploy -y \
-            --message "Canary ${{ inputs.ref }}" \
-            "${{ steps.upload.outputs.version_id }}@10%" \
-            "${{ steps.current.outputs.version_id }}@90%"
+            --message "Canary $REF" \
+            "$NEW_VERSION_ID@10%" \
+            "$OLD_VERSION_ID@90%"
+      - name: Deploy the first release straight to 100%
+        if: steps.current.outputs.version_id == ''
+        env:
+          NEW_VERSION_ID: ${{ steps.upload.outputs.version_id }}
+        run: |
+          pnpm exec wrangler versions deploy -y \
+            --message "Release $REF" \
+            "$NEW_VERSION_ID@100%"
       - name: Smoke test the new version
         env:
           NEW_VERSION_ID: ${{ steps.upload.outputs.version_id }}
@@ -97,13 +133,18 @@ jobs:
           echo "Smoke test failed: expected $EXPECTED, got '$served'" >&2
           exit 1
       - name: Promote to 100%
+        if: steps.current.outputs.version_id != ''
+        env:
+          NEW_VERSION_ID: ${{ steps.upload.outputs.version_id }}
         run: |
           pnpm exec wrangler versions deploy -y \
-            --message "Release ${{ inputs.ref }}" \
-            "${{ steps.upload.outputs.version_id }}@100%"
+            --message "Release $REF" \
+            "$NEW_VERSION_ID@100%"
       - name: Roll back on failure
         if: failure() && steps.current.outputs.version_id != ''
+        env:
+          OLD_VERSION_ID: ${{ steps.current.outputs.version_id }}
         run: |
           pnpm exec wrangler versions deploy -y \
-            --message "Automatic rollback of ${{ inputs.ref }}" \
-            "${{ steps.current.outputs.version_id }}@100%"
+            --message "Automatic rollback of $REF" \
+            "$OLD_VERSION_ID@100%"

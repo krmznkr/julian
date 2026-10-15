@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "./env";
-import { serve } from "./index";
+import { serve } from "./pipeline";
 
 const ORIGIN = "https://julian.krmznkr.com";
 
@@ -83,4 +83,60 @@ describe("site routing", () => {
       expect(response.headers.get("Cache-Control")).toBe("public, max-age=60");
     },
   );
+
+  it.each(["/nope.js", "/robots.txt", "/_headers", "/.env", "/.git/config", "/assets/missing.css"])(
+    "answers a non-navigation request for the missing file %s with 404",
+    async (path) => {
+      const response = await serve(
+        new Request(`${ORIGIN}${path}`, {
+          headers: { "User-Agent": "Mozilla/5.0", "Sec-Fetch-Mode": "no-cors" },
+        }),
+        makeEnv(echoAssets()),
+      );
+      expect(response.status).toBe(404);
+      expect(response.headers.get("Content-Security-Policy")).not.toBeNull();
+    },
+  );
+
+  it("keeps the SPA fallback for a navigation to a file-like path", async () => {
+    const response = await serve(
+      new Request(`${ORIGIN}/nope.js`, {
+        headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html,*/*" },
+      }),
+      makeEnv(echoAssets()),
+    );
+    expect(response.status).toBe(200);
+  });
+
+  it("serves an existing non-HTML file to a script request", async () => {
+    const assets = vi.fn<Env["ASSETS"]["fetch"]>(
+      async () => new Response("x", { headers: { "Content-Type": "text/javascript" } }),
+    );
+    const response = await serve(
+      new Request(`${ORIGIN}/assets/app.js`, {
+        headers: { "User-Agent": "Mozilla/5.0", "Sec-Fetch-Mode": "no-cors" },
+      }),
+      makeEnv(assets),
+    );
+    expect(response.status).toBe(200);
+  });
+
+  it("treats a request without fetch metadata or Accept as a file request", async () => {
+    const assets = vi.fn<Env["ASSETS"]["fetch"]>(async () => new Response("index"));
+    const missing = await serve(
+      new Request(`${ORIGIN}/nope.js`, { headers: { "User-Agent": "Mozilla/5.0" } }),
+      makeEnv(assets),
+    );
+    expect(missing.status).toBe(200);
+    const html = await serve(get("/nope.js"), makeEnv(echoAssets()));
+    expect(html.status).toBe(404);
+  });
+
+  it("serves the marketing .html files as they are", async () => {
+    const response = await serve(
+      new Request(`${ORIGIN}/home.html`, { headers: { "User-Agent": "Mozilla/5.0" } }),
+      makeEnv(echoAssets()),
+    );
+    expect(response.status).toBe(200);
+  });
 });

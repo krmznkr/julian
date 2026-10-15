@@ -14,21 +14,32 @@ export const WORKER_SECRETS = ["GOOGLE_CLIENT_SECRET"] as const;
 /** Assets directory, relative to apps/edge. */
 export const ASSETS_DIRECTORY = "../web/dist";
 
+export type Channel = "stable" | "nightly";
+
 export interface RateLimit {
   readonly binding: string;
-  readonly namespaceId: string;
+  /** One namespace per Worker, so nightly traffic never spends production's budget. */
+  readonly namespaceIds: Readonly<Record<Channel, string>>;
   readonly limit: number;
   readonly period: 10 | 60;
 }
 
 export const RATE_LIMITS: ReadonlyArray<RateLimit> = [
   // Whole-site abuse cap: generous for humans, throttles volumetric scraping.
-  { binding: "SITE_RATELIMIT", namespaceId: "1001", limit: 240, period: 60 },
+  {
+    binding: "SITE_RATELIMIT",
+    namespaceIds: { stable: "1001", nightly: "2001" },
+    limit: 240,
+    period: 60,
+  },
   // Tight cap on the OAuth proxy so nobody can hammer Google through it.
-  { binding: "OAUTH_RATELIMIT", namespaceId: "1002", limit: 12, period: 60 },
+  {
+    binding: "OAUTH_RATELIMIT",
+    namespaceIds: { stable: "1002", nightly: "2002" },
+    limit: 12,
+    period: 60,
+  },
 ];
-
-export type Channel = "stable" | "nightly";
 
 export interface WorkerConfig {
   readonly name: string;
