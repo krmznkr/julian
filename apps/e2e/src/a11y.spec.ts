@@ -5,7 +5,7 @@ import { expect, test } from "./fixtures";
 /**
  * Serious and critical violations fail the run. Moderate findings that remain
  * are deliberate:
- * - `page-has-heading-one`: the landing page *is* the app; its first heading is
+ * - `page-has-heading-one`: the demo *is* the app; its first heading is
  *   the sidebar's "Calendars", and an invisible h1 would only exist for the scan.
  * - `region`: the demo banner sits above the app shell's landmarks so it reads
  *   first; it holds one button and two lines of text.
@@ -30,7 +30,7 @@ async function expectNoSeriousViolations(page: Page) {
   expect(blocking).toEqual([]);
 }
 
-test("the landing page has no serious accessibility violations", async ({ demo: page }) => {
+test("the demo has no serious accessibility violations", async ({ demo: page }) => {
   await expectNoSeriousViolations(page);
 });
 
@@ -51,3 +51,15 @@ test("the event dialog has no serious accessibility violations", async ({ demo: 
   await expect(page.getByRole("dialog", { name: "New event" })).toBeVisible();
   await expectNoSeriousViolations(page);
 });
+
+for (const path of ["/home", "/privacy", "/terms"]) {
+  for (const colorScheme of ["light", "dark"] as const) {
+    test(`the marketing page ${path} (${colorScheme}) has no serious accessibility violations`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme });
+      await page.goto(path);
+      await expectNoSeriousViolations(page);
+    });
+  }
+}

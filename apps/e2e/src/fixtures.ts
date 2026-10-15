@@ -15,7 +15,7 @@ export function cellId(month: number, day: number, year = YEAR) {
 export const test = base.extend<{ demo: Page }>({
   demo: async ({ page }, use) => {
     await page.clock.setFixedTime(TODAY);
-    await page.goto("/");
+    await page.goto("/demo");
     await expect(yearGrid(page)).toBeFocused();
     await use(page);
   },

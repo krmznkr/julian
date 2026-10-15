@@ -3,7 +3,7 @@
     "collect": {
       "staticDistDir": "../web/dist",
       "isSinglePageApplication": true,
-      "url": ["http://localhost/"],
+      "url": ["http://localhost/demo", "http://localhost/home.html"],
       "numberOfRuns": 3,
       "settings": {
         "chromeFlags": "--headless=new --no-sandbox"
