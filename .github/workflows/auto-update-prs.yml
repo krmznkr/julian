@@ -63,7 +63,7 @@ jobs:
           fi
 
           updated=false
-          while read -r pr branch; do
+          while read -r pr _branch; do
             echo "Updating PR #$pr"
             # A failure here is not fatal: the next run retries, and a branch
             # that cannot be updated needs a human anyway.
