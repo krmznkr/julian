@@ -1,0 +1,2 @@
+timestamp=2026-10-15T08:23:32.416Z level=INFO fiber=#1 message="Loading stack state"
+timestamp=2026-10-15T08:23:32.416Z level=DEBUG fiber=#333 message="state store: initializing"

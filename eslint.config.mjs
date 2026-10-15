@@ -21,6 +21,7 @@ export default [
       "packages/release/src/**/*.ts",
       "apps/edge/src/**/*.ts",
       "apps/marketing/src/**/*.ts",
+      "infra/src/**/*.ts",
     ],
     ignores: ["**/node_modules/**", "**/dist/**", "**/build/**"],
     plugins: { functional },
