@@ -55,6 +55,14 @@ describe("routes", () => {
     });
   });
 
+  it("canonicalizes /demo/yyyy/mm to a month focus in the demo", async () => {
+    expect(await resolve("/demo/2026/03?day=9")).toMatchObject({
+      pathname: "/demo/2026",
+      search: { month: 3, day: 9 },
+      notFound: false,
+    });
+  });
+
   it("redirects pre-1.0 /year/yyyy bookmarks", async () => {
     expect(await resolve("/year/2025?month=2")).toMatchObject({
       pathname: "/2025",
@@ -62,7 +70,10 @@ describe("routes", () => {
     });
   });
 
-  it.each(["/twenty", "/2026/13", "/demo/abc"])("treats %s as not found", async (path) => {
-    expect((await resolve(path)).notFound).toBe(true);
-  });
+  it.each(["/twenty", "/2026/13", "/demo/abc", "/demo/2026/00"])(
+    "treats %s as not found",
+    async (path) => {
+      expect((await resolve(path)).notFound).toBe(true);
+    },
+  );
 });

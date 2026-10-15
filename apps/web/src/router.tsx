@@ -17,7 +17,6 @@ import {
 } from "@/lib/year-view-url";
 import { RootErrorBoundary, RootLayout } from "@/routes/root-layout";
 import { AuthCallbackPage } from "@/routes/auth-callback-page";
-import { LabPage } from "@/routes/lab-page";
 import { dynamic } from "@/lib/router";
 import { hasStoredGoogleSession } from "@/lib/session";
 import { NotFoundScreen } from "@/features/shell/not-found-screen";
@@ -119,6 +118,24 @@ const yearMonthRoute = createRoute({
   },
 });
 
+// `/demo/{yyyy}/{mm}`, the demo twin of `/{yyyy}/{mm}`.
+const demoMonthRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/demo/$year/$month",
+  beforeLoad: ({ location, params }) => {
+    requireYear(params.year);
+    const month = parseMonthParam(params.month);
+    if (month === null) throw notFound();
+    const search = parseYearViewSearch(location.search as Record<string, unknown>);
+    throw redirect({
+      to: "/demo/$year",
+      params: { year: params.year },
+      search: { ...search, month, day: search.day ?? 1 },
+      replace: true,
+    });
+  },
+});
+
 // Pre-1.0 bookmarks. The edge answers these with a 301; this covers the Vite servers.
 const legacyYearRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -172,11 +189,18 @@ const authCallbackRoute = createRoute({
   component: AuthCallbackPage,
 });
 
-const labRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/lab",
-  component: LabPage,
-});
+// A component sandbox for development; production builds leave it out.
+const labRoutes = import.meta.env.DEV
+  ? [
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: "/lab",
+        component: dynamic(async () => ({
+          default: (await import("@/routes/lab-page")).LabPage,
+        })),
+      }),
+    ]
+  : [];
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -185,8 +209,9 @@ const routeTree = rootRoute.addChildren([
   legacyYearRoute,
   demoIndexRoute,
   demoRoute,
+  demoMonthRoute,
   authCallbackRoute,
-  labRoute,
+  ...labRoutes,
 ]);
 
 export const router = createRouter({
