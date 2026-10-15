@@ -253,6 +253,26 @@ describe("GoogleCalendarApi writes", () => {
     }),
   );
 
+  it.effect("moves an all-day event by patching its dates", () =>
+    Effect.gen(function* () {
+      const env = yield* TestEnv.makeTestEnv({
+        storage: TestEnv.validTokenStorage(),
+        responses: [TestEnv.jsonResponse({ id: "event" })],
+      });
+
+      yield* Effect.flatMap(GoogleCalendarApi, (api) =>
+        api.moveEvent("cal", "event", { start: "2026-04-02", end: "2026-04-04" }),
+      ).pipe(Effect.provide(env.layer));
+
+      const [request] = yield* Ref.get(env.fetch.requests);
+      expect(request?.method).toBe("PATCH");
+      expect(JSON.parse(String(request?.body))).toEqual({
+        start: { date: "2026-04-02" },
+        end: { date: "2026-04-04" },
+      });
+    }),
+  );
+
   it.effect("treats deleting an already-deleted event as success", () =>
     Effect.gen(function* () {
       const env = yield* TestEnv.makeTestEnv({

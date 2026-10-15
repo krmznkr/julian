@@ -47,6 +47,12 @@ export interface GoogleCalendarApiShape {
     eventId: string,
     input: { readonly title: string },
   ) => Effect.Effect<void, GoogleApiFailure>;
+  /** Reschedules an all-day event; `start`/`end` are dates, `end` exclusive. */
+  readonly moveEvent: (
+    calendarId: string,
+    eventId: string,
+    dates: { readonly start: string; readonly end: string },
+  ) => Effect.Effect<void, GoogleApiFailure>;
   readonly deleteEvent: (
     calendarId: string,
     eventId: string,
@@ -212,6 +218,25 @@ export const googleCalendarApiLayer: Layer.Layer<GoogleCalendarApi, never, Googl
         yield* http.send(request, "GoogleCalendar.updateEvent", "Failed to update event");
       });
 
+      const moveEvent: GoogleCalendarApiShape["moveEvent"] = Effect.fn("GoogleCalendar.moveEvent")(
+        function* (
+          calendarId: string,
+          eventId: string,
+          dates: { readonly start: string; readonly end: string },
+        ) {
+          const request = HttpClientRequest.patch(
+            `${CALENDAR_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+          ).pipe(
+            HttpClientRequest.bodyJsonUnsafe({
+              start: { date: dates.start },
+              end: { date: dates.end },
+            }),
+          );
+
+          yield* http.send(request, "GoogleCalendar.moveEvent", "Failed to move event");
+        },
+      );
+
       const deleteEvent: GoogleCalendarApiShape["deleteEvent"] = Effect.fn(
         "GoogleCalendar.deleteEvent",
       )(function* (calendarId: string, eventId: string) {
@@ -229,6 +254,7 @@ export const googleCalendarApiLayer: Layer.Layer<GoogleCalendarApi, never, Googl
         listEvents,
         createEvent,
         updateEvent,
+        moveEvent,
         deleteEvent,
       });
     }),

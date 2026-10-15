@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { buildEventKey, buildMonthSegments } from "@julian/domain";
+import { matchesEventQuery } from "@/components/year-view/event-search";
 import type { YearSourceFailure } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
@@ -9,6 +10,7 @@ export function useYearViewDerivedData({
   failures,
   formatDate,
   isRefreshing,
+  searchQuery,
   selectedCalendarIds,
   year,
 }: {
@@ -17,6 +19,7 @@ export function useYearViewDerivedData({
   failures: ReadonlyArray<YearSourceFailure>;
   formatDate: (date: Date, options?: Intl.DateTimeFormatOptions) => string;
   isRefreshing: boolean;
+  searchQuery: string;
   selectedCalendarIds: ReadonlyArray<string>;
   year: number;
 }) {
@@ -66,8 +69,10 @@ export function useYearViewDerivedData({
 
   const visibleEvents = useMemo(() => {
     const selected = new Set(selectedCalendarIds);
-    return events.filter((event) => selected.has(event.calendarId));
-  }, [events, selectedCalendarIds]);
+    return events.filter(
+      (event) => selected.has(event.calendarId) && matchesEventQuery(event, searchQuery),
+    );
+  }, [events, searchQuery, selectedCalendarIds]);
 
   const displayEventMap = useMemo(
     () => new Map(visibleEvents.map((event) => [buildEventKey(event.id, event.calendarId), event])),

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="What Julian accesses in your Google account and where it keeps it."
+    />
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="googlebot" content="noindex, nofollow" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <title>Privacy · Julian</title>
+  </head>
+  <body>
+    <!-- @header -->
+    <main class="prose">
+      <h1>Privacy</h1>
+      <p>
+        Julian is a browser app. It reads and changes your Google Calendar from your browser, on
+        your behalf, and keeps nothing about your calendar on a server.
+      </p>
+
+      <h2>What Julian asks Google for</h2>
+      <p>Signing in asks for these Google permissions and nothing else:</p>
+      <!-- @scopes -->
+      <p>
+        Julian only changes events when you create, rename, move, or delete one. It never reads your
+        email, contacts, or files.
+      </p>
+
+      <h2>Where your data lives</h2>
+      <ul>
+        <li>
+          Calendar events and tasks are fetched by your browser straight from Google's APIs and kept
+          in memory while the page is open. Julian has no database and stores no calendar data on
+          any server.
+        </li>
+        <li>
+          Your Google access and refresh tokens are kept in your browser's local storage on this
+          device. Signing out removes them; you can also revoke access any time in your
+          <a href="https://myaccount.google.com/permissions">Google account settings</a>.
+        </li>
+        <li>
+          Display preferences (theme, hidden calendars, sidebar state) are kept in local storage
+          too. A cookie named <code>julian_session</code> records only that this browser has signed
+          in, so the home page can open your calendar directly. It holds no token and is cleared
+          when you sign out.
+        </li>
+      </ul>
+
+      <h2>Hosting</h2>
+      <p>
+        Julian is served by Cloudflare Workers. To sign in, the Worker passes the one-time
+        authorization code and refresh requests to Google with the app's client secret and returns
+        Google's answer to your browser without storing it. Cloudflare processes request metadata
+        such as IP addresses to deliver the site and to rate-limit abuse. There are no analytics,
+        ads, or third-party trackers.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions or requests: open an issue on
+        <a href="https://github.com/krmznkr/julian/issues">GitHub</a>.
+      </p>
+    </main>
+    <!-- @footer -->
+  </body>
+</html>

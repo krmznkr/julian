@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildYearViewSearch,
   cellFromYearViewSearch,
+  parseMonthParam,
+  parseYearParam,
   parseYearViewSearch,
+  todayFocus,
 } from "@/lib/year-view-url";
 
 describe("year-view-url", () => {
@@ -31,6 +34,38 @@ describe("year-view-url", () => {
     expect(cellFromYearViewSearch(2026, { month: 2, day: 30 })).toEqual({
       month: 1,
       day: 28,
+    });
+  });
+
+  it.each([
+    ["2026", 2026],
+    ["1970", 1970],
+    ["2100", 2100],
+    ["1969", null],
+    ["2101", null],
+    ["202", null],
+    ["year", null],
+    ["2026a", null],
+  ])("parses the year segment %j as %s", (raw, expected) => {
+    expect(parseYearParam(raw)).toBe(expected);
+  });
+
+  it.each([
+    ["3", 3],
+    ["03", 3],
+    ["12", 12],
+    ["0", null],
+    ["13", null],
+    ["003", null],
+    ["mar", null],
+  ])("parses the month segment %j as %s", (raw, expected) => {
+    expect(parseMonthParam(raw)).toBe(expected);
+  });
+
+  it("focuses today with a 1-indexed month", () => {
+    expect(todayFocus(new Date(2026, 2, 10, 12))).toEqual({
+      year: 2026,
+      search: { month: 3, day: 10 },
     });
   });
 });

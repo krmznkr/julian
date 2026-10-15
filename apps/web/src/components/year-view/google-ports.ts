@@ -49,6 +49,8 @@ export function makeGoogleEventApi(provide: Provide): YearViewEventApi {
     createEvent: (calendar, input) => withCalendar((api) => api.createEvent(calendar, input)),
     updateEvent: (calendarId, eventId, input) =>
       withCalendar((api) => api.updateEvent(calendarId, eventId, input)),
+    moveEvent: (calendarId, eventId, dates) =>
+      withCalendar((api) => api.moveEvent(calendarId, eventId, dates)),
     deleteEvent: (calendarId, eventId) =>
       withCalendar((api) => api.deleteEvent(calendarId, eventId)),
   };

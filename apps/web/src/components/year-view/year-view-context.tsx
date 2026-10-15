@@ -2,14 +2,17 @@ import {
   createContext,
   type Dispatch,
   type ReactNode,
+  type RefObject,
   type SetStateAction,
   useContext,
 } from "react";
-import type { CalendarSummary } from "@julian/domain";
+import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
 type YearViewSharedDataContextValue = {
   calendars: ReadonlyArray<CalendarSummary>;
   monthNames: string[];
+  /** Opens the move dialog for an event, or null when the event cannot move. */
+  onRequestMoveEvent?: (event: CalendarEvent) => (() => void) | null;
 };
 
 const YearViewSharedDataContext = createContext<YearViewSharedDataContextValue | null>(null);
@@ -58,6 +61,10 @@ type YearViewContextValue = {
   setKeyboardHelpOpen: Dispatch<SetStateAction<boolean>>;
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: Dispatch<SetStateAction<boolean>>;
+  searchQuery: string;
+  setSearchQuery: Dispatch<SetStateAction<string>>;
+  searchInputRef: RefObject<HTMLInputElement | null>;
+  searchMatchCount: number;
   registerFocusYearGrid: (focus: (() => void) | null) => void;
   focusYearGrid: () => void;
   onYearChange: (event: React.ChangeEvent<HTMLInputElement>) => void;

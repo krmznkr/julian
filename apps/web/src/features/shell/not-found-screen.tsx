@@ -19,10 +19,10 @@ export function NotFoundScreen() {
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Button asChild>
-            <Link href={`/year/${currentYear}`}>Open current year</Link>
+            <Link href={`/${currentYear}`}>Open current year</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/">Go home</Link>
+            <a href="/home">Go home</a>
           </Button>
           <Button variant="ghost" onClick={() => window.history.back()}>
             Go back

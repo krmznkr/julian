@@ -1,6 +1,6 @@
 // Cloudflare Worker for julian.krmznkr.com.
 //
-// It serves the static SPA (via the ASSETS binding) and proxies the Google OAuth
+// It serves the marketing pages and the static SPA (via the ASSETS binding) and proxies the Google OAuth
 // token exchange so the client secret never reaches the browser.
 //
 // The request pipeline is one Effect program:
@@ -9,7 +9,8 @@
 //   3. /api/oauth/*: origin lock, tight rate limit,
 //      capped body, schema-validated grant, Google call (oauth.ts)
 //   4. /version.json: build metadata of this deploy
-//   5. everything else: static assets
+//   5. everything else: marketing or app assets, and the
+//      `/` and legacy `/year/*` redirects             (site.ts)
 // Any rejection is a tagged error (errors.ts) rendered by `toResponse`, and
 // every response leaves with the hardening headers from @julian/security.
 import { SECURITY_HEADERS } from "@julian/security";
@@ -19,6 +20,7 @@ import { WorkerEnv, workerEnvLayer, type Env } from "./env";
 import type { EdgeError } from "./errors";
 import { enforceSiteRateLimit, rejectBots } from "./guards";
 import { OAUTH_PREFIX, handleOAuth } from "./oauth";
+import { serveSite } from "./site";
 
 // Copies a response and layers the hardening headers on top. Existing headers
 // (content-type, cache-control from the assets binding, etc.) are preserved.
@@ -61,19 +63,13 @@ const serveVersion = Effect.fn("edge.version")(function* () {
   return json(build, 200);
 });
 
-const serveAsset = Effect.fn("edge.asset")(function* (request: Request) {
-  const env = yield* WorkerEnv;
-  // index.html fallback is handled by the assets binding's SPA not_found_handling.
-  return yield* Effect.promise(() => env.assets.fetch(request));
-});
-
 export const handle = Effect.fn("edge.request")(function* (request: Request) {
   yield* rejectBots(request);
   yield* enforceSiteRateLimit(request);
   const { pathname } = new URL(request.url);
   if (pathname.startsWith(OAUTH_PREFIX)) return yield* handleOAuth(request);
   if (pathname === VERSION_PATH) return yield* serveVersion();
-  return yield* serveAsset(request);
+  return yield* serveSite(request);
 });
 
 // `fetchImpl` is the outbound fetch used for Google; tests pass a fake.

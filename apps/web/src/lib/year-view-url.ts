@@ -1,4 +1,5 @@
 import { clampCell, type KeyboardCell } from "@/components/year-view/year-grid-keyboard";
+import { MAX_YEAR, MIN_YEAR } from "@/components/year-view/constants";
 
 export type YearViewSearch = {
   month?: number;
@@ -47,4 +48,25 @@ export function buildYearViewSearch(focus: {
 
 export function focusSignature(focus: { cell: KeyboardCell; detailsOpen: boolean }) {
   return `${focus.cell.month}:${focus.cell.day}:${focus.detailsOpen ? 1 : 0}`;
+}
+
+/** A `/{yyyy}` segment within the supported range, or null. */
+export function parseYearParam(raw: string): number | null {
+  if (!/^\d{4}$/.test(raw)) return null;
+  const year = Number(raw);
+  return year >= MIN_YEAR && year <= MAX_YEAR ? year : null;
+}
+
+/** A `/{yyyy}/{mm}` month segment (`3` or `03`) as 1–12, or null. */
+export function parseMonthParam(raw: string): number | null {
+  if (!/^\d{1,2}$/.test(raw)) return null;
+  const month = Number(raw);
+  return month >= 1 && month <= 12 ? month : null;
+}
+
+export function todayFocus(today: Date = new Date()) {
+  return {
+    year: today.getFullYear(),
+    search: { month: today.getMonth() + 1, day: today.getDate() } satisfies YearViewSearch,
+  };
 }

@@ -7,6 +7,7 @@ import {
   TopBarActions,
   TopBarTrailing,
 } from "@/components/year-view/top-bar-parts";
+import { TopBarSearch } from "@/components/year-view/top-bar-search";
 import { useYearViewContext } from "@/components/year-view/year-view-context";
 import {
   TopBarKeyboardShortcuts,
@@ -177,7 +178,8 @@ export default function YearViewTopBar() {
           />
         </div>
 
-        <div className="ml-auto md:ml-0">
+        <div className="ml-auto flex items-center justify-end gap-2 md:ml-0">
+          <TopBarSearch />
           <TopBarTrailing
             syncBadge={syncBadge}
             commandPaletteOpen={commandPaletteOpen}

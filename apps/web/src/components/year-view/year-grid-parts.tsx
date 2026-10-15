@@ -29,6 +29,9 @@ export type YearGridProps = {
   canModifyEvent: (event: CalendarEvent) => boolean;
   onRequestCreateEvent: (cell: KeyboardCell) => void;
   onRequestEditEvent: (event: CalendarEvent) => void;
+  onRequestMoveEvent: (event: CalendarEvent) => void;
+  /** Drop target of a drag: the event and the `YYYY-MM-DD` day it should start on. */
+  onMoveEvent: (event: CalendarEvent, date: string) => void;
   onRequestDeleteEvent: (event: CalendarEvent) => void;
   onKeyboardHelpOpenChange: (open: boolean | ((prev: boolean) => boolean)) => void;
   onRegisterFocusYearGrid: (focus: (() => void) | null) => void;

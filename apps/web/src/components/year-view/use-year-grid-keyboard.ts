@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { canMoveEvent } from "@/components/year-view/use-event-move";
 import type { YearViewUrlFocus } from "@/components/year-view/use-year-view-url-sync";
 import { getOrderedDayEvents } from "@/components/year-view/use-month-column";
 import { useKeepCellInView } from "@/components/year-view/use-keep-cell-in-view";
@@ -39,6 +40,7 @@ type UseYearGridKeyboardArgs = {
   canModifyEvent: (event: CalendarEvent) => boolean;
   onRequestCreateEvent: (cell: KeyboardCell) => void;
   onRequestEditEvent: (event: CalendarEvent) => void;
+  onRequestMoveEvent: (event: CalendarEvent) => void;
   onRequestDeleteEvent: (event: CalendarEvent) => void;
   onHelpOpenChange: (open: boolean | ((prev: boolean) => boolean)) => void;
   onRegisterFocusGrid: (focus: (() => void) | null) => void;
@@ -74,6 +76,7 @@ export function useYearGridKeyboard({
   canModifyEvent,
   onRequestCreateEvent,
   onRequestEditEvent,
+  onRequestMoveEvent,
   onRequestDeleteEvent,
   onHelpOpenChange,
   onRegisterFocusGrid,
@@ -407,6 +410,18 @@ export function useYearGridKeyboard({
         return;
       }
 
+      if (
+        event.key.toLowerCase() === "m" &&
+        !event.altKey &&
+        dayPanelOpen &&
+        activeEvent &&
+        canMoveEvent(activeEvent.event, canModifyEvent)
+      ) {
+        claim();
+        onRequestMoveEvent(activeEvent.event);
+        return;
+      }
+
       if (event.key === "Escape") {
         if (!dayPanelOpen) return;
         claim();
@@ -505,6 +520,7 @@ export function useYearGridKeyboard({
       onRequestCreateEvent,
       onRequestDeleteEvent,
       onRequestEditEvent,
+      onRequestMoveEvent,
       onYearNavigate,
       openDialog,
       rememberLocalFocus,

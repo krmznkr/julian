@@ -20,10 +20,13 @@ import { useYearViewDerivedData } from "@/components/year-view/use-year-view-der
 import { useYearViewShortcuts } from "@/components/year-view/use-year-view-shortcuts";
 import { useYearViewViewport } from "@/components/year-view/use-year-view-viewport";
 import { useYearViewUrlSync } from "@/components/year-view/use-year-view-url-sync";
+import { EventSearchQueryProvider } from "@/components/year-view/event-search";
 import YearGrid from "@/components/year-view/year-grid";
 import { useYearViewData } from "@/components/year-view/use-year-view-data";
 import EventFormDialog from "@/components/year-view/event-form-dialog";
 import DeleteEventDialog from "@/components/year-view/delete-event-dialog";
+import MoveEventDialog from "@/components/year-view/move-event-dialog";
+import { useEventMove } from "@/components/year-view/use-event-move";
 import { YearRefreshNotice } from "@/components/year-view/shared-components";
 import type { YearViewInitialData } from "@/components/year-view/types";
 import type {
@@ -81,6 +84,9 @@ export default function YearViewCore({
   const [focusTodaySignal, setFocusTodaySignal] = useState(0);
   const [keyboardHelpOpen, setKeyboardHelpOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const focusSearch = useCallback(() => searchInputRef.current?.focus(), []);
 
   // The grid owns its own focus; it hands us a callback so dialogs can return
   // focus to the cell the visitor came from after they close.
@@ -135,6 +141,7 @@ export default function YearViewCore({
     failures: state.failures,
     formatDate,
     isRefreshing,
+    searchQuery,
     selectedCalendarIds,
     year,
   });
@@ -160,6 +167,8 @@ export default function YearViewCore({
     reconcile,
     focusYearGrid,
   });
+
+  const eventMove = useEventMove({ eventApi, dispatch });
 
   const onToggleSidebar = useCallback(() => {
     const collapsed = !state.sidebarCollapsed;
@@ -192,6 +201,7 @@ export default function YearViewCore({
     onToggleSidebar,
     onRefresh: reconcile,
     onJumpToToday: navigation.onJumpToToday,
+    onFocusSearch: focusSearch,
   });
 
   const onUrlFocusChange = useCallback(
@@ -233,6 +243,10 @@ export default function YearViewCore({
       setCommandPaletteOpen,
       registerFocusYearGrid,
       focusYearGrid,
+      searchQuery,
+      setSearchQuery,
+      searchInputRef,
+      searchMatchCount: visibleEvents.length,
       onRefresh: reconcile,
       onToggleSidebar,
       onOpenMobileSidebar,
@@ -250,10 +264,12 @@ export default function YearViewCore({
       onToggleSidebar,
       reconcile,
       registerFocusYearGrid,
+      searchQuery,
       selectedCalendarIds,
       state.sidebarCollapsed,
       syncBadge,
       todayLongLabel,
+      visibleEvents.length,
       year,
     ],
   );
@@ -261,105 +277,130 @@ export default function YearViewCore({
   return (
     <TooltipProvider>
       <YearViewProvider value={yearViewContextValue}>
-        <AppShell
-          sidebarCollapsed={state.sidebarCollapsed}
-          mobileSidebarOpen={state.mobileSidebarOpen}
-          onMobileSidebarOpenChange={onMobileSidebarOpenChange}
-          topbar={<YearViewTopBar />}
-          banner={banner}
-          sidebar={
-            <YearViewSidebar
-              error={error}
-              onRetry={reconcile}
-              loading={loading}
-              onResync={handleReloadCalendars}
-              onChangeCalendars={updateSelectedCalendars}
-              visibleEventsCount={visibleEvents.length}
-              unresolvedSelectedCalendarIds={unresolvedSelectedCalendarIds}
-              onGoogleAuthChange={reconcile}
-            />
-          }
-        >
-          <div className="flex h-full w-full flex-1 min-h-0 flex-col">
-            <div className="relative h-full">
-              {isRefreshing && state.hasHydratedData && (
-                <div className="pointer-events-none absolute right-4 top-4 z-20">
-                  <YearRefreshNotice label="Loading events..." />
-                </div>
-              )}
-              <YearGrid
-                months={months}
-                events={displayEventMap}
-                calendars={calendars}
-                year={year}
-                scrollRef={scrollRef}
-                monthHeaderRefs={monthHeaderRefs}
-                scrollEdges={state.scrollEdges}
-                rowsRef={rowsRef}
-                rowHeight={ROW_HEIGHT}
-                monthNames={monthNames}
-                yearCalendarAriaLabel={`Calendar for ${year}`}
-                todayLongLabel={todayLongLabel}
-                jumpDayHighlight={jumpDayHighlight}
-                focusTodaySignal={focusTodaySignal}
-                keyboardHelpOpen={keyboardHelpOpen}
-                commandPaletteOpen={commandPaletteOpen}
-                mutationDialogOpen={mutations.anyDialogOpen}
-                canModifyEvent={canModifyEvent}
-                onRequestCreateEvent={mutations.create.open}
-                onRequestEditEvent={mutations.edit.open}
-                onRequestDeleteEvent={mutations.remove.open}
-                onKeyboardHelpOpenChange={setKeyboardHelpOpen}
-                onRegisterFocusYearGrid={registerFocusYearGrid}
-                urlFocus={urlFocus}
-                shouldApplyUrlFocus={shouldApplyUrlFocus}
-                markUrlFocusApplied={markUrlFocusApplied}
-                onUrlFocusChange={onUrlFocusChange}
-                onYearNavigate={onYearNavigate}
+        <EventSearchQueryProvider query={searchQuery}>
+          <AppShell
+            sidebarCollapsed={state.sidebarCollapsed}
+            mobileSidebarOpen={state.mobileSidebarOpen}
+            onMobileSidebarOpenChange={onMobileSidebarOpenChange}
+            topbar={<YearViewTopBar />}
+            banner={banner}
+            sidebar={
+              <YearViewSidebar
+                error={error}
+                onRetry={reconcile}
+                loading={loading}
+                onResync={handleReloadCalendars}
+                onChangeCalendars={updateSelectedCalendars}
+                visibleEventsCount={visibleEvents.length}
+                unresolvedSelectedCalendarIds={unresolvedSelectedCalendarIds}
+                onGoogleAuthChange={reconcile}
               />
+            }
+          >
+            <div className="flex h-full w-full flex-1 min-h-0 flex-col">
+              <div className="relative h-full">
+                {eventMove.error && (
+                  <div
+                    role="alert"
+                    className="absolute left-1/2 top-4 z-40 flex max-w-[90%] -translate-x-1/2 items-center gap-3 rounded-lg border border-destructive/40 bg-background px-4 py-2 text-sm shadow-lg"
+                  >
+                    <span>{eventMove.error}</span>
+                    <button
+                      type="button"
+                      onClick={eventMove.dismissError}
+                      className="text-xs underline underline-offset-2"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+                {isRefreshing && state.hasHydratedData && (
+                  <div className="pointer-events-none absolute right-4 top-4 z-20">
+                    <YearRefreshNotice label="Loading events..." />
+                  </div>
+                )}
+                <YearGrid
+                  months={months}
+                  events={displayEventMap}
+                  calendars={calendars}
+                  year={year}
+                  scrollRef={scrollRef}
+                  monthHeaderRefs={monthHeaderRefs}
+                  scrollEdges={state.scrollEdges}
+                  rowsRef={rowsRef}
+                  rowHeight={ROW_HEIGHT}
+                  monthNames={monthNames}
+                  yearCalendarAriaLabel={`Calendar for ${year}`}
+                  todayLongLabel={todayLongLabel}
+                  jumpDayHighlight={jumpDayHighlight}
+                  focusTodaySignal={focusTodaySignal}
+                  keyboardHelpOpen={keyboardHelpOpen}
+                  commandPaletteOpen={commandPaletteOpen}
+                  mutationDialogOpen={mutations.anyDialogOpen || eventMove.target !== null}
+                  canModifyEvent={canModifyEvent}
+                  onRequestCreateEvent={mutations.create.open}
+                  onRequestEditEvent={mutations.edit.open}
+                  onRequestMoveEvent={eventMove.open}
+                  onMoveEvent={eventMove.move}
+                  onRequestDeleteEvent={mutations.remove.open}
+                  onKeyboardHelpOpenChange={setKeyboardHelpOpen}
+                  onRegisterFocusYearGrid={registerFocusYearGrid}
+                  urlFocus={urlFocus}
+                  shouldApplyUrlFocus={shouldApplyUrlFocus}
+                  markUrlFocusApplied={markUrlFocusApplied}
+                  onUrlFocusChange={onUrlFocusChange}
+                  onYearNavigate={onYearNavigate}
+                />
+              </div>
             </div>
-          </div>
-        </AppShell>
+          </AppShell>
 
-        <EventFormDialog
-          open={mutations.create.isOpen}
-          mode="create"
-          dateLabel={
-            mutations.create.target
-              ? `${monthNames[mutations.create.target.month]} ${mutations.create.target.day}, ${year}`
-              : ""
-          }
-          calendarName={getDefaultWritableCalendar(calendars)?.summary ?? null}
-          submittable={getDefaultWritableCalendar(calendars) !== null}
-          hint="Connect a writable Google calendar to create events."
-          submitting={mutations.create.submitting}
-          error={mutations.create.error}
-          onSubmit={mutations.submitCreate}
-          onOpenChange={mutations.create.setOpen}
-          restoreFocus={focusYearGrid}
-        />
-        <EventFormDialog
-          open={mutations.edit.isOpen}
-          mode="edit"
-          initialTitle={mutations.edit.target?.title ?? ""}
-          dateLabel={formatEventDateLabel(mutations.edit.target, monthNames)}
-          calendarName={mutations.edit.target?.calendarSummary ?? null}
-          submittable
-          submitting={mutations.edit.submitting}
-          error={mutations.edit.error}
-          onSubmit={mutations.submitEdit}
-          onOpenChange={mutations.edit.setOpen}
-          restoreFocus={focusYearGrid}
-        />
-        <DeleteEventDialog
-          open={mutations.remove.isOpen}
-          eventTitle={mutations.remove.target?.title ?? ""}
-          deleting={mutations.remove.submitting}
-          error={mutations.remove.error}
-          onConfirm={mutations.confirmDelete}
-          onOpenChange={mutations.remove.setOpen}
-          restoreFocus={focusYearGrid}
-        />
+          <EventFormDialog
+            open={mutations.create.isOpen}
+            mode="create"
+            dateLabel={
+              mutations.create.target
+                ? `${monthNames[mutations.create.target.month]} ${mutations.create.target.day}, ${year}`
+                : ""
+            }
+            calendarName={getDefaultWritableCalendar(calendars)?.summary ?? null}
+            submittable={getDefaultWritableCalendar(calendars) !== null}
+            hint="Connect a writable Google calendar to create events."
+            submitting={mutations.create.submitting}
+            error={mutations.create.error}
+            onSubmit={mutations.submitCreate}
+            onOpenChange={mutations.create.setOpen}
+            restoreFocus={focusYearGrid}
+          />
+          <EventFormDialog
+            open={mutations.edit.isOpen}
+            mode="edit"
+            initialTitle={mutations.edit.target?.title ?? ""}
+            dateLabel={formatEventDateLabel(mutations.edit.target, monthNames)}
+            calendarName={mutations.edit.target?.calendarSummary ?? null}
+            submittable
+            submitting={mutations.edit.submitting}
+            error={mutations.edit.error}
+            onSubmit={mutations.submitEdit}
+            onOpenChange={mutations.edit.setOpen}
+            restoreFocus={focusYearGrid}
+          />
+          <MoveEventDialog
+            event={eventMove.target}
+            onMove={eventMove.move}
+            onClose={eventMove.close}
+            restoreFocus={focusYearGrid}
+          />
+          <DeleteEventDialog
+            open={mutations.remove.isOpen}
+            eventTitle={mutations.remove.target?.title ?? ""}
+            deleting={mutations.remove.submitting}
+            error={mutations.remove.error}
+            onConfirm={mutations.confirmDelete}
+            onOpenChange={mutations.remove.setOpen}
+            restoreFocus={focusYearGrid}
+          />
+        </EventSearchQueryProvider>
       </YearViewProvider>
     </TooltipProvider>
   );

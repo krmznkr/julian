@@ -1,6 +1,7 @@
 name: Build web
 description: >
-  Install, build the web app for one release channel, refuse a bundle that
+  Install, build the web app (with the marketing pages copied into its dist)
+  for one release channel, refuse a bundle that
   contains the Google client secret, and expose the build metadata.
 
 inputs:
@@ -47,7 +48,8 @@ runs:
         APP_PR_NUMBER: ${{ inputs.pr-number }}
         VITE_GOOGLE_CLIENT_ID: 151900009012-fevbjvlejmju4lva9brr5lmufp5q4g0s.apps.googleusercontent.com
       run: pnpm build
-    # The Google client secret must never appear in the static bundle.
+    # The Google client secret must never appear in the static bundle. apps/web/dist
+    # is the Worker's whole assets directory, marketing pages included.
     - name: Verify no client secret in dist
       shell: bash
       run: |

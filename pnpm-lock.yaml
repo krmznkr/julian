@@ -89,6 +89,18 @@ importers:
         specifier: 4.119.0
         version: 4.119.0(@types/node@26.6.5)
 
+  apps/marketing:
+    devDependencies:
+      '@julian/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@julian/google':
+        specifier: workspace:*
+        version: link:../../packages/google
+      vite:
+        specifier: 8.3.4
+        version: 8.3.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.1)
+
   apps/web:
     dependencies:
       '@julian/domain':
@@ -97,6 +109,9 @@ importers:
       '@julian/google':
         specifier: workspace:*
         version: link:../../packages/google
+      '@julian/security':
+        specifier: workspace:*
+        version: link:../../packages/security
       '@tanstack/react-router':
         specifier: 1.170.21
         version: 1.170.21(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -137,12 +152,12 @@ importers:
       '@julian/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@julian/marketing':
+        specifier: workspace:*
+        version: link:../marketing
       '@julian/release':
         specifier: workspace:*
         version: link:../../packages/release
-      '@julian/security':
-        specifier: workspace:*
-        version: link:../../packages/security
       '@tailwindcss/vite':
         specifier: 4.3.3
         version: 4.3.3(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.1))

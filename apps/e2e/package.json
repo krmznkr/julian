@@ -2,7 +2,7 @@
   "name": "@julian/e2e",
   "version": "0.0.0",
   "private": true,
-  "description": "End-to-end, accessibility, and Lighthouse checks against the production build of @julian/web.",
+  "description": "End-to-end, accessibility, and Lighthouse checks against the production build of @julian/web and @julian/marketing.",
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",

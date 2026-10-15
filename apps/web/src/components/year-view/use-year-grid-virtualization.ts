@@ -1,4 +1,5 @@
-import { type RefObject, useCallback, useMemo, useState } from "react";
+import { type RefObject, useCallback, useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   MONTH_GAP_PX,
   FALLBACK_MONTH_WIDTH,
@@ -49,13 +50,16 @@ export function useYearGridVirtualization({
 
   useRafViewportListener(scrollRef, updateVisibleRange, months.length > 0);
 
+  const printing = usePrinting();
+  const range = printing ? { start: 0, end: Math.max(0, months.length - 1) } : visibleRange;
+
   const visibleMonths = useMemo(
-    () => months.slice(visibleRange.start, visibleRange.end + 1),
-    [months, visibleRange],
+    () => months.slice(range.start, range.end + 1),
+    [months, range.start, range.end],
   );
 
-  const leftCount = visibleRange.start;
-  const rightCount = Math.max(0, months.length - visibleRange.end - 1);
+  const leftCount = range.start;
+  const rightCount = Math.max(0, months.length - range.end - 1);
   const spacerWidth = (count: number) =>
     count <= 0 ? 0 : count * monthWidth + Math.max(0, count - 1) * MONTH_GAP_PX;
 
@@ -67,4 +71,21 @@ export function useYearGridVirtualization({
     rightSpacerStyle: { width: `${spacerWidth(rightCount)}px` },
     visibleMonths,
   };
+}
+
+/** True while the page is being printed, when every month must be in the DOM. */
+function usePrinting() {
+  const [printing, setPrinting] = useState(false);
+  useEffect(() => {
+    // Chrome lays out the print right after this event, so render synchronously.
+    const start = () => flushSync(() => setPrinting(true));
+    const end = () => setPrinting(false);
+    window.addEventListener("beforeprint", start);
+    window.addEventListener("afterprint", end);
+    return () => {
+      window.removeEventListener("beforeprint", start);
+      window.removeEventListener("afterprint", end);
+    };
+  }, []);
+  return printing;
 }

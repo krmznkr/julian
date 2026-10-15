@@ -20,6 +20,7 @@ export default [
       "packages/google/src/**/*.ts",
       "packages/release/src/**/*.ts",
       "apps/edge/src/**/*.ts",
+      "apps/marketing/src/**/*.ts",
     ],
     ignores: ["**/node_modules/**", "**/dist/**", "**/build/**"],
     plugins: { functional },

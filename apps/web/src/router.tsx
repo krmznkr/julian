@@ -1,8 +1,20 @@
-import { createRootRoute, createRoute, createRouter, redirect } from "@tanstack/react-router";
-import { LandingPage } from "@/routes/landing-page";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  notFound,
+  redirect,
+} from "@tanstack/react-router";
+import { DemoPage } from "@/routes/demo-page";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import type { ComponentType } from "react";
-import { parseYearViewSearch, type YearViewSearch } from "@/lib/year-view-url";
+import {
+  parseMonthParam,
+  parseYearParam,
+  parseYearViewSearch,
+  todayFocus,
+  type YearViewSearch,
+} from "@/lib/year-view-url";
 import { RootErrorBoundary, RootLayout } from "@/routes/root-layout";
 import { AuthCallbackPage } from "@/routes/auth-callback-page";
 import { LabPage } from "@/routes/lab-page";
@@ -32,18 +44,18 @@ const YearPage = dynamic<{ year: number }>(
 
 function YearRouteComponent() {
   const { year } = yearRoute.useParams();
-  const parsedYear = Number(year);
-
-  return <YearPage year={Number.isNaN(parsedYear) ? new Date().getFullYear() : parsedYear} />;
+  return <YearPage year={Number(year)} />;
 }
 
-function todayYearRoute() {
-  const today = new Date();
-  return {
-    year: String(today.getFullYear()),
-    month: today.getMonth() + 1,
-    day: today.getDate(),
-  };
+function DemoRouteComponent() {
+  const { year } = demoRoute.useParams();
+  return <DemoPage year={Number(year)} />;
+}
+
+function requireYear(raw: string): number {
+  const year = parseYearParam(raw);
+  if (year === null) throw notFound();
+  return year;
 }
 
 const rootRoute = createRootRoute({
@@ -54,40 +66,103 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  // Someone who has already connected a calendar has nothing to learn from the
-  // pitch. Gate on the synchronous credential check rather than the async
-  // `isAuthenticated()` so the landing page never flashes before the redirect.
+  // In production the edge Worker answers `/` (marketing page, or a redirect
+  // for a returning visitor), so this only runs under the Vite servers. Gate
+  // on the synchronous credential check so nothing flashes before it.
   beforeLoad: () => {
-    if (!hasStoredGoogleSession()) return;
-    const today = todayYearRoute();
-    throw redirect({
-      to: "/year/$year",
-      params: { year: today.year },
-      search: { month: today.month, day: today.day },
-      replace: true,
-    });
+    const today = todayFocus();
+    throw hasStoredGoogleSession()
+      ? redirect({
+          to: "/$year",
+          params: { year: String(today.year) },
+          search: today.search,
+          replace: true,
+        })
+      : redirect({ to: "/demo", replace: true });
   },
-  component: LandingPage,
 });
 
 const yearRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/year/$year",
+  path: "/$year",
   validateSearch: (search: Record<string, unknown>): YearViewSearch => parseYearViewSearch(search),
   beforeLoad: ({ location, params }) => {
-    const today = todayYearRoute();
+    const year = requireYear(params.year);
+    const today = todayFocus();
     const search = location.search as Record<string, unknown>;
-    if (params.year === today.year && !search.month && !search.day) {
-      throw redirect({
-        to: "/year/$year",
-        params: { year: today.year },
-        search: { month: today.month, day: today.day },
-      });
+    if (year === today.year && !search.month && !search.day) {
+      throw redirect({ to: "/$year", params: { year: params.year }, search: today.search });
     }
   },
   component: YearRouteComponent,
   errorComponent: ({ error, reset }: ErrorComponentProps) => (
     <RouteErrorScreen error={error} reset={reset} context="Year view" />
+  ),
+});
+
+// `/{yyyy}/{mm}` opens the year focused on that month. Focus lives in the
+// search params, so this resolves to the canonical `/{yyyy}?month=` form.
+const yearMonthRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/$year/$month",
+  beforeLoad: ({ location, params }) => {
+    requireYear(params.year);
+    const month = parseMonthParam(params.month);
+    if (month === null) throw notFound();
+    const search = parseYearViewSearch(location.search as Record<string, unknown>);
+    throw redirect({
+      to: "/$year",
+      params: { year: params.year },
+      search: { ...search, month, day: search.day ?? 1 },
+      replace: true,
+    });
+  },
+});
+
+// Pre-1.0 bookmarks. The edge answers these with a 301; this covers the Vite servers.
+const legacyYearRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/year/$year",
+  beforeLoad: ({ location, params }) => {
+    throw redirect({
+      to: "/$year",
+      params: { year: params.year },
+      search: parseYearViewSearch(location.search as Record<string, unknown>),
+      replace: true,
+    });
+  },
+});
+
+// The marketing site links here without knowing the current year.
+const demoIndexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/demo",
+  beforeLoad: () => {
+    const today = todayFocus();
+    throw redirect({
+      to: "/demo/$year",
+      params: { year: String(today.year) },
+      search: today.search,
+      replace: true,
+    });
+  },
+});
+
+const demoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/demo/$year",
+  validateSearch: (search: Record<string, unknown>): YearViewSearch => parseYearViewSearch(search),
+  beforeLoad: ({ location, params }) => {
+    const year = requireYear(params.year);
+    const today = todayFocus();
+    const search = location.search as Record<string, unknown>;
+    if (year === today.year && !search.month && !search.day) {
+      throw redirect({ to: "/demo/$year", params: { year: params.year }, search: today.search });
+    }
+  },
+  component: DemoRouteComponent,
+  errorComponent: ({ error, reset }: ErrorComponentProps) => (
+    <RouteErrorScreen error={error} reset={reset} context="Demo" />
   ),
 });
 
@@ -103,7 +178,16 @@ const labRoute = createRoute({
   component: LabPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, yearRoute, authCallbackRoute, labRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  yearRoute,
+  yearMonthRoute,
+  legacyYearRoute,
+  demoIndexRoute,
+  demoRoute,
+  authCallbackRoute,
+  labRoute,
+]);
 
 export const router = createRouter({
   routeTree,

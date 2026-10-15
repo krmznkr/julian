@@ -24,6 +24,7 @@ export interface RecordedRequest {
   // Lowercased header names -> value, so tests can assert on what actually goes
   // on the wire (e.g. that no header shows up which would break CORS preflight).
   readonly headers: Readonly<Record<string, string>>;
+  readonly body?: string;
 }
 
 export interface FetchStub {
@@ -57,7 +58,14 @@ export const makeFetchStub = (
         ).entries(),
       );
 
-      Effect.runSync(Ref.update(requests, (seen) => [...seen, { url, method, headers }]));
+      const body =
+        typeof init?.body === "string"
+          ? init.body
+          : init?.body instanceof Uint8Array
+            ? new TextDecoder().decode(init.body)
+            : undefined;
+
+      Effect.runSync(Ref.update(requests, (seen) => [...seen, { url, method, headers, body }]));
 
       const index = Effect.runSync(Ref.getAndUpdate(cursor, (n) => n + 1));
       const entry = responses[Math.min(index, responses.length - 1)];

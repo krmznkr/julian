@@ -63,7 +63,8 @@ Inputs are the env vars `APP_CHANNEL`, `APP_PR_NUMBER` and optionally
 ## Channels
 
 All deploy paths share `.github/actions/build-web`, which builds for a channel
-and **fails if a `GOCSPX-` client secret appears in `apps/web/dist`**. They
+and **fails if a `GOCSPX-` client secret appears in `apps/web/dist`**, the single
+assets directory that holds both the app and the marketing pages. They
 authenticate with the `CLOUDFLARE_API_TOKEN` secret against account
 `93527c9983d1c08638cb9c1de99f0450`.
 
@@ -94,7 +95,8 @@ prerelease. A second run on the same day replaces that day's nightly.
    `GITHUB_TOKEN` cannot trigger other workflows, hence the direct call.)
 3. The deploy uploads the version, routes **10%** of traffic to it, smoke-tests
    it through the `Cloudflare-Workers-Version-Overrides` header (`/version.json`
-   must report the new version; `/` must serve the app shell), then promotes it
+   must report the new version; `/` must serve the marketing page and `/demo` the
+   app shell), then promotes it
    to **100%**. Any failure puts 100% back on the previous version.
 
 Pushing to `main` no longer deploys production. To redeploy a release by hand,

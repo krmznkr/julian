@@ -15,11 +15,6 @@ import type {
   YearViewRouterPort,
 } from "@/components/year-view/year-view-ports";
 import type { CalendarEvent } from "@julian/domain";
-import type { YearViewSearch } from "@/lib/year-view-url";
-
-function todaySearch(today: Date): YearViewSearch {
-  return { month: today.getMonth() + 1, day: today.getDate() };
-}
 
 /**
  * Mutations are kept in a ref rather than component state: the year view owns
@@ -109,6 +104,19 @@ function useDemoStore(year: number) {
             ]),
           );
         }),
+      moveEvent: (calendarId, eventId, dates) =>
+        Effect.sync(() => {
+          eventsRef.current = Object.fromEntries(
+            Object.entries(eventsRef.current).map(([key, events]) => [
+              key,
+              events.map((event) =>
+                event.id === eventId && event.calendarId === calendarId
+                  ? { ...event, ...dates }
+                  : event,
+              ),
+            ]),
+          );
+        }),
       deleteEvent: (calendarId, eventId) =>
         Effect.sync(() => {
           eventsRef.current = Object.fromEntries(
@@ -142,31 +150,33 @@ function useDemoStore(year: number) {
     [seed],
   );
 
-  return { dataSource, eventApi, preferences, initialData, today };
+  return { dataSource, eventApi, preferences, initialData };
 }
 
-function DemoSession({ banner, onReset }: { banner?: ReactNode; onReset: () => void }) {
+function DemoSession({
+  year,
+  router,
+  banner,
+  onReset,
+}: {
+  year: number;
+  router: YearViewRouterPort;
+  banner?: ReactNode;
+  onReset: () => void;
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const year = useMemo(() => new Date().getFullYear(), []);
-  const { dataSource, eventApi, preferences, initialData, today } = useDemoStore(year);
-
-  const [search, setSearch] = useState<YearViewSearch>(() => todaySearch(today));
-  const [displayYear, setDisplayYear] = useState(year);
-
-  const navigate = useCallback<YearViewRouterPort["navigate"]>((target) => {
-    setDisplayYear(target.year);
-    setSearch(target.search);
-  }, []);
-
-  const router = useMemo<YearViewRouterPort>(() => ({ search, navigate }), [navigate, search]);
+  // The store is seeded with the year the session opened on; other years are
+  // generated as the visitor navigates.
+  const [seedYear] = useState(year);
+  const { dataSource, eventApi, preferences, initialData } = useDemoStore(seedYear);
 
   const player = useDemoPlayer(containerRef);
 
   return (
     <div ref={containerRef} className="relative">
       <YearViewCore
-        initialYear={displayYear}
-        initialData={displayYear === year ? initialData : null}
+        initialYear={year}
+        initialData={year === seedYear ? initialData : null}
         router={router}
         dataSource={dataSource}
         eventApi={eventApi}
@@ -182,8 +192,16 @@ function DemoSession({ banner, onReset }: { banner?: ReactNode; onReset: () => v
   );
 }
 
-export function DemoYearView({ banner }: { banner?: ReactNode }) {
+export function DemoYearView({
+  year,
+  router,
+  banner,
+}: {
+  year: number;
+  router: YearViewRouterPort;
+  banner?: ReactNode;
+}) {
   const [session, setSession] = useState(0);
   const reset = useCallback(() => setSession((value) => value + 1), []);
-  return <DemoSession key={session} banner={banner} onReset={reset} />;
+  return <DemoSession key={session} year={year} router={router} banner={banner} onReset={reset} />;
 }

@@ -35,3 +35,40 @@ test("the calendars drawer opens on demand and stays out of the tab order", asyn
     .tap({ position: { x: (viewport?.width ?? 400) - 20, y: 200 } });
   await expect(drawer).toBeHidden();
 });
+
+test("search works from the touch keyboard", async ({ demo: page }) => {
+  const search = page.getByRole("searchbox", { name: "Search events" });
+  await search.tap();
+  await search.fill("lisbon");
+  await expect(yearGrid(page).locator("mark").first()).toHaveText(/lisbon/i);
+  await page.getByRole("button", { name: "Clear search" }).tap();
+  await expect(search).toHaveValue("");
+});
+
+test("an all-day event moves to another day by touch", async ({ demo: page }) => {
+  await page.getByRole("button", { name: "Add sample event" }).tap();
+  const create = page.getByRole("dialog", { name: "New event" });
+  await create.getByRole("textbox", { name: "Event title" }).fill("Dentist");
+  await create.getByRole("button", { name: "Add event" }).tap();
+  await expect(create).toBeHidden();
+
+  await yearGrid(page)
+    .getByRole("button", { name: /^Dentist, Mar 10/ })
+    .tap();
+  await page.getByRole("button", { name: "Move to another day" }).tap();
+  const move = page.getByRole("dialog", { name: "Move event" });
+  await move.getByLabel("Start date").fill("2026-03-12");
+  await move.getByRole("button", { name: "Move" }).tap();
+  await expect(move).toBeHidden();
+  await expect(yearGrid(page).getByRole("button", { name: /^Dentist, Mar 12/ })).toBeAttached();
+});
+
+test("touch targets in the top bar are at least 32px", async ({ demo: page }) => {
+  for (const name of ["Previous year", "Next year", "Open calendars", "Clear search"]) {
+    const button = page.getByRole("button", { name });
+    if ((await button.count()) === 0) continue;
+    const box = await button.boundingBox();
+    expect(box?.height ?? 0, name).toBeGreaterThanOrEqual(32);
+    expect(box?.width ?? 0, name).toBeGreaterThanOrEqual(32);
+  }
+});

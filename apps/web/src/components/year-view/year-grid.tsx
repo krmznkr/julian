@@ -2,6 +2,7 @@ import { useYearGridState } from "@/components/year-view/use-year-grid";
 import { type YearGridProps, YearGridBody } from "@/components/year-view/year-grid-parts";
 import { useYearGridKeyboard } from "@/components/year-view/use-year-grid-keyboard";
 import { cellDomId } from "@/components/year-view/year-grid-keyboard";
+import { canMoveEvent } from "@/components/year-view/use-event-move";
 import YearGridHeader from "@/components/year-view/year-grid-header";
 import { YearViewSharedDataProvider } from "@/components/year-view/year-view-context";
 
@@ -11,6 +12,39 @@ function readNumericDataAttribute(element: Element, name: string) {
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : null;
 }
+
+const EVENT_DRAG_TYPE = "application/x-julian-event";
+
+/** The day under the pointer, from the month column and the row it falls in. */
+function cellAtPointer(
+  target: EventTarget | null,
+  clientY: number,
+  rowHeight: number,
+  year: number,
+): { month: number; day: number } | null {
+  const element = target instanceof Element ? target : null;
+  const monthColumn = element?.closest("[data-month-column]");
+  if (!monthColumn) return null;
+
+  const month = readNumericDataAttribute(monthColumn, "data-month-column");
+  if (month === null) return null;
+
+  const dayElement = element?.closest("[data-day-cell], [data-day-cell-frame]");
+  const explicitDay = dayElement
+    ? readNumericDataAttribute(
+        dayElement,
+        dayElement.hasAttribute("data-day-cell") ? "data-day-cell" : "data-day-cell-frame",
+      )
+    : null;
+
+  const monthRect = monthColumn.getBoundingClientRect();
+  const day = explicitDay ?? Math.floor((clientY - monthRect.top) / rowHeight) + 1;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  return day < 1 || day > daysInMonth ? null : { month, day };
+}
+
+const dateKey = (year: number, cell: { month: number; day: number }) =>
+  `${year}-${String(cell.month + 1).padStart(2, "0")}-${String(cell.day).padStart(2, "0")}`;
 
 export default function YearGrid(props: YearGridProps) {
   const {
@@ -32,6 +66,8 @@ export default function YearGrid(props: YearGridProps) {
     canModifyEvent,
     onRequestCreateEvent,
     onRequestEditEvent,
+    onRequestMoveEvent,
+    onMoveEvent,
     onRequestDeleteEvent,
     onKeyboardHelpOpenChange,
     onRegisterFocusYearGrid,
@@ -64,6 +100,7 @@ export default function YearGrid(props: YearGridProps) {
     canModifyEvent,
     onRequestCreateEvent,
     onRequestEditEvent,
+    onRequestMoveEvent,
     onRequestDeleteEvent,
     onHelpOpenChange: onKeyboardHelpOpenChange,
     onRegisterFocusGrid: onRegisterFocusYearGrid,
@@ -96,33 +133,40 @@ export default function YearGrid(props: YearGridProps) {
             }}
             onClick={(event) => {
               if (event.defaultPrevented) return;
-              const target = event.target instanceof Element ? event.target : null;
-              const monthColumn = target?.closest("[data-month-column]");
-              if (!monthColumn) return;
-
-              const month = readNumericDataAttribute(monthColumn, "data-month-column");
-              if (month === null) return;
-
-              const dayElement = target?.closest("[data-day-cell], [data-day-cell-frame]");
-              const explicitDay = dayElement
-                ? readNumericDataAttribute(
-                    dayElement,
-                    dayElement.hasAttribute("data-day-cell")
-                      ? "data-day-cell"
-                      : "data-day-cell-frame",
-                  )
-                : null;
-
-              const monthRect = monthColumn.getBoundingClientRect();
-              const pointerDay = Math.floor((event.clientY - monthRect.top) / rowHeight) + 1;
-              const day = explicitDay ?? pointerDay;
-              const daysInMonth = new Date(year, month + 1, 0).getDate();
-              if (day < 1 || day > daysInMonth) return;
+              const cell = cellAtPointer(event.target, event.clientY, rowHeight, year);
+              if (cell === null) return;
 
               event.preventDefault();
+              const target = event.target instanceof Element ? event.target : null;
               const eventKey =
                 target?.closest("[data-event-key]")?.getAttribute("data-event-key") ?? undefined;
-              keyboard.openDayDetails({ month, day }, eventKey);
+              keyboard.openDayDetails(cell, eventKey);
+            }}
+            onDragStart={(event) => {
+              const target = event.target instanceof Element ? event.target : null;
+              const key = target?.closest("[data-event-key]")?.getAttribute("data-event-key");
+              const dragged = key ? events.get(key) : undefined;
+              if (!key || !dragged || !canMoveEvent(dragged, canModifyEvent)) {
+                event.preventDefault();
+                return;
+              }
+              event.dataTransfer.setData(EVENT_DRAG_TYPE, key);
+              // DataTransfer is configured through setters.
+              // eslint-disable-next-line functional/immutable-data
+              event.dataTransfer.effectAllowed = "move";
+            }}
+            onDragOver={(event) => {
+              if (!event.dataTransfer.types.includes(EVENT_DRAG_TYPE)) return;
+              event.preventDefault();
+              // eslint-disable-next-line functional/immutable-data
+              event.dataTransfer.dropEffect = "move";
+            }}
+            onDrop={(event) => {
+              const dragged = events.get(event.dataTransfer.getData(EVENT_DRAG_TYPE));
+              const cell = cellAtPointer(event.target, event.clientY, rowHeight, year);
+              if (!dragged || cell === null) return;
+              event.preventDefault();
+              onMoveEvent(dragged, dateKey(year, cell));
             }}
           >
             <p id="year-grid-keyboard-help" className="sr-only">
