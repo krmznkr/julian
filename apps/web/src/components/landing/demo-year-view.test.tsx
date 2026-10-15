@@ -242,4 +242,45 @@ describe("DemoYearView", () => {
       await screen.findByRole("button", { name: "Ship the calendar rewrite, May 20, All day" }),
     ).toBeInTheDocument();
   });
+
+  it("navigates by month, year input, and today", () => {
+    const { navigate } = renderDemo({ month: 3, day: 27 });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Jump to month" }), {
+      target: { value: "5" },
+    });
+    expect(navigate).toHaveBeenLastCalledWith({
+      year: 2026,
+      search: { month: 6, day: 27 },
+      replace: true,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /^Go to today/ }));
+    expect(navigate).toHaveBeenLastCalledWith({
+      year: 2026,
+      search: { month: 10, day: 15 },
+      replace: false,
+    });
+
+    const yearInput = screen.getByLabelText("Year");
+    fireEvent.keyDown(yearInput, { key: "ArrowUp" });
+    expect(navigate).toHaveBeenLastCalledWith(expect.objectContaining({ year: 2027 }));
+    fireEvent.change(yearInput, { target: { value: "2031" } });
+    expect(navigate).toHaveBeenLastCalledWith(expect.objectContaining({ year: 2031 }));
+  });
+
+  it("binds / to search and T to today, but not while typing", () => {
+    const { navigate } = renderDemo({ month: 3, day: 27 });
+    const search = screen.getByRole("searchbox", { name: "Search events" });
+
+    press("/");
+    expect(search).toHaveFocus();
+    fireEvent.keyDown(search, { key: "t" });
+    expect(navigate).not.toHaveBeenCalled();
+
+    press("t");
+    expect(navigate).toHaveBeenLastCalledWith(
+      expect.objectContaining({ search: { month: 10, day: 15 } }),
+    );
+  });
 });
