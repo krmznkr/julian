@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Response hardening headers shared by the edge Worker and the web build.",
+  "description": "Response hardening headers and the session-hint cookie shared by the edge Worker and the web app.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./session-hint": "./src/session-hint.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
