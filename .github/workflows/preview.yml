@@ -51,19 +51,27 @@ jobs:
             --var "APP_VERSION:${{ steps.build.outputs.version }}" \
             --var "APP_CHANNEL:preview" \
             --var "APP_COMMIT:${{ steps.build.outputs.commit }}" | tee upload.log
-          url=$(grep -oE 'Version Preview Alias URL: https://[^ ]+' upload.log | awk '{print $5}')
-          test -n "$url"
+          url=$(grep -oE 'Version Preview Alias URL: https://[^ ]+' upload.log | awk '{print $5}' || true)
+          version_id=$(grep -oE 'Worker Version ID: [0-9a-f-]+' upload.log | awk '{print $4}')
+          test -n "$version_id"
+          # Cloudflare only issues preview URLs once a deployment has enabled them.
+          if [ -z "$url" ]; then
+            echo "::warning::Version $version_id uploaded, but Cloudflare returned no preview URL yet."
+          fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
       - if: steps.token.outputs.present == 'true'
         name: Comment the preview URL
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           URL: ${{ steps.upload.outputs.url }}
+          VERSION_ID: ${{ steps.upload.outputs.version_id }}
           VERSION: ${{ steps.build.outputs.version }}
         run: |
           marker="<!-- julian-preview -->"
+          if [ -n "$URL" ]; then preview="**Preview:** $URL"; else preview="**Preview:** version \`$VERSION_ID\` uploaded; Cloudflare has not issued a preview URL yet (it appears after the next production deploy enables preview URLs)."; fi
           body="$marker
-          **Preview:** $URL
+          $preview
           Version \`$VERSION\`. Google sign-in is disabled on previews (origin not allowed); the demo works."
           existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
             --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -n 1)
