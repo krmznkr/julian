@@ -8,7 +8,7 @@ import { openEventInGoogle } from "@/lib/open-event";
 import { cn } from "@/lib/utils";
 
 const EventDetail = memo(function EventDetail({ item }: { item: DayEventItem | undefined }) {
-  const { calendars } = useYearViewSharedData();
+  const { calendars, onRequestMoveEvent } = useYearViewSharedData();
   const calendar = useMemo(
     () => calendars.find((entry) => entry.id === item?.event.calendarId),
     [calendars, item?.event.calendarId],
@@ -23,6 +23,7 @@ const EventDetail = memo(function EventDetail({ item }: { item: DayEventItem | u
   }
 
   const color = item.event.calendarColor ?? "#8b8b8b";
+  const requestMove = onRequestMoveEvent?.(item.event) ?? null;
 
   return (
     <aside className="min-h-40 w-72 border-l border-border/80 px-3 py-2">
@@ -56,6 +57,16 @@ const EventDetail = memo(function EventDetail({ item }: { item: DayEventItem | u
           onClick={() => openEventInGoogle(item.event)}
         >
           Open in Google Calendar
+        </button>
+      )}
+      {requestMove && (
+        <button
+          type="button"
+          className="mt-2 block text-xs underline underline-offset-2"
+          aria-keyshortcuts="M"
+          onClick={requestMove}
+        >
+          Move to another day
         </button>
       )}
 
