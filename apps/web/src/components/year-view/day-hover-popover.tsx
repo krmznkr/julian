@@ -107,7 +107,13 @@ const DayPanelListItem = memo(function DayPanelListItem({
         <span className="min-w-0 flex-1 truncate text-[12px] text-foreground">
           {item.event.title}
         </span>
-        <span className="shrink-0 text-[10px] text-muted-foreground">
+        <span
+          className={cn(
+            "shrink-0 text-[10px]",
+            // Muted grey drops under 4.5:1 on the selected row's muted fill.
+            isActive ? "text-foreground/80" : "text-muted-foreground",
+          )}
+        >
           {formatTimeRange(item.event)}
         </span>
       </button>

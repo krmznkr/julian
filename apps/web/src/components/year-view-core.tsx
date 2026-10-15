@@ -280,10 +280,7 @@ export default function YearViewCore({
             />
           }
         >
-          <main
-            className="flex h-full w-full flex-1 min-h-0 flex-col"
-            aria-label={`Calendar for ${year}`}
-          >
+          <div className="flex h-full w-full flex-1 min-h-0 flex-col">
             <div className="relative h-full">
               {isRefreshing && state.hasHydratedData && (
                 <div className="pointer-events-none absolute right-4 top-4 z-20">
@@ -321,7 +318,7 @@ export default function YearViewCore({
                 onYearNavigate={onYearNavigate}
               />
             </div>
-          </main>
+          </div>
         </AppShell>
 
         <EventFormDialog
@@ -339,6 +336,7 @@ export default function YearViewCore({
           error={mutations.create.error}
           onSubmit={mutations.submitCreate}
           onOpenChange={mutations.create.setOpen}
+          restoreFocus={focusYearGrid}
         />
         <EventFormDialog
           open={mutations.edit.isOpen}
@@ -351,6 +349,7 @@ export default function YearViewCore({
           error={mutations.edit.error}
           onSubmit={mutations.submitEdit}
           onOpenChange={mutations.edit.setOpen}
+          restoreFocus={focusYearGrid}
         />
         <DeleteEventDialog
           open={mutations.remove.isOpen}
@@ -359,6 +358,7 @@ export default function YearViewCore({
           error={mutations.remove.error}
           onConfirm={mutations.confirmDelete}
           onOpenChange={mutations.remove.setOpen}
+          restoreFocus={focusYearGrid}
         />
       </YearViewProvider>
     </TooltipProvider>

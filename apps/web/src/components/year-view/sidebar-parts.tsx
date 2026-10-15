@@ -97,7 +97,7 @@ export function SidebarCalendarSection({
           </h2>
           <div className="flex items-center gap-2">
             {calendars.length > 0 && (
-              <span className="text-xs text-muted-foreground/60">
+              <span className="text-xs text-muted-foreground">
                 {selectedCalendarIds.length}/{calendars.length}
               </span>
             )}
@@ -206,7 +206,7 @@ export function SidebarFooter({
   return (
     <div className="mt-4 pt-3 border-t border-border/40 space-y-1">
       {visibleEventsCount > 0 && (
-        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground/60">
+        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
           <span>
             {visibleEventsCount} {visibleEventsCount === 1 ? "event" : "events"}
           </span>
@@ -214,7 +214,7 @@ export function SidebarFooter({
         </div>
       )}
       <p
-        className="px-1 text-[10px] text-muted-foreground/40 truncate"
+        className="px-1 text-[10px] text-muted-foreground truncate"
         title={`Julian ${BUILD_INFO.version} · ${BUILD_INFO.channel} · ${BUILD_INFO.commit}`}
       >
         {buildLabel(BUILD_INFO)}

@@ -18,6 +18,7 @@ A pnpm workspace orchestrated by Turborepo:
 | ------------------- | ------------------ | ------------------------------------------------------- |
 | `apps/web`          | `@julian/web`      | The Vite/React calendar app                             |
 | `apps/edge`         | `@julian/edge`     | Cloudflare Worker: assets, OAuth proxy, protections     |
+| `apps/e2e`          | `@julian/e2e`      | Playwright, axe, and Lighthouse checks on the web build |
 | `packages/domain`   | `@julian/domain`   | Pure calendar logic: dates, events, year-grid layout    |
 | `packages/google`   | `@julian/google`   | Effect services for Google OAuth, Calendar, and Tasks   |
 | `packages/security` | `@julian/security` | Security headers shared by the Worker and the web build |
@@ -29,17 +30,50 @@ caches results that did not change.
 
 ## Commands
 
-| Command               | Purpose                                          |
-| --------------------- | ------------------------------------------------ |
-| `pnpm dev`            | Start the local Vite dev server                  |
-| `pnpm build`          | Build every package                              |
-| `pnpm typecheck`      | TypeScript + Effect diagnostics, every package   |
-| `pnpm test:run`       | Unit tests, every package                        |
-| `pnpm test:coverage`  | Unit tests with per-package coverage thresholds  |
-| `pnpm test:tz:dates`  | Date tests across five time zones                |
-| `pnpm quality:static` | Lint, format, dead code, functional rules, types |
+| Command                | Purpose                                          |
+| ---------------------- | ------------------------------------------------ |
+| `pnpm dev`             | Start the local Vite dev server                  |
+| `pnpm build`           | Build every package                              |
+| `pnpm typecheck`       | TypeScript + Effect diagnostics, every package   |
+| `pnpm test:run`        | Unit tests, every package                        |
+| `pnpm test:coverage`   | Unit tests with per-package coverage thresholds  |
+| `pnpm test:tz:dates`   | Date tests across five time zones                |
+| `pnpm test:e2e`        | Playwright end-to-end and axe accessibility      |
+| `pnpm test:lighthouse` | Lighthouse CI against the production build       |
+| `pnpm quality:static`  | Lint, format, dead code, functional rules, types |
 
 Run one package's script with a filter, e.g. `pnpm --filter @julian/web preview`.
+
+## End-to-end and web-quality checks
+
+`apps/e2e` tests the production build, not the dev server. Both commands build
+`@julian/web` first through Turborepo. No Google credentials are needed: every
+test drives the landing page's live demo, which runs the real year view on
+sample data.
+
+```bash
+pnpm --filter @julian/e2e exec playwright install chromium   # once
+pnpm test:e2e
+pnpm test:lighthouse
+```
+
+- **Playwright** serves `apps/web/dist` with `vite preview` on port 4173 and
+  covers the demo, grid keyboard navigation, creating/renaming/deleting an
+  event, the theme toggle, and a mobile viewport. The clock is pinned so the
+  sample year is deterministic. Open the last run with
+  `pnpm --filter @julian/e2e exec playwright show-report`; failed tests keep a
+  trace in `apps/e2e/test-results`.
+- **axe** (`src/a11y.spec.ts`) fails on any serious or critical violation. The
+  moderate findings that remain are listed, with reasons, at the top of that
+  file.
+- **Lighthouse CI** (`lighthouserc.json`) runs three mobile-emulated passes and
+  asserts performance ≥ 0.9, accessibility ≥ 0.95, and best practices ≥ 0.95.
+  SEO is not asserted: the site is deliberately `noindex`. It needs a local
+  Chrome; reports land in `apps/e2e/.lighthouseci`.
+
+Reports and traces are git-ignored. In CI, both run as separate jobs; the
+Playwright report and traces are uploaded when a test fails, and the
+Lighthouse reports on every run.
 
 ## Local OAuth
 

@@ -10,6 +10,8 @@
     "test:run": "turbo run test:run",
     "test:coverage": "turbo run test:coverage",
     "test:tz:dates": "node scripts/test-date-timezones.mjs",
+    "test:e2e": "turbo run test:e2e",
+    "test:lighthouse": "turbo run test:lighthouse",
     "quality:oxlint": "oxlint --config .oxlintrc.json --react-plugin --react-perf-plugin --jsx-a11y-plugin --vitest-plugin --deny-warnings .",
     "quality:oxfmt": "oxfmt --check \"apps/*/src/**/*.{js,jsx,ts,tsx}\" \"packages/*/src/**/*.ts\" \"apps/*/*.{js,mjs,ts}\" \"*.{js,mjs,ts}\"",
     "quality:fallow": "fallow dead-code",
@@ -17,7 +19,7 @@
     "quality:static": "pnpm run quality:oxlint && pnpm run quality:oxfmt && pnpm run quality:fallow && pnpm run quality:fp && pnpm run typecheck",
     "lint-staged": "lint-staged",
     "prepare": "husky",
-    "clean:artifacts": "rm -rf apps/*/dist apps/*/coverage packages/*/coverage .turbo **/*.tsbuildinfo"
+    "clean:artifacts": "rm -rf apps/*/dist apps/*/coverage packages/*/coverage apps/e2e/playwright-report apps/e2e/test-results apps/e2e/.lighthouseci .turbo **/*.tsbuildinfo"
   },
   "devDependencies": {
     "@effect/language-service": "0.87.4",

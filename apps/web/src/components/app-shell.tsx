@@ -43,6 +43,8 @@ export default function AppShell({
           aria-modal="true"
           aria-label="Calendars"
           aria-hidden={!mobileSidebarOpen}
+          // Off-screen, its checkboxes and buttons must not stay tabbable.
+          inert={!mobileSidebarOpen}
           tabIndex={mobileSidebarOpen ? 0 : -1}
         >
           <div className="h-full overflow-y-auto px-4 py-4 scrollbar-minimal" data-sidebar-root="">
@@ -63,6 +65,7 @@ export default function AppShell({
                 : "overflow-y-auto px-4 py-4",
             )}
             aria-hidden={sidebarCollapsed}
+            inert={sidebarCollapsed}
             data-sidebar-root=""
           >
             {sidebar}
