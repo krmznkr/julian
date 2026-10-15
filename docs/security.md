@@ -119,7 +119,7 @@ ever disabled:
 default-src 'self'
 script-src 'self'                         # Vite output + /bootstrap.js, all same-origin
 style-src 'self' 'unsafe-inline'          # Tailwind/Radix inject inline styles
-img-src 'self' data: https:               # Google avatars, data URIs
+img-src 'self' data:                      # no remote images
 connect-src 'self' https://www.googleapis.com   # Calendar API + our /api/oauth
 form-action 'self' https://accounts.google.com  # Google sign-in navigation
 frame-ancestors 'none'; base-uri 'self'; object-src 'none'

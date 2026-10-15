@@ -7,7 +7,7 @@
 //   - scripts/styles/assets are all same-origin (Vite output + bootstrap.js)
 //   - the browser calls our own /api/oauth (self) and the Google Calendar API
 //   - Google sign-in is a top-level navigation to accounts.google.com
-//   - avatars can come from Google's user-content CDN (https:) or data URIs
+//   - images are same-origin or data URIs; nothing loads remote images
 //   - the page may never be framed (clickjacking) and can't be a frame target
 export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
@@ -16,7 +16,7 @@ export const CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
+  "img-src 'self' data:",
   "font-src 'self' data:",
   "connect-src 'self' https://www.googleapis.com",
   "form-action 'self' https://accounts.google.com",
