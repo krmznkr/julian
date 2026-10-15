@@ -1,6 +1,6 @@
 import path from "node:path";
 import { defineConfig, type Plugin } from "vite";
-import { renderPartials } from "./src/partials";
+import { renderPartials } from "./src/partials.ts";
 
 const page = (name: string) => path.resolve(import.meta.dirname, `${name}.html`);
 

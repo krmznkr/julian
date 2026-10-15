@@ -1,6 +1,6 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
-import { buildDefines } from "./build-defines";
+import { buildDefines } from "./build-defines.ts";
 
 const root = (...parts: string[]) => path.resolve(import.meta.dirname, ...parts);
 
