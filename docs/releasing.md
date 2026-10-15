@@ -24,12 +24,12 @@ flowchart LR
   `.release-please-manifest.json`. Workspace packages stay private at `0.0.0`.
 - Semver, read for a web app:
 
-  | Bump  | When                                                                  | Commit types                         |
-  | ----- | --------------------------------------------------------------------- | ------------------------------------ |
-  | major | Breaks bookmarks or stored state, or forces OAuth re-consent          | `feat!:` / `BREAKING CHANGE:`        |
-  | minor | New user-visible capability                                           | `feat`                               |
-  | patch | Bug fix or performance improvement                                    | `fix`, `perf`                        |
-  | none  | Nothing a user could notice                                           | `refactor`, `test`, `docs`, `ci`, `build`, `chore` |
+  | Bump  | When                                                         | Commit types                                       |
+  | ----- | ------------------------------------------------------------ | -------------------------------------------------- |
+  | major | Breaks bookmarks or stored state, or forces OAuth re-consent | `feat!:` / `BREAKING CHANGE:`                      |
+  | minor | New user-visible capability                                  | `feat`                                             |
+  | patch | Bug fix or performance improvement                           | `fix`, `perf`                                      |
+  | none  | Nothing a user could notice                                  | `refactor`, `test`, `docs`, `ci`, `build`, `chore` |
 
 - While the product is `0.x`, `bump-minor-pre-major` turns a breaking change
   into a minor bump instead of jumping to `1.0.0`.
@@ -42,12 +42,12 @@ flowchart LR
 `packages/release` (`@julian/release`) derives the version string for each
 channel from the root version (`next-minor` = minor + 1, patch 0):
 
-| Channel   | Version                                  | Example                          |
-| --------- | ---------------------------------------- | -------------------------------- |
-| `stable`  | `<version>`                              | `1.4.0`                          |
-| `nightly` | `<next-minor>-nightly.YYYYMMDD+<sha>`    | `1.5.0-nightly.20261015+0123456` |
-| `preview` | `<next-minor>-pr.<N>+<sha>`              | `1.5.0-pr.42+0123456`            |
-| `dev`     | `<version>-dev+<sha>`                    | `1.4.0-dev+0123456`              |
+| Channel   | Version                               | Example                          |
+| --------- | ------------------------------------- | -------------------------------- |
+| `stable`  | `<version>`                           | `1.4.0`                          |
+| `nightly` | `<next-minor>-nightly.YYYYMMDD+<sha>` | `1.5.0-nightly.20261015+0123456` |
+| `preview` | `<next-minor>-pr.<N>+<sha>`           | `1.5.0-pr.42+0123456`            |
+| `dev`     | `<version>-dev+<sha>`                 | `1.4.0-dev+0123456`              |
 
 Inputs are the env vars `APP_CHANNEL`, `APP_PR_NUMBER` and optionally
 `APP_COMMIT`; anything missing means a local `dev` build. Print the values with

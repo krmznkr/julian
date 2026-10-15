@@ -5,15 +5,18 @@ repository, with Effect as the backbone everywhere.
 
 ## Where we are
 
-- Single Vite app (`src/`) plus a Cloudflare Worker (`worker/`).
-- Effect `4.0.4` (LTS to Sep 2029) is used
-  only in `src/lib/effect/*` (Google HTTP via `effect/http`, auth,
-  token store, schemas, errors; services already use `Context.Service`). React hooks, `async-task.ts`, `session.ts`,
-  the landing demo, and the whole Worker still use raw `async`/`Promise`.
-- Domain logic already lives in `src/domain/` and is well tested.
-- Coverage: 56% statements, 42% branches (Worker included), enforced in CI. No E2E.
-- CSP defined once in `worker/security-headers.ts` (was duplicated).
-- Cloudflare config partly in `wrangler.jsonc`, partly manual dashboard work.
+All phases have shipped as a stack of PRs (#35 to #46).
+
+- pnpm workspace: `apps/web`, `apps/marketing`, `apps/edge`, `apps/e2e`, and
+  `packages/{domain,google,security,release,config}`.
+- Effect `4.0.4` (LTS to Sep 2029) runs the Google services, the React data
+  flows (as interruptible fibers), the landing tour, and the edge Worker.
+- Release pipeline: preview per PR, nightly, gradual stable rollout.
+- Owner steps left: the one-time Alchemy setup and the nightly OAuth callback
+  in [`follow-ups.md`](follow-ups.md).
+
+The original starting point was a single Vite app plus a Worker, with Effect
+only in `src/lib/effect`, 55% coverage, no E2E, and a duplicated CSP.
 
 ## Target layout
 
@@ -79,7 +82,7 @@ Each phase is one or more PRs, merged green, deployable on its own.
       using the [migration guide](https://github.com/Effect-TS/effect/blob/main/MIGRATION.md).
 - [x] Add Effect LSP diagnostics to `pnpm typecheck`.
 - [x] Coverage enforced in CI; thresholds at current levels so they can only rise.
-- [ ] README hero: screenshot/GIF, live link, badges, "why it's interesting".
+- [x] README hero: screenshot, live demo link, badges, "why it's interesting".
 - [x] Single-source CSP with a test (later moves to `packages/security`).
 
 ### Phase 1: Workspace
@@ -96,33 +99,39 @@ Each phase is one or more PRs, merged green, deployable on its own.
 
 ### Phase 3: Effect everywhere
 
-- [ ] Google services as Tags + Layers; tagged errors; retry `Schedule`.
-- [ ] React runtime + query/mutation hooks; delete `async-task.ts`.
-- [ ] `session.ts`, storage, config as services.
+- [x] Google services as `Context.Service`s + Layers; tagged errors; retry `Schedule`;
+      own tests via injected `FetchHttpClient.Fetch`.
+- [x] Effect-based year-view ports run as fibers (`use-latest-fiber`), interrupted
+      on unmount or when superseded, aborting in-flight fetches; `async-task.ts`
+      and the Promise facade deleted.
+- [x] Storage, navigation, and config as services (`KeyValueStore`, `Navigation`,
+      `AppConfig`).
 - [x] Worker rewritten as one Effect pipeline: `WorkerEnv` service, tagged
       rejections, `Schema`-validated grants, `HttpClient` for Google, `Redacted`
       secret. (A full `HttpRouter` was overkill for two routes.)
-- [ ] Demo player as an Effect script tested with `TestClock`.
+- [x] Demo player as an Effect script tested with `TestClock`.
 
 ### Phase 4: Product
 
-- [ ] Year-based URLs (`/2026`, `/2026/03`, `/demo/2026`), redirect via hint cookie.
-- [ ] `apps/marketing` split out; `/privacy`, `/terms`.
-- [ ] Calendar toggles + search/filter.
-- [ ] One standout feature: drag to move events, or print/PDF export.
-- [ ] Mobile/touch layout; a11y pass on the grid.
+- [x] Year-based URLs (`/2026`, `/2026/03`, `/demo/2026`), redirect via hint cookie,
+      `/year/*` 301s for old bookmarks.
+- [x] `apps/marketing` split out; `/privacy`, `/terms` (static, no JS).
+- [x] Calendar toggles + search/filter (`/` to focus).
+- [x] Drag to move all-day events (keyboard and touch alternatives, optimistic
+      with rollback) and a one-page landscape print layout.
+- [x] Mobile/touch layout; a11y pass on the grid (axe in CI).
 
 ### Phase 5: Infra as code
 
-- [ ] `infra/` with [Alchemy](https://alchemy.run): Worker + assets, rate limit
-      bindings, secret, DNS, robots `Content-Signal`. Cleans up the manual items
-      in `follow-ups.md`. Alchemy 2 is still beta; fall back to OpenTofu if it
-      blocks.
-- [ ] Preview deploy per PR, production deploy on main.
+- [x] `infra/` with [Alchemy](https://alchemy.run): production and nightly
+      Workers, rate limits, secret, domains. `apps/edge/wrangler.jsonc` is
+      generated from `infra/src/config.ts`; wrangler still deploys (versions,
+      gradual rollout). CI stays off until the one-time owner steps in
+      [`infrastructure.md`](infrastructure.md) are done.
 
 ### Phase 6: Releases and channels
 
-- [ ] Conventional commits enforced on PR titles (squash merges).
+- [x] Conventional commits enforced on PR titles (squash merges).
 
 #### Versioning
 
@@ -155,9 +164,9 @@ Each phase is one or more PRs, merged green, deployable on its own.
 
 #### Pipeline
 
-- [ ] [release-please](https://github.com/googleapis/release-please): release PR
+- [x] [release-please](https://github.com/googleapis/release-please): release PR
       bumps semver, writes `CHANGELOG.md`, tags, and publishes a GitHub Release.
-- [ ] Three channels, all free on the existing zone (one-level subdomains are
+- [x] Three channels, all free on the existing zone (one-level subdomains are
       covered by the free certificate):
 
 | Channel | Trigger                                | Where                                      |
@@ -166,20 +175,23 @@ Each phase is one or more PRs, merged green, deployable on its own.
 | Nightly | 03:00 UTC cron, only if `main` changed | `julian-nightly.krmznkr.com`               |
 | Stable  | release tag                            | `julian.krmznkr.com`                       |
 
-- [ ] Pushes to `main` stop deploying production; only releases do.
-- [ ] Stable deploys use Workers gradual deployments (10% → 100%) with a
+- [x] Pushes to `main` stop deploying production; only releases do.
+- [x] Stable deploys use Workers gradual deployments (10% → 100%) with a
       smoke test gate and one-command rollback to the previous version.
-- [ ] Version, channel, and commit shown in the app (footer / about) and in a
+- [x] Version, channel, and commit shown in the app (footer / about) and in a
       `/version.json` endpoint.
-- [ ] Release notes generated from merged PRs; nightly builds tagged
+- [x] Release notes generated from merged PRs; nightly builds tagged
       `nightly-YYYYMMDD` as prereleases.
 
 ### Phase 7: Quality signals
 
-- [ ] Playwright E2E on `/demo/2026` (keyboard nav, event create) in CI.
-- [ ] Coverage ≥ 80% statements, ≥ 70% branches, per package.
-- [ ] Lighthouse + axe in CI; scores in README.
-- [ ] Architecture diagram in README; per-package READMEs.
+- [x] Playwright E2E on the demo (keyboard nav, create/rename/delete/move, search,
+      print, Pixel 7) in CI.
+- [x] Coverage ≥ 80% statements, ≥ 70% branches, per package (web 90/79,
+      domain 98/94, edge 97/95, google 89/76, others 100).
+- [x] Lighthouse + axe in CI (performance ≥ 0.9, accessibility and best practices
+      ≥ 0.95).
+- [x] Architecture diagram and package table in README.
 
 ## Order rationale
 

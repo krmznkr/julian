@@ -1,12 +1,93 @@
 # Julian
 
-A full-year calendar for Google Calendar events and Google Tasks. View all-day,
-multi-day, and timed events, navigate with the keyboard, and create, rename, or
-delete events on writable calendars.
+[![CI](https://github.com/krmznkr/julian/actions/workflows/ci.yml/badge.svg)](https://github.com/krmznkr/julian/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Run Locally
+**Your whole year on one screen.** Julian lays out Google Calendar events and
+Google Tasks as a twelve-column year, so trips, sprints, and holidays read at a
+glance. It is fully keyboard-driven, works on phones, and prints the year on a
+single landscape page.
 
-Prerequisites: Node 24 and [pnpm](https://pnpm.io).
+**[Try the live demo](https://julian.krmznkr.com/demo)**: no sign-in, sample
+data, changes stay in your browser.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/year-dark.png">
+  <img alt="Julian's year view: one column per month, events as colored blocks" src="docs/assets/year-light.png">
+</picture>
+
+## Features
+
+- **Year grid:** all-day, multi-day, and timed events laid out in lanes, one
+  column per month, with Google Tasks on their due dates.
+- **Keyboard first:** arrows, Home/End, type a day or month number, `/` to
+  search, `?` for every shortcut.
+- **Edit in place:** create, rename, delete, and drag an event to another day,
+  with an optimistic update that rolls back if Google rejects it.
+- **Readable URLs:** `/2026`, `/2026/03`, and a shareable `/demo/2026`.
+- **Phones and print:** a touch layout and a one-page landscape print style.
+
+## Why it's interesting
+
+| Area              | What to look at                                                                                                                                                                                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Effect end to end | Google services as `Context.Service`s with live and test layers, tagged errors, retry `Schedule`s ([`packages/google`](packages/google)); UI loads run as fibers that cancel in-flight requests ([`use-latest-fiber.ts`](apps/web/src/lib/effect/use-latest-fiber.ts)) |
+| Edge Worker       | One Effect pipeline: bot filter, rate limits, OAuth proxy with an origin lock, streamed body cap, `Schema`-validated grants, and a `Redacted` client secret ([`apps/edge`](apps/edge/src))                                                                             |
+| Hexagonal UI      | The year view talks to ports; the live app plugs in Google, the demo plugs in an in-memory store, so the demo runs the real component ([`year-view-ports.ts`](apps/web/src/components/year-view/year-view-ports.ts))                                                   |
+| Pure domain       | Date math and lane layout with no React or I/O, tested across five time zones ([`packages/domain`](packages/domain))                                                                                                                                                   |
+| Security          | The client secret never reaches the browser; CSP and hardening headers defined once ([`packages/security`](packages/security)); threat model in [`docs/security.md`](docs/security.md)                                                                                 |
+| Releases          | Semver from Conventional Commits, preview per PR, nightly channel, gradual stable rollout with automatic rollback ([`docs/releasing.md`](docs/releasing.md))                                                                                                           |
+
+## Architecture
+
+```mermaid
+flowchart LR
+  browser["Browser<br/>apps/web + apps/marketing"]
+  edge["Cloudflare Worker<br/>apps/edge"]
+  google["Google Calendar<br/>and Tasks APIs"]
+  oauth["Google OAuth<br/>token endpoint"]
+
+  browser -- "pages and assets" --> edge
+  browser -- "PKCE code / refresh token" --> edge
+  edge -- "adds client secret" --> oauth
+  browser -- "bearer token, direct" --> google
+```
+
+The browser calls Google directly with its own access token; the Worker only
+serves assets and adds the client secret to token exchanges. There is no
+database. Details: [`docs/architecture.md`](docs/architecture.md).
+
+## Repository layout
+
+| Path                | Purpose                                                   |
+| ------------------- | --------------------------------------------------------- |
+| `apps/web`          | The calendar app: Vite, React 19, TanStack Router, Effect |
+| `apps/marketing`    | Static home, privacy, and terms pages                     |
+| `apps/edge`         | Cloudflare Worker: routing, OAuth proxy, protections      |
+| `apps/e2e`          | Playwright, axe accessibility scans, Lighthouse CI        |
+| `packages/domain`   | Pure calendar logic: dates, events, year-grid layout      |
+| `packages/google`   | Effect services for Google OAuth, Calendar, and Tasks     |
+| `packages/security` | Security headers shared by the Worker and the build       |
+| `packages/release`  | Version strings for each release channel                  |
+| `packages/config`   | Shared TypeScript configuration                           |
+| `infra`             | Cloudflare resources as code (Alchemy, Effect)            |
+
+## Quality gates
+
+Every PR runs these in CI; coverage thresholds are per package and only go up.
+
+| Check                                            | Command                |
+| ------------------------------------------------ | ---------------------- |
+| oxlint, oxfmt, dead code, functional rules       | `pnpm quality:static`  |
+| TypeScript + Effect language-service diagnostics | `pnpm typecheck`       |
+| Unit tests with coverage thresholds              | `pnpm test:coverage`   |
+| Date tests in five time zones                    | `pnpm test:tz:dates`   |
+| End-to-end and accessibility (Playwright, axe)   | `pnpm test:e2e`        |
+| Lighthouse (performance, a11y, best practices)   | `pnpm test:lighthouse` |
+
+## Run locally
+
+Prerequisites: Node 24 and [pnpm](https://pnpm.io) 10.
 
 ```bash
 git clone https://github.com/krmznkr/julian.git
@@ -15,70 +96,24 @@ pnpm install
 pnpm dev
 ```
 
-Open the URL printed by Vite, normally `http://127.0.0.1:3000`.
-
-## Google OAuth and deployment
-
-The public Google Cloud project is `krmznkr-julian`. `VITE_GOOGLE_CLIENT_ID` is
-public by design. `GOOGLE_CLIENT_SECRET` is confidential and exists only in the
-personal 1Password vault and the Cloudflare Worker secret store; never put it in
-an `.env` file or give it a `VITE_` prefix.
-
-Production uses `https://julian.krmznkr.com/auth/callback`. Local browser builds
-use their own origin plus `/auth/callback`; the configured development callbacks
-are `http://localhost:5173/auth/callback` and
-`http://localhost:3000/auth/callback`.
-
-Production deploys only from release tags: release-please opens a release PR,
-and merging it tags `vX.Y.Z` and rolls the Worker out gradually. Every PR gets
-a preview version and `main` ships nightly to `julian-nightly.krmznkr.com`. See
-[`docs/releasing.md`](docs/releasing.md). For a break-glass manual deploy:
-
-```bash
-pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET
-./scripts/deploy-web.sh
-```
+Open `http://127.0.0.1:3000/demo`. Signing in with Google locally needs the
+OAuth setup in [`docs/development.md`](docs/development.md).
 
 ## Documentation
 
-- [`docs/README.md`](docs/README.md) — documentation map and ownership.
-- [`docs/releasing.md`](docs/releasing.md) — versioning, release channels,
-  rollout, and rollback.
-- [`docs/architecture.md`](docs/architecture.md) — system context, edge request
-  pipeline, OAuth sequence, calendar/task data flow, browser storage,
-  deployment, and failure behavior.
-- [`docs/development.md`](docs/development.md) — local setup and command guide.
-- [`docs/security.md`](docs/security.md) — threat model, edge hardening, and
-  production smoke tests.
-- [`docs/follow-ups.md`](docs/follow-ups.md) — known gaps, gotchas, tuning
-  knobs, and deliberate deferrals.
+- [`docs/architecture.md`](docs/architecture.md): request pipeline, OAuth
+  sequence, data flow, storage, failure behavior.
+- [`docs/development.md`](docs/development.md): setup and commands.
+- [`docs/releasing.md`](docs/releasing.md): versioning, channels, rollout, rollback.
+- [`docs/infrastructure.md`](docs/infrastructure.md): Cloudflare as code with Alchemy.
+- [`docs/security.md`](docs/security.md): threat model, edge hardening, smoke tests.
+- [`docs/follow-ups.md`](docs/follow-ups.md): known gaps and manual steps.
+- [`docs/roadmap.md`](docs/roadmap.md): what is done and what is next.
 
-## Security
-
-The deployment is hardened in code: bot filtering, per-IP rate limiting, an
-OAuth-proxy origin lock, response security headers (CSP/HSTS/…), and search
-de-indexing. Design, tuning, and verification steps are documented in
-[`docs/security.md`](docs/security.md).
-
-## Tech Stack
-
-- **Frontend:** Vite + React 19 + TanStack Router
-- **UI:** Tailwind CSS 4, Radix UI
-- **Data:** Google Calendar and Google Tasks APIs; browser-local OAuth tokens
-  and UI preferences
-
-## Quality Checks
-
-```bash
-pnpm typecheck
-pnpm test:run
-pnpm build
-```
-
-Use [`CONTRIBUTING.md`](CONTRIBUTING.md) for contribution checks,
-[`SUPPORT.md`](SUPPORT.md) for usage help, and [`SECURITY.md`](SECURITY.md) for
-private vulnerability reporting.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SUPPORT.md`](SUPPORT.md), and
+[`SECURITY.md`](SECURITY.md) for contributing, help, and private vulnerability
+reports.
 
 ## License
 
-MIT
+[MIT](LICENSE)
