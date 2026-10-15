@@ -59,8 +59,9 @@ pnpm test:lighthouse
 ```
 
 - **Playwright** serves `apps/web/dist` with `vite preview` on port 4173 and
-  covers the marketing pages, the URL scheme, the demo, grid keyboard navigation, creating/renaming/deleting an
-  event, the theme toggle, and a mobile viewport. The clock is pinned so the
+  covers the marketing pages, the URL scheme, the demo, grid keyboard navigation,
+  search, moving events by drag and keyboard, the one-page print, creating/renaming/deleting an
+  event, the theme toggle, and a Pixel 7 viewport with touch input. The clock is pinned so the
   sample year is deterministic. Open the last run with
   `pnpm --filter @julian/e2e exec playwright show-report`; failed tests keep a
   trace in `apps/e2e/test-results`.
