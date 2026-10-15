@@ -34,7 +34,7 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 - **New browser-side external API call?** Add its origin to `connect-src` in
   `packages/security/src/index.ts`, or CSP will block it.
 - **New dev/preview origin for OAuth?** Add it to `ALLOWED_ORIGINS` in
-  `apps/edge/src/index.ts`.
+  `apps/edge/src/oauth.ts`.
 - **Dashboard work** must be done while logged into account **`93527…`**
   (`krmznkr@gmail.com`, Google SSO) — not the personal `c57b…` account.
 - **CSP has one source**, `packages/security/src/index.ts`; the build emits
@@ -44,10 +44,10 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 
 ## Tuning knobs
 
-- **Bot blocklist:** `BLOCKED_USER_AGENTS` in `apps/edge/src/index.ts`.
+- **Bot blocklist:** `BLOCKED_USER_AGENTS` in `apps/edge/src/guards.ts`.
 - **Rate limits:** `SITE_RATELIMIT` (240/60s) and `OAUTH_RATELIMIT` (12/60s) in
   `apps/edge/wrangler.jsonc` (`period` must be `10` or `60`).
-- **OAuth body cap:** `MAX_OAUTH_BODY_BYTES` in `apps/edge/src/index.ts`.
+- **OAuth body cap:** `MAX_OAUTH_BODY_BYTES` in `apps/edge/src/oauth.ts`.
 
 ## Deferred / not doing (by decision)
 

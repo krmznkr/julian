@@ -18,6 +18,7 @@ export default [
       "apps/web/src/**/*.tsx",
       "packages/domain/src/**/*.ts",
       "packages/google/src/**/*.ts",
+      "apps/edge/src/**/*.ts",
     ],
     ignores: ["**/node_modules/**", "**/dist/**", "**/build/**"],
     plugins: { functional },
@@ -62,7 +63,12 @@ export default [
     // (`Context.Service`). Both are declaration syntax rather than OO design —
     // no inheritance, no mutable instance state, no methods on the class — so
     // the rule is disabled for the Effect layer only, not the app at large.
-    files: ["apps/web/src/lib/effect/*.ts", "packages/google/src/**/*.ts"],
+    files: [
+      "apps/web/src/lib/effect/*.ts",
+      "packages/google/src/**/*.ts",
+      "apps/edge/src/errors.ts",
+      "apps/edge/src/env.ts",
+    ],
     rules: {
       "functional/no-classes": "off",
     },
