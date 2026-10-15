@@ -1,6 +1,12 @@
 {
   "name": "julian",
   "version": "0.1.5",
+  "description": "A full-year view for Google Calendar, built for multi-day events.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/krmznkr/julian.git"
+  },
   "private": true,
   "type": "module",
   "scripts": {
