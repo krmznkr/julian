@@ -14,16 +14,16 @@ exchange and refresh.
 
 A pnpm workspace orchestrated by Turborepo:
 
-| Path                | Package            | Purpose                                                 |
-| ------------------- | ------------------ | ------------------------------------------------------- |
-| `apps/web`          | `@julian/web`      | The Vite/React calendar app                             |
-| `apps/marketing`    | `@julian/marketing`| Static marketing, privacy, and terms pages              |
-| `apps/edge`         | `@julian/edge`     | Cloudflare Worker: assets, OAuth proxy, protections     |
-| `apps/e2e`          | `@julian/e2e`      | Playwright, axe, and Lighthouse checks on the web build |
-| `packages/domain`   | `@julian/domain`   | Pure calendar logic: dates, events, year-grid layout    |
-| `packages/google`   | `@julian/google`   | Effect services for Google OAuth, Calendar, and Tasks   |
-| `packages/security` | `@julian/security` | Security headers and the session-hint cookie            |
-| `packages/config`   | `@julian/config`   | Shared TypeScript configuration                         |
+| Path                | Package             | Purpose                                                 |
+| ------------------- | ------------------- | ------------------------------------------------------- |
+| `apps/web`          | `@julian/web`       | The Vite/React calendar app                             |
+| `apps/marketing`    | `@julian/marketing` | Static marketing, privacy, and terms pages              |
+| `apps/edge`         | `@julian/edge`      | Cloudflare Worker: assets, OAuth proxy, protections     |
+| `apps/e2e`          | `@julian/e2e`       | Playwright, axe, and Lighthouse checks on the web build |
+| `packages/domain`   | `@julian/domain`    | Pure calendar logic: dates, events, year-grid layout    |
+| `packages/google`   | `@julian/google`    | Effect services for Google OAuth, Calendar, and Tasks   |
+| `packages/security` | `@julian/security`  | Security headers and the session-hint cookie            |
+| `packages/config`   | `@julian/config`    | Shared TypeScript configuration                         |
 
 Linting, formatting, and dead-code checks run once from the root across every
 package. Build, typecheck, and tests run per package through Turborepo, which
@@ -97,6 +97,14 @@ application for an ordinary end-to-end OAuth check, or build and run Wrangler
 locally with its local-secret mechanism when specifically testing the Worker.
 The confidential Google client secret is never a Vite variable and must not be
 committed or given a `VITE_` prefix.
+
+The Google Cloud project is `krmznkr-julian`. `VITE_GOOGLE_CLIENT_ID` is public
+by design; `GOOGLE_CLIENT_SECRET` lives only in the personal 1Password vault and
+the Cloudflare Worker secret store. Registered callbacks: production
+`https://julian.krmznkr.com/auth/callback` and development
+`http://localhost:5173/auth/callback` and `http://localhost:3000/auth/callback`.
+The nightly callback is a pending manual step in
+[`follow-ups.md`](follow-ups.md).
 
 ## Data and state
 

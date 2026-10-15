@@ -214,11 +214,11 @@ and its focus live. Three ports in
 serves both the signed-in app and the demo:
 
 | Port                  | Live container (`year-view/google-ports.ts`) | Demo container (`landing/demo-year-view.tsx`) |
-| --------------------- | ------------------------------------------- | --------------------------------------------- |
-| `YearViewRouterPort`  | TanStack Router search params               | local `useState`                              |
-| `YearViewDataSource`  | Google Calendar + stored calendar selection | generated fixture year, in memory             |
-| `YearViewEventApi`    | Google create/update/move/delete            | in-memory store                               |
-| `YearViewPreferences` | `localStorage` sidebar preference           | in-memory ref                                 |
+| --------------------- | -------------------------------------------- | --------------------------------------------- |
+| `YearViewRouterPort`  | TanStack Router search params                | local `useState`                              |
+| `YearViewDataSource`  | Google Calendar + stored calendar selection  | generated fixture year, in memory             |
+| `YearViewEventApi`    | Google create/update/move/delete             | in-memory store                               |
+| `YearViewPreferences` | `localStorage` sidebar preference            | in-memory ref                                 |
 
 Loads and writes are `Effect` values with no requirements and a typed failure
 (a `_tag` and a message). The live ports get the app services from the shared
@@ -271,17 +271,17 @@ to another year. Refreshing the page or resetting the demo discards them.
 One domain serves two builds. The marketing pages are static HTML from
 `apps/marketing`; everything else is the React app.
 
-| Route                         | Served by | Purpose                                                                    |
-| ----------------------------- | --------- | -------------------------------------------------------------------------- |
-| `/`                           | Worker    | Marketing home, or `302 /{yyyy}` when the `julian_session` cookie is set   |
-| `/home`, `/privacy`, `/terms` | marketing | Static pages, no JavaScript                                                |
-| `/{yyyy}`                     | app       | Lazy-loaded year view; the current year adds today's month/day to the URL  |
-| `/{yyyy}/{mm}`                | app       | Redirects to `/{yyyy}?month=mm&day=1`                                      |
-| `/year/*`                     | Worker    | `301` to the same path without `/year`, query kept (legacy bookmarks)      |
-| `/demo`, `/demo/{yyyy}`       | app       | The real year view on sample data; `/demo` opens the current year          |
-| `/auth/callback`              | app       | Validates OAuth state and exchanges the single-use code                    |
-| `/api/oauth/*`                | Worker    | Token exchange and refresh                                                 |
-| `/lab`                        | app       | Component/design experimentation                                           |
+| Route                         | Served by | Purpose                                                                   |
+| ----------------------------- | --------- | ------------------------------------------------------------------------- |
+| `/`                           | Worker    | Marketing home, or `302 /{yyyy}` when the `julian_session` cookie is set  |
+| `/home`, `/privacy`, `/terms` | marketing | Static pages, no JavaScript                                               |
+| `/{yyyy}`                     | app       | Lazy-loaded year view; the current year adds today's month/day to the URL |
+| `/{yyyy}/{mm}`                | app       | Redirects to `/{yyyy}?month=mm&day=1`                                     |
+| `/year/*`                     | Worker    | `301` to the same path without `/year`, query kept (legacy bookmarks)     |
+| `/demo`, `/demo/{yyyy}`       | app       | The real year view on sample data; `/demo` opens the current year         |
+| `/auth/callback`              | app       | Validates OAuth state and exchanges the single-use code                   |
+| `/api/oauth/*`                | Worker    | Token exchange and refresh                                                |
+| `/lab`                        | app       | Component/design experimentation                                          |
 
 `julian_session` (`packages/security/src/session-hint.ts`) is a hint, not a
 credential: its value is `1`, it is set after a successful sign-in (and whenever
@@ -368,19 +368,19 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 
 ## Where to change things
 
-| Change                                           | Primary files                                                                                   |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| OAuth scopes, token lifecycle, Google mapping    | `packages/google/src/`                                                                          |
-| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/*.ts`, `packages/security/src/index.ts`, `infra/src/config.ts`                   |
-| Route structure and URL contract                 | `apps/web/src/router.tsx`, `apps/web/src/lib/year-view-url.ts`                                  |
-| Calendar math and event segmentation             | `packages/domain/src/`                                                                          |
-| Year-view state and orchestration                | `apps/web/src/components/year-view-reducer.ts`, `apps/web/src/components/year-view-core.tsx`    |
+| Change                                           | Primary files                                                                                               |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| OAuth scopes, token lifecycle, Google mapping    | `packages/google/src/`                                                                                      |
+| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/*.ts`, `packages/security/src/index.ts`, `infra/src/config.ts`                               |
+| Route structure and URL contract                 | `apps/web/src/router.tsx`, `apps/web/src/lib/year-view-url.ts`                                              |
+| Calendar math and event segmentation             | `packages/domain/src/`                                                                                      |
+| Year-view state and orchestration                | `apps/web/src/components/year-view-reducer.ts`, `apps/web/src/components/year-view-core.tsx`                |
 | Where the year view gets data, focus, and writes | `apps/web/src/components/year-view/year-view-ports.ts`, `apps/web/src/components/year-view/google-ports.ts` |
-| Demo page and its scripted tour                  | `apps/web/src/routes/demo-page.tsx`, `apps/web/src/components/landing/`                         |
-| Marketing, privacy, and terms pages              | `apps/marketing/*.html`, `apps/marketing/src/partials.ts`                                       |
-| `/` routing, legacy redirects, session hint      | `apps/edge/src/site.ts`, `packages/security/src/session-hint.ts`                                |
-| Month rendering and virtualization               | `apps/web/src/components/year-view/`                                                            |
-| Build chunking, asset assembly, and deployment   | `apps/web/vite.config.ts`, `.github/actions/build-web`, `.github/workflows/deploy-stable.yml`   |
+| Demo page and its scripted tour                  | `apps/web/src/routes/demo-page.tsx`, `apps/web/src/components/landing/`                                     |
+| Marketing, privacy, and terms pages              | `apps/marketing/*.html`, `apps/marketing/src/partials.ts`                                                   |
+| `/` routing, legacy redirects, session hint      | `apps/edge/src/site.ts`, `packages/security/src/session-hint.ts`                                            |
+| Month rendering and virtualization               | `apps/web/src/components/year-view/`                                                                        |
+| Build chunking, asset assembly, and deployment   | `apps/web/vite.config.ts`, `.github/actions/build-web`, `.github/workflows/deploy-stable.yml`               |
 
 ## Related documentation
 
