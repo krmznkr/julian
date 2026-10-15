@@ -5,6 +5,7 @@ import { formatDateRange } from "@julian/domain";
 import { openExternal } from "@/lib/open-external";
 import type { CalendarEvent, CalendarSummary, EventSegment } from "@julian/domain";
 import { cn } from "@/lib/utils";
+import { HighlightedText } from "@/components/year-view/event-search";
 
 export interface EventChipProps {
   segment: EventSegment;
@@ -77,7 +78,7 @@ export function EventChipContent({ title, displayMode }: EventChipContentProps) 
         displayMode === "full" && "leading-snug",
       )}
     >
-      {compactTitle}
+      <HighlightedText text={compactTitle} />
     </span>
   );
 }

@@ -14,11 +14,13 @@ export function useYearViewShortcuts({
   onToggleSidebar,
   onRefresh,
   onJumpToToday,
+  onFocusSearch,
 }: {
   onToggleCommandPalette: () => void;
   onToggleSidebar: () => void;
   onRefresh: () => void;
   onJumpToToday: () => void;
+  onFocusSearch: () => void;
 }) {
   const { setTheme, theme } = useTheme();
 
@@ -36,6 +38,12 @@ export function useYearViewShortcuts({
       // Everything below is an unmodified letter, so a browser or OS chord
       // (Cmd+R, Alt+T) keeps its normal meaning.
       if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+      if (event.key === "/" && !event.shiftKey) {
+        event.preventDefault();
+        onFocusSearch();
+        return;
+      }
 
       switch (event.key.toLowerCase()) {
         case "s":
@@ -58,5 +66,13 @@ export function useYearViewShortcuts({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onJumpToToday, onRefresh, onToggleCommandPalette, onToggleSidebar, setTheme, theme]);
+  }, [
+    onFocusSearch,
+    onJumpToToday,
+    onRefresh,
+    onToggleCommandPalette,
+    onToggleSidebar,
+    setTheme,
+    theme,
+  ]);
 }

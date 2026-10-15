@@ -25,6 +25,7 @@ function derive(overrides: Partial<Parameters<typeof useYearViewDerivedData>[0]>
       failures: [],
       formatDate,
       isRefreshing: false,
+      searchQuery: "",
       selectedCalendarIds: ["cal-1"],
       year: 2026,
       ...overrides,
@@ -78,5 +79,12 @@ describe("useYearViewDerivedData — visibility", () => {
     expect(
       derive({ selectedCalendarIds: ["cal-1", "gone"] }).unresolvedSelectedCalendarIds,
     ).toEqual(["gone"]);
+  });
+});
+
+describe("useYearViewDerivedData — search", () => {
+  it("keeps only events whose text matches the query", () => {
+    expect(derive({ searchQuery: "trip" }).visibleEvents).toEqual([event]);
+    expect(derive({ searchQuery: "dentist" }).visibleEvents).toEqual([]);
   });
 });

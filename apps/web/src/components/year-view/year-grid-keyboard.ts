@@ -189,6 +189,7 @@ export const YEAR_GRID_SHORTCUTS = [
   { keys: "R", action: "Refresh events" },
   { keys: "Shift T", action: "Toggle theme" },
   { keys: "S", action: "Toggle sidebar" },
+  { keys: "/", action: "Search events (Escape clears)" },
   { keys: "?", action: "Show keyboard shortcuts dialog" },
   { keys: "⌘K", action: "Open command palette" },
 ] as const;

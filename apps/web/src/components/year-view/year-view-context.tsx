@@ -2,6 +2,7 @@ import {
   createContext,
   type Dispatch,
   type ReactNode,
+  type RefObject,
   type SetStateAction,
   useContext,
 } from "react";
@@ -58,6 +59,10 @@ type YearViewContextValue = {
   setKeyboardHelpOpen: Dispatch<SetStateAction<boolean>>;
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: Dispatch<SetStateAction<boolean>>;
+  searchQuery: string;
+  setSearchQuery: Dispatch<SetStateAction<string>>;
+  searchInputRef: RefObject<HTMLInputElement | null>;
+  searchMatchCount: number;
   registerFocusYearGrid: (focus: (() => void) | null) => void;
   focusYearGrid: () => void;
   onYearChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
