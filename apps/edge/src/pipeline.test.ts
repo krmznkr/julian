@@ -125,6 +125,20 @@ describe("OAuth proxy", () => {
     },
   );
 
+  it.each([
+    ["dev", 200],
+    ["stable", 403],
+    ["nightly", 403],
+  ])("on the %s channel answers a localhost origin with %i", async (channel, status) => {
+    const google = async () => new Response('{"access_token":"a"}', { status: 200 });
+    const response = await serve(
+      refresh('{"refresh_token":"refresh"}', { Origin: "http://127.0.0.1:3000" }),
+      makeEnv({ APP_CHANNEL: channel }),
+      google,
+    );
+    expect(response.status).toBe(status);
+  });
+
   it("rejects an oversized declared Content-Length before reading", async () => {
     const response = await serve(refresh("{}", { "Content-Length": "100000" }), makeEnv());
     expect(response.status).toBe(413);

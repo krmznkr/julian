@@ -11,16 +11,20 @@ import { enforceOAuthRateLimit } from "./guards";
 
 const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
-// Only the app's own origins may call the proxy. Anything else (curl,
-// scrapers, cross-site pages) is rejected before we ever talk to Google.
-export const ALLOWED_ORIGINS: ReadonlySet<string> = new Set([
-  "https://julian.krmznkr.com",
-  "https://julian-nightly.krmznkr.com",
+// Only the app's own origins may call the proxy, so cross-site pages are
+// rejected before we ever talk to Google. Local dev servers are allowed only
+// on the dev channel. This is browser hygiene, not authentication: a non-browser
+// client can send any Origin it likes.
+const DEPLOYED_ORIGINS = ["https://julian.krmznkr.com", "https://julian-nightly.krmznkr.com"];
+const LOCAL_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
-]);
+];
+
+export const allowedOrigins = (channel: string): ReadonlySet<string> =>
+  new Set(channel === "dev" ? [...DEPLOYED_ORIGINS, ...LOCAL_ORIGINS] : DEPLOYED_ORIGINS);
 
 // OAuth JSON bodies are tiny; anything larger is abuse or a bug.
 export const MAX_OAUTH_BODY_BYTES = 4096;
@@ -38,10 +42,10 @@ const RefreshRequest = Schema.Struct({
 });
 
 // Same-site browser POSTs only, with a sane declared body size.
-const checkRequest = (request: Request) => {
+const checkRequest = (request: Request, channel: string) => {
   if (request.method !== "POST") return Effect.fail(rejectOAuth(405, "method_not_allowed"));
   const origin = request.headers.get("Origin");
-  if (!origin || !ALLOWED_ORIGINS.has(origin)) {
+  if (!origin || !allowedOrigins(channel).has(origin)) {
     return Effect.fail(rejectOAuth(403, "forbidden", "Origin not allowed"));
   }
   const contentLength = Number(request.headers.get("Content-Length") ?? "0");
@@ -128,10 +132,10 @@ const exchangeWithGoogle = Effect.fn("edge.exchangeWithGoogle")(function* (
 
 export const handleOAuth = Effect.fn("edge.oauth")(function* (request: Request) {
   const { pathname } = new URL(request.url);
-  yield* checkRequest(request);
+  const env = yield* WorkerEnv;
+  yield* checkRequest(request, env.build.channel);
   yield* enforceOAuthRateLimit(request);
 
-  const env = yield* WorkerEnv;
   if (Redacted.value(env.googleClientSecret) === "") {
     return yield* rejectOAuth(500, "server_misconfigured", "GOOGLE_CLIENT_SECRET is not set");
   }
