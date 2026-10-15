@@ -12,6 +12,7 @@ describe("marketing partials", () => {
     expect(new Set(Object.keys(SCOPE_PURPOSES))).toEqual(new Set(GOOGLE_SCOPES));
     const html = renderScopes();
     GOOGLE_SCOPES.forEach((scope) => expect(html).toContain(`<code>${scope}</code>`));
+    expect(html).not.toContain("userinfo");
   });
 
   it("refuses a scope the privacy page does not explain", () => {

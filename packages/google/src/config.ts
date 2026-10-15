@@ -15,7 +15,6 @@ export const GOOGLE_SCOPES: ReadonlyArray<string> = [
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/tasks.readonly",
-  "https://www.googleapis.com/auth/userinfo.email",
 ];
 
 // The redirect URI is derived from where the app is actually served rather than

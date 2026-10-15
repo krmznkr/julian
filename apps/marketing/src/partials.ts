@@ -16,7 +16,6 @@ export const SCOPE_PURPOSES: Readonly<Record<string, string>> = {
     "create, rename, move, and delete events when you ask it to",
   "https://www.googleapis.com/auth/tasks.readonly":
     "show your incomplete Google Tasks with due dates (read-only)",
-  "https://www.googleapis.com/auth/userinfo.email": "show which Google account is connected",
 };
 
 const escapeHtml = (text: string) =>
