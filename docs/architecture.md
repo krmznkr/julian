@@ -344,7 +344,7 @@ then uploads or deploys. Channels, gradual rollout and rollback are described in
 | Value                   | Local development                      | GitHub Actions                  | Worker runtime                       |
 | ----------------------- | -------------------------------------- | ------------------------------- | ------------------------------------ |
 | `VITE_GOOGLE_CLIENT_ID` | `.env` from `.env.example`             | Public value in deploy workflow | Embedded in static JS                |
-| `GOOGLE_CLIENT_ID`      | Wrangler variable                      | `apps/edge/wrangler.jsonc`      | Worker binding                       |
+| `GOOGLE_CLIENT_ID`      | Wrangler variable                      | `infra/src/config.ts`           | Worker binding                       |
 | `GOOGLE_CLIENT_SECRET`  | Optional local Wrangler secret         | Never supplied to build         | Encrypted Worker secret              |
 | `CLOUDFLARE_API_TOKEN`  | Operator environment for manual deploy | Repository secret               | Consumed by Wrangler, not the Worker |
 
@@ -371,7 +371,7 @@ inspection, and the production smoke tests in [`security.md`](security.md).
 | Change                                           | Primary files                                                                                   |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | OAuth scopes, token lifecycle, Google mapping    | `packages/google/src/`                                                                          |
-| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/*.ts`, `packages/security/src/index.ts`, `apps/edge/wrangler.jsonc`              |
+| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/*.ts`, `packages/security/src/index.ts`, `infra/src/config.ts`                   |
 | Route structure and URL contract                 | `apps/web/src/router.tsx`, `apps/web/src/lib/year-view-url.ts`                                  |
 | Calendar math and event segmentation             | `packages/domain/src/`                                                                          |
 | Year-view state and orchestration                | `apps/web/src/components/year-view-reducer.ts`, `apps/web/src/components/year-view-core.tsx`    |

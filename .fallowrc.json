@@ -14,11 +14,15 @@
     "apps/marketing/src/styles.css",
     "apps/marketing/vite.config.ts",
     "apps/marketing/vitest.config.ts",
-    "packages/*/vitest.config.ts"
+    "packages/*/vitest.config.ts",
+    "infra/alchemy.run.ts",
+    "infra/scripts/generate-wrangler.ts",
+    "infra/vitest.config.ts"
   ],
   "ignorePatterns": ["apps/web/index.html", ".github/**"],
   "ignoreDependencies": [
     "pino-pretty",
-    "@julian/marketing"
+    "@julian/marketing",
+    "@effect/platform-node"
   ]
 }

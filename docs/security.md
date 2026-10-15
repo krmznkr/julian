@@ -34,7 +34,8 @@ no path to an unexpected bill.
 
 ## Request pipeline
 
-`assets.run_worker_first = true` in `apps/edge/wrangler.jsonc` forces **every** request —
+`assets.run_worker_first = true` in `apps/edge/wrangler.jsonc` (rendered from
+`infra/src/config.ts`) forces **every** request —
 including static assets, which normally bypass the Worker — through
 `apps/edge/src/index.ts`, a single Effect pipeline where every rejection is a
 tagged error rendered in one place (`toResponse`). Order of checks:
@@ -66,7 +67,7 @@ Social link-preview bots (LinkedIn, Slack, Twitter/X, Facebook, WhatsApp) are
 **To tune:** edit the `BLOCKED_USER_AGENTS` array. Removing `curl/`/`wget/`
 re-allows quick command-line checks.
 
-### 2. Rate limiting — `apps/edge/wrangler.jsonc` + `apps/edge/src/guards.ts`
+### 2. Rate limiting — `infra/src/config.ts` + `apps/edge/src/guards.ts`
 
 Native Workers rate limiting (no KV/DB, no billing), keyed by
 `CF-Connecting-IP`:
@@ -79,8 +80,9 @@ Native Workers rate limiting (no KV/DB, no billing), keyed by
 Over-limit returns `429`. `period` must be `10` or `60`. Limits are best-effort
 and enforced per Cloudflare location, which is fine for abuse mitigation.
 
-**To tune:** change `simple.limit` in `apps/edge/wrangler.jsonc`. The Worker reads the
-bindings by name, so no code change is needed.
+**To tune:** change `RATE_LIMITS` in `infra/src/config.ts` and run
+`pnpm --filter @julian/infra wrangler:generate`. The Worker reads the bindings by
+name, so no code change is needed.
 
 ### 3. OAuth proxy lock-down — `apps/edge/src/oauth.ts`
 
@@ -135,7 +137,8 @@ Three layers:
 1. `X-Robots-Tag: noindex, nofollow` on every response (authoritative signal).
 2. `<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">` in
    `index.html`.
-3. Cloudflare's **managed `robots.txt`** (zone feature) already `Disallow`s the
+3. Cloudflare's **managed `robots.txt`** (zone feature, declared in
+   `infra/alchemy.run.ts`) `Disallow`s the
    major AI crawlers (GPTBot, ClaudeBot, CCBot, Bytespider, Google-Extended, …)
    while allowing search crawl — which is required so crawlers actually _see_ the
    `noindex` and drop the page from the index.

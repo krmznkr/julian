@@ -13,7 +13,7 @@
     "test:e2e": "turbo run test:e2e",
     "test:lighthouse": "turbo run test:lighthouse",
     "quality:oxlint": "oxlint --config .oxlintrc.json --react-plugin --react-perf-plugin --jsx-a11y-plugin --vitest-plugin --deny-warnings .",
-    "quality:oxfmt": "oxfmt --check \"apps/*/src/**/*.{js,jsx,ts,tsx}\" \"packages/*/src/**/*.ts\" \"apps/*/*.{js,mjs,ts}\" \"*.{js,mjs,ts}\"",
+    "quality:oxfmt": "oxfmt --check \"apps/*/src/**/*.{js,jsx,ts,tsx}\" \"packages/*/src/**/*.ts\" \"apps/*/*.{js,mjs,ts}\" \"infra/**/*.ts\" \"*.{js,mjs,ts}\"",
     "quality:fallow": "fallow dead-code",
     "quality:fp": "eslint .",
     "quality:static": "pnpm run quality:oxlint && pnpm run quality:oxfmt && pnpm run quality:fallow && pnpm run quality:fp && pnpm run typecheck",
@@ -53,6 +53,7 @@
       "fallow"
     ],
     "overrides": {
+      "@effect/platform-node-shared": "4.0.4",
       "deepmerge-ts@<8.0.0": "^8.0.0",
       "esbuild@<0.28.1": "^0.28.1",
       "sharp@<0.35.5": "^0.35.5",

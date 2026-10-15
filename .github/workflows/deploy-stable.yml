@@ -48,6 +48,12 @@ jobs:
         uses: ./.github/actions/build-web
         with:
           channel: stable
+      # Zone settings from infra/ (Alchemy). Off until the state store is
+      # bootstrapped; see docs/infrastructure.md.
+      - name: Apply the Alchemy stack
+        if: vars.ALCHEMY_ENABLED == 'true'
+        working-directory: infra
+        run: pnpm exec alchemy deploy --stage prod --yes --no-input
       - name: Find the version currently serving production
         id: current
         run: |

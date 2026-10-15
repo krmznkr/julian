@@ -12,6 +12,7 @@ flowchart LR
   security["Security<br/>controls + smoke tests"]
   followups["Follow-ups<br/>known gaps + decisions"]
   releasing["Releasing<br/>versions + channels"]
+  infra["Infrastructure<br/>Cloudflare as code"]
   community["CONTRIBUTING / SUPPORT / SECURITY<br/>project interaction"]
 
   readme --> dev
@@ -20,6 +21,7 @@ flowchart LR
   security --> followups
   readme --> community
   readme --> releasing
+  releasing --> infra
 
   classDef entry fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:2px
   classDef howto fill:#dcfce7,stroke:#16a34a,color:#14532d
@@ -27,7 +29,7 @@ flowchart LR
   classDef action fill:#fef3c7,stroke:#d97706,color:#78350f
   class readme entry
   class dev,community,releasing howto
-  class architecture,security explain
+  class architecture,security,infra explain
   class followups action
 ```
 
@@ -38,6 +40,7 @@ flowchart LR
 | [`architecture.md`](architecture.md)       | You need system context, request/OAuth/data flows, browser storage, deployment, or failure behavior    |
 | [`security.md`](security.md)               | You are changing the Worker boundary, OAuth handling, rate limits, headers, or production verification |
 | [`releasing.md`](releasing.md)             | You are cutting a release, deploying a channel, or rolling back                                        |
+| [`infrastructure.md`](infrastructure.md)   | You are changing Cloudflare config, Worker bindings, domains, zone settings, or the Alchemy stack      |
 | [`follow-ups.md`](follow-ups.md)           | You need current gaps, gotchas, tuning decisions, or explicitly deferred work                          |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | You are preparing a change                                                                             |
 | [`../SECURITY.md`](../SECURITY.md)         | You need to report a vulnerability privately                                                           |

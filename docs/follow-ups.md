@@ -16,10 +16,15 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
       release-please starts its changelog there instead of the whole history.
 - [ ] **Create the `production` and `nightly` GitHub environments** (optional
       protection rules) used by the deploy workflows.
+- [ ] **Turn on Cloudflare as code.** Widen the API token, bootstrap the Alchemy
+      state store, review the adoption plan, apply once, then set the
+      `ALCHEMY_ENABLED` repository variable. Steps in
+      [`infrastructure.md`](infrastructure.md#one-time-owner-steps).
 
 - [ ] **(Optional) Set managed robots.txt `Content-Signal: search=no`.** Indexing
       is already prevented by the `noindex` header; this only adds an extra
-      signal. Requires dashboard access to account `93527…`.
+      signal. Alchemy's bot management resource does not expose it yet, so it
+      stays a dashboard change. Requires dashboard access to account `93527…`.
 - [ ] **(Optional) Clean up 1Password.** The `Cloudflare` login item holds a
       revoked `homelab-access-home-issue2` API token — delete it to avoid
       confusion.
@@ -59,7 +64,8 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 
 - **Bot blocklist:** `BLOCKED_USER_AGENTS` in `apps/edge/src/guards.ts`.
 - **Rate limits:** `SITE_RATELIMIT` (240/60s) and `OAUTH_RATELIMIT` (12/60s) in
-  `apps/edge/wrangler.jsonc` (`period` must be `10` or `60`).
+  `infra/src/config.ts` (`period` must be `10` or `60`); regenerate
+  `apps/edge/wrangler.jsonc` with `pnpm --filter @julian/infra wrangler:generate`.
 - **OAuth body cap:** `MAX_OAUTH_BODY_BYTES` in `apps/edge/src/oauth.ts`.
 
 ## Deferred / not doing (by decision)
