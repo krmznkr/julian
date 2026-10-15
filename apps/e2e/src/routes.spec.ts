@@ -36,6 +36,13 @@ test("/lab is not part of the production build", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Go home" })).toBeVisible();
 });
 
+test("/{yyyy} without a Google session offers sign-in or the demo", async ({ page }) => {
+  await page.goto(`/${YEAR - 1}`);
+  await expect(page.getByRole("button", { name: "Connect Google Calendar" })).toBeVisible();
+  await page.getByRole("link", { name: "Open the demo" }).click();
+  await page.waitForURL((url) => url.pathname === `/demo/${YEAR - 1}`);
+});
+
 test("a legacy /year path lands on the new URL", async ({ page }) => {
   await page.goto(`/year/${YEAR}?month=5&day=2`);
   await expectFocus(page, `/${YEAR}`, 5, 2);
