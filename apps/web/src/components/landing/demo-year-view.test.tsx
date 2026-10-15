@@ -1,4 +1,13 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { YearViewRouterPort } from "@/components/year-view/year-view-ports";
 import { AppProviders } from "@/providers";
@@ -27,6 +36,11 @@ function renderDemo(search: YearViewRouterPort["search"] = {}) {
   );
   return { navigate, ...view };
 }
+
+// With no layout every month column sits at y = 0, so a pointer's clientY is
+// its offset into the month: row height (30px) times the zero-based day.
+const clickDay = (element: Element, day: number) =>
+  fireEvent.click(element, { clientY: (day - 1) * 30 + 5 });
 
 const grid = () => screen.getByRole("application");
 const press = (key: string, init: KeyboardEventInit = {}) =>
@@ -159,5 +173,73 @@ describe("DemoYearView", () => {
     const deleteDialog = await screen.findByRole("dialog", { name: "Delete event?" });
     fireEvent.click(within(deleteDialog).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(screen.queryByText("Ship more coverage")).not.toBeInTheDocument());
+  });
+
+  it("opens day details when an event is clicked", async () => {
+    renderDemo();
+    clickDay(screen.getByRole("button", { name: /^Nadia's birthday/ }), 24);
+    const panel = await screen.findByRole("listbox", { name: /^Events for January/ });
+    expect(within(panel).getByRole("option", { selected: true })).toHaveTextContent(
+      "Nadia's birthday",
+    );
+  });
+
+  it("refuses to drag an event from a read-only calendar", () => {
+    renderDemo();
+    const dragStart = createEvent.dragStart(
+      screen.getByRole("button", { name: /^Nadia's birthday/ }),
+    );
+    fireEvent(screen.getByRole("button", { name: /^Nadia's birthday/ }), dragStart);
+    expect(dragStart.defaultPrevented).toBe(true);
+  });
+
+  it("moves an event by dragging it onto another day", async () => {
+    renderDemo();
+    const chip = screen.getByRole("button", { name: /^Ship the calendar rewrite/ });
+    const store = new Map<string, string>();
+    const dataTransfer = {
+      get types() {
+        return [...store.keys()];
+      },
+      setData: (type: string, value: string) => store.set(type, value),
+      getData: (type: string) => store.get(type) ?? "",
+      effectAllowed: "none",
+      dropEffect: "none",
+    };
+    const target = document.querySelector('[data-month-column="1"] [data-day-cell-frame="10"]');
+    if (!target) throw new Error("Feb 10 is not rendered");
+
+    fireEvent.dragStart(chip, { dataTransfer });
+    fireEvent.dragOver(target, { dataTransfer });
+    fireEvent.drop(target, { dataTransfer });
+
+    expect(
+      await screen.findByRole("button", { name: "Ship the calendar rewrite, Feb 10, All day" }),
+    ).toBeInTheDocument();
+  });
+
+  it("moves the selected event to a typed date with M", async () => {
+    renderDemo({ month: 3, day: 27 });
+    act(() => grid().focus());
+    press("Enter");
+    const panel = await screen.findByRole("listbox", { name: "Events for March 27" });
+    expect(within(panel).getByRole("option", { selected: true })).toHaveTextContent(
+      "Marathon training block",
+    );
+    press("]");
+    expect(within(panel).getByRole("option", { selected: true })).toHaveTextContent(
+      "Ship the calendar rewrite",
+    );
+
+    press("m");
+    const dialog = await screen.findByRole("dialog", { name: "Move event" });
+    fireEvent.change(within(dialog).getByLabelText("Start date"), {
+      target: { value: "2026-05-20" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Move" }));
+
+    expect(
+      await screen.findByRole("button", { name: "Ship the calendar rewrite, May 20, All day" }),
+    ).toBeInTheDocument();
   });
 });
