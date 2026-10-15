@@ -35,3 +35,26 @@ if (typeof window !== "undefined" && !("ResizeObserver" in window)) {
     value: ResizeObserverMock,
   });
 }
+
+if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
+  class IntersectionObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  }
+
+  Object.defineProperty(window, "IntersectionObserver", {
+    configurable: true,
+    writable: true,
+    value: IntersectionObserverMock,
+  });
+}
+
+// jsdom implements no layout, so scrolling is a no-op rather than missing.
+if (typeof window !== "undefined") {
+  Element.prototype.scrollTo ??= () => {};
+  Element.prototype.scrollIntoView ??= () => {};
+}
