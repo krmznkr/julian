@@ -47,16 +47,16 @@ export const appConfigLayer: Layer.Layer<AppConfig> = Layer.effect(
     // the landing page and the year-view demo without credentials. Only the
     // OAuth flow needs it, and `GoogleAuth.start` reports the absence as a
     // typed `AuthConfigError` at the point the user actually tries to sign in.
-    const clientId = yield* Config.string("VITE_GOOGLE_CLIENT_ID").pipe(Config.withDefault(""));
-    const proxyBaseUrl = yield* Config.string("VITE_OAUTH_PROXY_BASE").pipe(
+    const clientId = yield* Config.String("VITE_GOOGLE_CLIENT_ID").pipe(Config.withDefault(""));
+    const proxyBaseUrl = yield* Config.String("VITE_OAUTH_PROXY_BASE").pipe(
       Config.withDefault("/api/oauth"),
     );
-    const redirectUri = yield* Config.string("VITE_GOOGLE_REDIRECT_URI").pipe(
+    const redirectUri = yield* Config.String("VITE_GOOGLE_REDIRECT_URI").pipe(
       Config.withDefault(defaultRedirectUri()),
     );
 
-    const retryTimes = yield* Config.int("VITE_HTTP_RETRY_TIMES").pipe(Config.withDefault(3));
-    const apiConcurrency = yield* Config.int("VITE_API_CONCURRENCY").pipe(Config.withDefault(8));
+    const retryTimes = yield* Config.Int("VITE_HTTP_RETRY_TIMES").pipe(Config.withDefault(3));
+    const apiConcurrency = yield* Config.Int("VITE_API_CONCURRENCY").pipe(Config.withDefault(8));
 
     return AppConfig.of({
       clientId,

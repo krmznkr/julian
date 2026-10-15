@@ -8,7 +8,7 @@
 // runtime is first used is silently ignored. Providing the reference explicitly
 // makes the transport an ordinary, per-test dependency.
 import { Effect, Layer, Ref } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 import { AppConfigShape, appConfigLayerWith } from "@/lib/effect/config";
 import { keyValueStoreMemoryLayer } from "@/lib/effect/key-value-store";
 import { NavigationCall, recordingNavigationLayer } from "@/lib/effect/navigation";

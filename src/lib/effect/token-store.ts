@@ -1,5 +1,5 @@
 import { Context, Effect, Layer, Option, Semaphore } from "effect";
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http";
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { GoogleApiError } from "@/lib/effect/errors";
 import { googleApiError } from "@/lib/effect/http-errors";
 import { retryingClient } from "@/lib/effect/http-policy";

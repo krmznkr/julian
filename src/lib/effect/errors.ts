@@ -1,6 +1,6 @@
 // Typed errors for the app's effectful layer.
 //
-// These use `Schema.TaggedErrorClass` rather than hand-rolled `_tag` classes so
+// These use `Schema.TaggedError` rather than hand-rolled `_tag` classes so
 // the error payloads are schema-described: they can be encoded/decoded, they
 // carry operation labels for diagnosis, and they stay discriminable in the
 // Effect error channel instead of becoming untyped thrown values.
@@ -13,7 +13,7 @@ import { Schema } from "effect";
 // `status` uses `Schema.optional`, not `optionalKey`: transport failures never
 // saw a response, so callers legitimately construct this error with an explicit
 // `status: undefined`. `optionalKey` would reject that at construction time.
-export class GoogleApiError extends Schema.TaggedErrorClass<GoogleApiError>()("Google.ApiError", {
+export class GoogleApiError extends Schema.TaggedError<GoogleApiError>()("Google.ApiError", {
   operation: Schema.String,
   message: Schema.String,
   status: Schema.optional(Schema.Number),
@@ -21,14 +21,14 @@ export class GoogleApiError extends Schema.TaggedErrorClass<GoogleApiError>()("G
 }) {}
 
 // The user is not authenticated (no valid or renewable token).
-export class NotAuthenticatedError extends Schema.TaggedErrorClass<NotAuthenticatedError>()(
+export class NotAuthenticatedError extends Schema.TaggedError<NotAuthenticatedError>()(
   "Google.NotAuthenticated",
   { message: Schema.String },
 ) {}
 
 // A local configuration problem (missing client id) or malformed OAuth state
 // (missing PKCE verifier).
-export class AuthConfigError extends Schema.TaggedErrorClass<AuthConfigError>()(
+export class AuthConfigError extends Schema.TaggedError<AuthConfigError>()(
   "Google.AuthConfigError",
   { message: Schema.String },
 ) {}

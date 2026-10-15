@@ -83,3 +83,4 @@ next-env.d.ts
 
 # Bun build cache
 **/.*.bun-build
+.turbo/

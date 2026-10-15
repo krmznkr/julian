@@ -5,7 +5,7 @@
 // `Effect.fn` so failures carry an operation label and each call produces a
 // span.
 import { Context, Effect, Layer, Option, Stream } from "effect";
-import { HttpClientRequest } from "effect/unstable/http";
+import { HttpClientRequest } from "effect/http";
 import { GoogleApiError, type GoogleApiFailure } from "@/lib/effect/errors";
 import * as S from "@/lib/effect/schemas";
 import { getEventBounds, toUtcDateOnly, type CalendarEvent, type CalendarSummary } from "@/domain";

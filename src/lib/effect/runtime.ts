@@ -10,7 +10,7 @@
 // services. Dependencies that consumers should not see (the raw `HttpClient`)
 // are hidden with `Layer.provide`; nothing is wired with a blanket `mergeAll`.
 import { Cause, Effect, Exit, Layer, ManagedRuntime } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/http";
 import { appConfigLayer } from "@/lib/effect/config";
 import { keyValueStoreLayer } from "@/lib/effect/key-value-store";
 import { navigationLayer } from "@/lib/effect/navigation";

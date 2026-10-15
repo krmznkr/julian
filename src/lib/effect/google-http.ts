@@ -9,7 +9,7 @@
 // threaded through every helper, and transient failures retry through a bounded
 // jittered schedule because Google rate-limits aggressively.
 import { Context, Effect, Layer, Option, Schema, Stream } from "effect";
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http";
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { GoogleApiError, NotAuthenticatedError } from "@/lib/effect/errors";
 import { googleApiError } from "@/lib/effect/http-errors";
 import { okClientWithRetry, retryingClient } from "@/lib/effect/http-policy";
