@@ -11,8 +11,8 @@ repository, with Effect as the backbone everywhere.
   token store, schemas, errors; services already use `Context.Service`). React hooks, `async-task.ts`, `session.ts`,
   the landing demo, and the whole Worker still use raw `async`/`Promise`.
 - Domain logic already lives in `src/domain/` and is well tested.
-- Coverage: 55% statements, 41% branches. No thresholds, no E2E.
-- CSP duplicated in `worker/index.ts` and `public/_headers`.
+- Coverage: 56% statements, 42% branches (Worker included), enforced in CI. No E2E.
+- CSP defined once in `worker/security-headers.ts` (was duplicated).
 - Cloudflare config partly in `wrangler.jsonc`, partly manual dashboard work.
 
 ## Target layout
@@ -77,10 +77,10 @@ Each phase is one or more PRs, merged green, deployable on its own.
 ### Phase 0: Baseline (small, now)
 - [x] Upgrade `effect` + `@effect/vitest` from `4.0.0-beta.102` to `4.0.4`
       using the [migration guide](https://github.com/Effect-TS/effect/blob/main/MIGRATION.md).
-- [ ] Add Effect LSP diagnostics to `pnpm typecheck`.
-- [ ] Coverage reported in CI; thresholds at current levels so they can only rise.
+- [x] Add Effect LSP diagnostics to `pnpm typecheck`.
+- [x] Coverage enforced in CI; thresholds at current levels so they can only rise.
 - [ ] README hero: screenshot/GIF, live link, badges, "why it's interesting".
-- [ ] Single-source CSP with a test (later moves to `packages/security`).
+- [x] Single-source CSP with a test (later moves to `packages/security`).
 
 ### Phase 1: Workspace
 - [ ] `pnpm-workspace.yaml`, Turborepo, `packages/config`.
@@ -89,7 +89,7 @@ Each phase is one or more PRs, merged green, deployable on its own.
 ### Phase 2: Packages
 - [ ] `packages/domain` from `src/domain` + year-grid helpers.
 - [ ] `packages/schema` and `packages/google` from `src/lib/effect` + `google-calendar.ts`.
-- [ ] `packages/security`; delete `public/_headers` duplication.
+- [ ] `packages/security` from `worker/security-headers.ts`.
 
 ### Phase 3: Effect everywhere
 - [ ] Google services as Tags + Layers; tagged errors; retry `Schedule`.

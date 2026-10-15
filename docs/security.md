@@ -93,10 +93,11 @@ the client secret stays server-side. `rejectDisallowedOAuthRequest()` enforces:
 
 **If you add a new dev/preview origin,** add it to `ALLOWED_ORIGINS`.
 
-### 4. Security headers — `worker/index.ts` (`withSecurityHeaders`) + `public/_headers`
+### 4. Security headers — `worker/security-headers.ts`
 
-Applied to every response (the `_headers` file is belt-and-suspenders in case
-`run_worker_first` is ever disabled):
+Applied to every response by the Worker (`withSecurityHeaders`). The build also
+emits the same map as `dist/_headers`, a fallback in case `run_worker_first` is
+ever disabled:
 
 | Header | Value / purpose |
 | --- | --- |
@@ -109,7 +110,7 @@ Applied to every response (the `_headers` file is belt-and-suspenders in case
 | `Cross-Origin-Opener-Policy` | `same-origin` |
 | `X-Robots-Tag` | `noindex, nofollow` (see de-indexing) |
 
-**CSP breakdown** (kept in sync between the Worker constant and `_headers`):
+**CSP breakdown** (defined once in `worker/security-headers.ts`):
 
 ```
 default-src 'self'
@@ -123,7 +124,7 @@ upgrade-insecure-requests
 ```
 
 > ⚠️ **If you add a new external API call from the browser**, add its origin to
-> `connect-src` in *both* `worker/index.ts` and `public/_headers`, or the request
+> `connect-src` in `worker/security-headers.ts`, or the request
 > will be blocked by CSP.
 
 ### 5. De-indexing (kept out of search) — `index.html` + headers + Cloudflare
@@ -202,7 +203,7 @@ done
   ceiling, and blocking bots early is cheap.
 - **CSP vs. Google sign-in:** the production flow was exercised end to end on
   2026-07-15 without a CSP or redirect mismatch. Any new browser-side origin
-  must still be added to both `worker/index.ts` and `public/_headers`.
+  must still be added to `worker/security-headers.ts`.
 - **Managed robots.txt** currently signals `search=yes`. Indexing is still
   prevented by the `noindex` header; flip the content signal to `search=no` from
   the dashboard if you want the extra signal.

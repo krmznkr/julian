@@ -49,6 +49,9 @@ importers:
         specifier: 3.6.0
         version: 3.6.0
     devDependencies:
+      '@effect/language-service':
+        specifier: 0.87.4
+        version: 0.87.4
       '@effect/vitest':
         specifier: 4.0.4
         version: 4.0.4(effect@4.0.4)(vitest@4.1.11)
@@ -256,6 +259,10 @@ packages:
   '@csstools/css-tokenizer@4.0.2':
     resolution: {integrity: sha512-OoKoR0f76dCY666JlcbhmVTs2drYj1GUXZTYTcbUgJjh9Nv41aFfZ21bPQTERm5+L5cBDo466NltB2lplS5GBw==}
     engines: {node: '>=20.19.0'}
+
+  '@effect/language-service@0.87.4':
+    resolution: {integrity: sha512-AfFn4K45l84LtbQSwoPWc06nrg7OzfV3uJOnIUqimSOWTCIsY1IKBXZfjSsVTq7jDuL9Jtoz8//bZp9+rkEihg==}
+    hasBin: true
 
   '@effect/vitest@4.0.4':
     resolution: {integrity: sha512-l5KN46RbDVpqZxWzwXZtX6FVQiyzd+/hTYqL543uSDRo7hC0m19IeICh6O9U/nqCtfersqsNZnBjgHFfkuHsBw==}
@@ -3537,6 +3544,8 @@ snapshots:
       css-tree: 3.2.1
 
   '@csstools/css-tokenizer@4.0.2': {}
+
+  '@effect/language-service@0.87.4': {}
 
   '@effect/vitest@4.0.4(effect@4.0.4)(vitest@4.1.11)':
     dependencies:
