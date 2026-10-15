@@ -1,8 +1,11 @@
 import { useCallback, useState } from "react";
 import { DemoYearView } from "@/components/landing/demo-year-view";
+import { useRoutePort } from "@/components/year-view/use-route-port";
 import { startGoogleAuth } from "@/lib/google-calendar";
 
-export function LandingPage() {
+// `/demo/{yyyy}`: the real year view on sample data, linked from the marketing site.
+export function DemoPage({ year }: { year: number }) {
+  const router = useRoutePort("/demo/$year");
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,12 +22,17 @@ export function LandingPage() {
 
   return (
     <DemoYearView
+      year={year}
+      router={router}
       banner={
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-border/40 bg-muted/40 px-3 py-2 text-center text-sm sm:px-6">
           <span className="rounded border border-border bg-background px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
             Demo · Sample data
           </span>
           <span className="text-muted-foreground">Try it here. Changes stay in this demo.</span>
+          <a href="/home" className="text-xs underline underline-offset-2">
+            About Julian
+          </a>
           <button
             type="button"
             onClick={connectGoogle}

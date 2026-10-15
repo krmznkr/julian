@@ -59,7 +59,7 @@ export default function YearViewErrorBoundary({ year, children }: YearViewErrorB
     window.location.reload();
   };
 
-  const backHref = year != null ? `/year/${year}` : "/";
+  const backHref = year != null ? `/${year}` : "/";
 
   return (
     <YearViewErrorBoundaryInner

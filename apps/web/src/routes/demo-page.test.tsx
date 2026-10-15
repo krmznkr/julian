@@ -7,33 +7,35 @@ const { startGoogleAuth } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/google-calendar", () => ({ startGoogleAuth }));
+vi.mock("@/components/year-view/use-route-port", () => ({
+  useRoutePort: () => ({ search: {}, navigate: vi.fn<() => void>() }),
+}));
 vi.mock("@/components/landing/demo-year-view", () => ({
   DemoYearView: ({ banner }: { banner: ReactNode }) => <main>{banner}</main>,
 }));
 
-import { LandingPage } from "./landing-page";
+import { DemoPage } from "./demo-page";
 
-describe("LandingPage", () => {
+describe("DemoPage", () => {
   beforeEach(() => startGoogleAuth.mockReset());
   afterEach(cleanup);
 
-  it("contains only the calendar demo banner, without a second marketing page", () => {
-    render(<LandingPage />);
+  it("labels the sample data and links back to the marketing site", () => {
+    render(<DemoPage year={2026} />);
     expect(screen.getByText("Demo · Sample data")).toBeInTheDocument();
-    expect(screen.queryByText("A year view for Google Calendar")).not.toBeInTheDocument();
-    expect(screen.queryByText("View source")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "About Julian" })).toHaveAttribute("href", "/home");
   });
 
   it("starts Google login directly", async () => {
     startGoogleAuth.mockResolvedValue();
-    render(<LandingPage />);
+    render(<DemoPage year={2026} />);
     fireEvent.click(screen.getByRole("button", { name: "Connect my Google Calendar" }));
     await waitFor(() => expect(startGoogleAuth).toHaveBeenCalledOnce());
   });
 
   it("shows an authentication error and lets the visitor retry", async () => {
     startGoogleAuth.mockRejectedValueOnce(new Error("OAuth unavailable"));
-    render(<LandingPage />);
+    render(<DemoPage year={2026} />);
     fireEvent.click(screen.getByRole("button", { name: "Connect my Google Calendar" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("OAuth unavailable");
     expect(screen.getByRole("button", { name: "Connect my Google Calendar" })).toBeEnabled();

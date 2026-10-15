@@ -35,7 +35,7 @@ export function AuthCallbackPage() {
   useEffect(() => {
     if (status !== "success") return;
     const timeout = setTimeout(() => {
-      location.assign(`/year/${new Date().getFullYear()}`);
+      location.assign(`/${new Date().getFullYear()}`);
     }, 1000);
     return () => clearTimeout(timeout);
   }, [status]);

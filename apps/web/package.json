@@ -15,6 +15,7 @@
   "dependencies": {
     "@julian/domain": "workspace:*",
     "@julian/google": "workspace:*",
+    "@julian/security": "workspace:*",
     "@tanstack/react-router": "1.170.21",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
@@ -29,7 +30,6 @@
   },
   "devDependencies": {
     "@julian/config": "workspace:*",
-    "@julian/security": "workspace:*",
     "@effect/vitest": "4.0.4",
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",
