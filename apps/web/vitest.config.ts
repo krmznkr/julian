@@ -1,9 +1,11 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
+import { buildDefines } from "./build-defines";
 
 const root = (...parts: string[]) => path.resolve(import.meta.dirname, ...parts);
 
 export default defineConfig({
+  define: buildDefines,
   resolve: {
     alias: {
       "@": root("src"),

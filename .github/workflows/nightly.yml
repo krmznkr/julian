@@ -1,0 +1,79 @@
+name: Nightly
+
+# Deploys main to julian-nightly.krmznkr.com (wrangler env "nightly") once a
+# day, but only when main moved since the last nightly tag.
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: 93527c9983d1c08638cb9c1de99f0450
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - id: diff
+        run: |
+          last=$(git tag --list 'nightly-*' --sort=-creatordate | head -n 1)
+          if [ -n "$last" ] && [ "$(git rev-parse "$last^{commit}")" = "$(git rev-parse HEAD)" ]; then
+            echo "main has not changed since $last; skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: nightly
+      url: https://julian-nightly.krmznkr.com
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - id: build
+        uses: ./.github/actions/build-web
+        with:
+          channel: nightly
+      - name: Deploy the nightly Worker
+        working-directory: apps/edge
+        run: |
+          pnpm exec wrangler deploy --env nightly \
+            --var "APP_VERSION:${{ steps.build.outputs.version }}" \
+            --var "APP_CHANNEL:nightly" \
+            --var "APP_COMMIT:${{ steps.build.outputs.commit }}"
+      - name: Tag and publish the prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.build.outputs.version }}
+        run: |
+          tag="nightly-$(date -u +%Y%m%d)"
+          # A second run on the same day replaces that day's nightly.
+          gh release delete "$tag" --cleanup-tag --yes 2>/dev/null || true
+          # Notes cover everything since the last stable release, when there is one.
+          since=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          gh release create "$tag" \
+            --target "$(git rev-parse HEAD)" \
+            --prerelease \
+            --title "Nightly $VERSION" \
+            --generate-notes \
+            ${since:+--notes-start-tag "$since"}

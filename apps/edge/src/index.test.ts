@@ -40,6 +40,40 @@ const pageRequest = (userAgent?: string) =>
 
 const neverFetch = () => vi.fn<typeof globalThis.fetch>();
 
+describe("version endpoint", () => {
+  const versionRequest = () =>
+    new Request("https://julian.krmznkr.com/version.json", { headers: { "User-Agent": BROWSER } });
+
+  it("reports the deployed build without touching assets", async () => {
+    const assets = vi.fn<Env["ASSETS"]["fetch"]>();
+    const env = makeEnv({
+      ASSETS: { fetch: assets },
+      APP_VERSION: "1.4.0",
+      APP_CHANNEL: "stable",
+      APP_COMMIT: "abc1234",
+    });
+    const response = await serve(versionRequest(), env);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("Content-Security-Policy")).not.toBeNull();
+    expect(await response.json()).toEqual({
+      version: "1.4.0",
+      channel: "stable",
+      commit: "abc1234",
+    });
+    expect(assets).not.toHaveBeenCalled();
+  });
+
+  it("falls back when the deploy set no build vars", async () => {
+    const response = await serve(versionRequest(), makeEnv());
+    expect(await response.json()).toEqual({
+      version: "unknown",
+      channel: "dev",
+      commit: "unknown",
+    });
+  });
+});
+
 describe("site guards", () => {
   it("serves assets to browsers with the security headers", async () => {
     const response = await serve(pageRequest(BROWSER), makeEnv());

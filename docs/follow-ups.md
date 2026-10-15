@@ -5,6 +5,18 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 
 ## Open action items
 
+- [ ] **Authorize the nightly OAuth redirect.** In Google Cloud project
+      `krmznkr-julian`, add `https://julian-nightly.krmznkr.com/auth/callback`
+      to the OAuth client's redirect URIs and
+      `https://julian-nightly.krmznkr.com` to its JavaScript origins. The
+      Worker already allows the origin.
+- [ ] **Set the nightly Worker secret** once, before the first nightly:
+      `pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET --env nightly`.
+- [ ] **Tag the baseline release.** Push `v0.1.5` on the current `main` so
+      release-please starts its changelog there instead of the whole history.
+- [ ] **Create the `production` and `nightly` GitHub environments** (optional
+      protection rules) used by the deploy workflows.
+
 - [ ] **(Optional) Set managed robots.txt `Content-Signal: search=no`.** Indexing
       is already prevented by the `noindex` header; this only adds an extra
       signal. Requires dashboard access to account `93527…`.
@@ -24,7 +36,8 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 ## Verify after any change
 
 - [ ] `pnpm typecheck && pnpm test:run && pnpm build` pass locally.
-- [ ] CI + Deploy workflows are green on the pushed commit.
+- [ ] CI and Preview workflows are green on the PR; Deploy stable is green
+      after the release PR merges.
 - [ ] Production smoke tests still pass (see "Verifying protections" in
       [`security.md`](security.md)): bots → 403, browser → 200, headers present,
       foreign-origin OAuth → 403, OAuth burst → 429.

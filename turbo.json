@@ -1,6 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "globalEnv": ["VITE_*"],
+  "globalEnv": ["VITE_*", "APP_CHANNEL", "APP_COMMIT", "APP_PR_NUMBER"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

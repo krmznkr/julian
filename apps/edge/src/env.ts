@@ -18,6 +18,16 @@ export interface Env {
   GOOGLE_CLIENT_SECRET: string;
   SITE_RATELIMIT: RateLimiter;
   OAUTH_RATELIMIT: RateLimiter;
+  // Build metadata, set per deploy with `wrangler --var` (see docs/releasing.md).
+  APP_VERSION?: string;
+  APP_CHANNEL?: string;
+  APP_COMMIT?: string;
+}
+
+export interface BuildInfo {
+  readonly version: string;
+  readonly channel: string;
+  readonly commit: string;
 }
 
 export interface WorkerEnvShape {
@@ -28,6 +38,7 @@ export interface WorkerEnvShape {
   readonly googleClientSecret: Redacted.Redacted<string>;
   readonly siteRateLimit: RateLimiter;
   readonly oauthRateLimit: RateLimiter;
+  readonly build: BuildInfo;
 }
 
 export class WorkerEnv extends Context.Service<WorkerEnv, WorkerEnvShape>()(
@@ -45,5 +56,10 @@ export const workerEnvLayer = (env: Env): Layer.Layer<WorkerEnv> =>
       }),
       siteRateLimit: env.SITE_RATELIMIT,
       oauthRateLimit: env.OAUTH_RATELIMIT,
+      build: {
+        version: env.APP_VERSION || "unknown",
+        channel: env.APP_CHANNEL || "dev",
+        commit: env.APP_COMMIT || "unknown",
+      },
     }),
   );

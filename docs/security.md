@@ -22,7 +22,7 @@ Julian is a portfolio showcase linked from a resume/GitHub. It should be:
 | Active account (hosts Julian) | `93527c9983d1c08638cb9c1de99f0450` (`krmznkr@gmail.com`, Google SSO)      |
 | Active zone                   | `krmznkr.com` — `08ca23de1d0f3b5923e975f0ece74251`, **Free Website** plan |
 | Custom domain                 | `julian.krmznkr.com` (`workers_dev: false`, so no `*.workers.dev` URL)    |
-| Deploy target in CI           | `deploy.yml` → account `93527…` via `CLOUDFLARE_API_TOKEN`                |
+| Deploy target in CI           | `deploy-stable.yml` / `nightly.yml` / `preview.yml` → account `93527…`    |
 
 > A separate personal account (`c57b…`) holds an old `status: moved` copy of the
 > `krmznkr.com` zone plus unrelated projects. That copy is inert. Any dashboard
@@ -144,12 +144,12 @@ There is intentionally **no** custom `apps/web/public/robots.txt`: a blanket `Di
 would stop crawlers from ever reading the `noindex` header (leaving bare URLs
 indexable) and conflicted with the managed file.
 
-### 6. Secret handling — `README.md`, `deploy.yml`, `scripts/deploy-web.sh`
+### 6. Secret handling — `README.md`, `.github/actions/build-web`, `scripts/deploy-web.sh`
 
 - `VITE_GOOGLE_CLIENT_ID` is **public** by design (OAuth client identifier).
 - `GOOGLE_CLIENT_SECRET` exists **only** in the Cloudflare Worker secret store
   and 1Password — never in `.env`, never with a `VITE_` prefix.
-- Both the CI deploy and `scripts/deploy-web.sh` **hard-fail** if a
+- Every CI deploy path and `scripts/deploy-web.sh` **hard-fail** if a
   `GOCSPX-…` client secret is ever found in `dist/`.
 
 Set/rotate it with:
@@ -160,13 +160,12 @@ pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET
 
 ## Deploying
 
-Push to `main`:
+Production ships from release tags, not from pushes to `main`; see
+[`releasing.md`](releasing.md) for the preview, nightly and stable channels.
+Each one builds through `.github/actions/build-web`, which verifies no secret
+leaked into `dist/` before Wrangler runs against account `93527…`.
 
-- `ci.yml` runs `typecheck`, `test:run`, `build`.
-- `deploy.yml` builds, verifies no secret leaked into `dist/`, and runs
-  `wrangler deploy` against account `93527…`.
-
-Manual deploy (needs a Workers-scoped token for account `93527…`):
+Manual break-glass deploy (needs a Workers-scoped token for account `93527…`):
 
 ```bash
 ./scripts/deploy-web.sh

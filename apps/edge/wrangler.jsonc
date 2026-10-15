@@ -2,6 +2,8 @@
   "name": "julian",
   "compatibility_date": "2026-07-04",
   "workers_dev": false,
+  // Version preview URLs (<alias>-julian.<subdomain>.workers.dev) back the PR previews.
+  "preview_urls": true,
   "main": "src/index.ts",
   "assets": {
     "directory": "../web/dist",
@@ -12,7 +14,11 @@
     "run_worker_first": true
   },
   "vars": {
-    "GOOGLE_CLIENT_ID": "151900009012-fevbjvlejmju4lva9brr5lmufp5q4g0s.apps.googleusercontent.com"
+    "GOOGLE_CLIENT_ID": "151900009012-fevbjvlejmju4lva9brr5lmufp5q4g0s.apps.googleusercontent.com",
+    // Overridden per deploy with `--var` by the release workflows.
+    "APP_VERSION": "unknown",
+    "APP_CHANNEL": "dev",
+    "APP_COMMIT": "unknown"
   },
   // Native Workers rate limiting (no KV/DB, no billing). Keys are per-client-IP.
   "ratelimits": [
@@ -23,5 +29,26 @@
   ],
   "routes": [
     { "pattern": "julian.krmznkr.com", "custom_domain": true }
-  ]
+  ],
+  // Nightly channel: a separate Worker on its own domain. Vars, bindings and
+  // routes are not inherited by environments, so they are repeated here.
+  "env": {
+    "nightly": {
+      "name": "julian-nightly",
+      "preview_urls": false,
+      "vars": {
+        "GOOGLE_CLIENT_ID": "151900009012-fevbjvlejmju4lva9brr5lmufp5q4g0s.apps.googleusercontent.com",
+        "APP_VERSION": "unknown",
+        "APP_CHANNEL": "nightly",
+        "APP_COMMIT": "unknown"
+      },
+      "ratelimits": [
+        { "name": "SITE_RATELIMIT", "namespace_id": "1001", "simple": { "limit": 240, "period": 60 } },
+        { "name": "OAUTH_RATELIMIT", "namespace_id": "1002", "simple": { "limit": 12, "period": 60 } }
+      ],
+      "routes": [
+        { "pattern": "julian-nightly.krmznkr.com", "custom_domain": true }
+      ]
+    }
+  }
 }

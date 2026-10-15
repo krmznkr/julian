@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { renderHeadersFile } from "@julian/security";
+import { buildDefines } from "./build-defines";
 
 const resolvePath = (...parts: string[]) => path.resolve(__dirname, ...parts);
 
@@ -16,6 +17,7 @@ const securityHeadersFile = (): Plugin => ({
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), securityHeadersFile()],
+  define: buildDefines,
   envDir: resolvePath("../.."),
   envPrefix: ["VITE_"],
   resolve: {

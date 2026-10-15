@@ -15,6 +15,7 @@ const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 // scrapers, cross-site pages) is rejected before we ever talk to Google.
 export const ALLOWED_ORIGINS: ReadonlySet<string> = new Set([
   "https://julian.krmznkr.com",
+  "https://julian-nightly.krmznkr.com",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
