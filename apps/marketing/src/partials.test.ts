@@ -19,6 +19,12 @@ describe("marketing partials", () => {
     expect(() => renderScopes(["https://www.googleapis.com/auth/drive"])).toThrow(/drive/);
   });
 
+  it("draws the header logo in the text color so it shows in dark mode", () => {
+    const html = renderPartials("<!-- @header -->");
+    expect(html).toContain('stroke="currentColor"');
+    expect(html).not.toContain("#111111");
+  });
+
   it("refuses an unknown partial", () => {
     expect(() => renderPartials("<!-- @sidebar -->")).toThrow(/@sidebar/);
   });
