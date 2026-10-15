@@ -25,6 +25,17 @@ test("/{yyyy}/{mm} opens the year on that month", async ({ page }) => {
   await expectFocus(page, `/${YEAR}`, 7, 1);
 });
 
+test("/demo/{yyyy}/{mm} opens the demo on that month", async ({ page }) => {
+  await page.goto(`/demo/${YEAR}/07`);
+  await expectFocus(page, `/demo/${YEAR}`, 7, 1);
+  await expect(yearGrid(page)).toBeVisible();
+});
+
+test("/lab is not part of the production build", async ({ page }) => {
+  await page.goto("/lab");
+  await expect(page.getByRole("link", { name: "Go home" })).toBeVisible();
+});
+
 test("a legacy /year path lands on the new URL", async ({ page }) => {
   await page.goto(`/year/${YEAR}?month=5&day=2`);
   await expectFocus(page, `/${YEAR}`, 5, 2);
