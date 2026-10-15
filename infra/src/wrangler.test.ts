@@ -12,7 +12,8 @@ const checkedIn = readFileSync(
 describe("config", () => {
   it("uses periods the rate limiting binding accepts and distinct namespaces", () => {
     expect(RATE_LIMITS.every((limit) => limit.period === 10 || limit.period === 60)).toBe(true);
-    expect(new Set(RATE_LIMITS.map((limit) => limit.namespaceId)).size).toBe(RATE_LIMITS.length);
+    const ids = RATE_LIMITS.flatMap((limit) => Object.values(limit.namespaceIds));
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("keeps the documented limits", () => {
@@ -41,7 +42,13 @@ describe("wranglerConfig", () => {
   });
 
   it("repeats vars, rate limits and routes for nightly", () => {
-    expect(config.env.nightly.ratelimits).toEqual(config.ratelimits);
+    expect(config.env.nightly.ratelimits.map(({ name, simple }) => ({ name, simple }))).toEqual(
+      config.ratelimits.map(({ name, simple }) => ({ name, simple })),
+    );
+    expect(config.env.nightly.ratelimits.map((limit) => limit.namespace_id)).toEqual([
+      "2001",
+      "2002",
+    ]);
     expect(config.env.nightly.vars.GOOGLE_CLIENT_ID).toBe(config.vars.GOOGLE_CLIENT_ID);
     expect(config.env.nightly).toMatchObject({
       name: "julian-nightly",
