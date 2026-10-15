@@ -35,7 +35,7 @@ Worker with wrangler using the `CLOUDFLARE_API_TOKEN` repository secret.
 For manual deploys:
 
 ```bash
-pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
+pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET
 ./scripts/deploy-web.sh
 ```
 

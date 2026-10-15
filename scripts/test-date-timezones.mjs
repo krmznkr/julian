@@ -11,6 +11,8 @@ for (const TZ of [
   const result = spawnSync(
     "pnpm",
     [
+      "--filter",
+      "@julian/web",
       "exec",
       "vitest",
       "run",

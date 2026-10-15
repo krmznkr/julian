@@ -10,16 +10,34 @@ exchange and refresh.
 - Node 24
 - pnpm 10
 
+## Repository layout
+
+A pnpm workspace orchestrated by Turborepo:
+
+| Path                | Package            | Purpose                                                  |
+| ------------------- | ------------------ | -------------------------------------------------------- |
+| `apps/web`          | `@julian/web`      | The Vite/React calendar app                              |
+| `apps/edge`         | `@julian/edge`     | Cloudflare Worker: assets, OAuth proxy, protections      |
+| `packages/security` | `@julian/security` | Security headers shared by the Worker and the web build  |
+| `packages/config`   | `@julian/config`   | Shared TypeScript configuration                          |
+
+Linting, formatting, and dead-code checks run once from the root across every
+package. Build, typecheck, and tests run per package through Turborepo, which
+caches results that did not change.
+
 ## Commands
 
-| Command              | Purpose                         |
-| -------------------- | ------------------------------- |
-| `pnpm dev`           | Start the local Vite dev server |
-| `pnpm build`         | Build the browser app           |
-| `pnpm preview`       | Preview the production build    |
-| `pnpm typecheck`     | Run TypeScript checks           |
-| `pnpm test:run`      | Run unit tests                  |
-| `pnpm quality:static` | Run static quality checks       |
+| Command                 | Purpose                                         |
+| ----------------------- | ----------------------------------------------- |
+| `pnpm dev`              | Start the local Vite dev server                 |
+| `pnpm build`            | Build every package                             |
+| `pnpm typecheck`        | TypeScript + Effect diagnostics, every package  |
+| `pnpm test:run`         | Unit tests, every package                       |
+| `pnpm test:coverage`    | Unit tests with per-package coverage thresholds |
+| `pnpm test:tz:dates`    | Date tests across five time zones               |
+| `pnpm quality:static`   | Lint, format, dead code, functional rules, types |
+
+Run one package's script with a filter, e.g. `pnpm --filter @julian/web preview`.
 
 ## Local OAuth
 
@@ -34,7 +52,7 @@ pnpm dev
 The Vite server is fixed to `http://127.0.0.1:3000`. Google OAuth must list the
 matching origin and `http://127.0.0.1:3000/auth/callback` redirect.
 
-Vite serves the browser application only; it does not run `worker/index.ts`.
+Vite serves the browser application only; it does not run `apps/edge/src/index.ts`.
 The OAuth token exchange therefore requires the Worker proxy. Use the deployed
 application for an ordinary end-to-end OAuth check, or build and run Wrangler
 locally with its local-secret mechanism when specifically testing the Worker.

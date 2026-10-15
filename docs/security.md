@@ -34,9 +34,9 @@ no path to an unexpected bill.
 
 ## Request pipeline
 
-`assets.run_worker_first = true` in `wrangler.jsonc` forces **every** request —
+`assets.run_worker_first = true` in `apps/edge/wrangler.jsonc` forces **every** request —
 including static assets, which normally bypass the Worker — through
-`worker/index.ts`. Order of checks:
+`apps/edge/src/index.ts`. Order of checks:
 
 ```
 request
@@ -48,7 +48,7 @@ request
 
 ## Controls
 
-### 1. Bot filtering — `worker/index.ts`
+### 1. Bot filtering — `apps/edge/src/index.ts`
 
 `rejectBadBot()` returns `403` when the `User-Agent`:
 
@@ -65,7 +65,7 @@ Social link-preview bots (LinkedIn, Slack, Twitter/X, Facebook, WhatsApp) are
 **To tune:** edit the `BLOCKED_USER_AGENTS` array. Removing `curl/`/`wget/`
 re-allows quick command-line checks.
 
-### 2. Rate limiting — `wrangler.jsonc` + `worker/index.ts`
+### 2. Rate limiting — `apps/edge/wrangler.jsonc` + `apps/edge/src/index.ts`
 
 Native Workers rate limiting (no KV/DB, no billing), keyed by
 `CF-Connecting-IP`:
@@ -78,10 +78,10 @@ Native Workers rate limiting (no KV/DB, no billing), keyed by
 Over-limit returns `429`. `period` must be `10` or `60`. Limits are best-effort
 and enforced per Cloudflare location, which is fine for abuse mitigation.
 
-**To tune:** change `simple.limit` in `wrangler.jsonc`. The Worker reads the
+**To tune:** change `simple.limit` in `apps/edge/wrangler.jsonc`. The Worker reads the
 bindings by name, so no code change is needed.
 
-### 3. OAuth proxy lock-down — `worker/index.ts`
+### 3. OAuth proxy lock-down — `apps/edge/src/index.ts`
 
 `/api/oauth/token` and `/api/oauth/refresh` proxy the Google token exchange so
 the client secret stays server-side. `rejectDisallowedOAuthRequest()` enforces:
@@ -93,7 +93,7 @@ the client secret stays server-side. `rejectDisallowedOAuthRequest()` enforces:
 
 **If you add a new dev/preview origin,** add it to `ALLOWED_ORIGINS`.
 
-### 4. Security headers — `worker/security-headers.ts`
+### 4. Security headers — `packages/security/src/index.ts`
 
 Applied to every response by the Worker (`withSecurityHeaders`). The build also
 emits the same map as `dist/_headers`, a fallback in case `run_worker_first` is
@@ -110,7 +110,7 @@ ever disabled:
 | `Cross-Origin-Opener-Policy` | `same-origin` |
 | `X-Robots-Tag` | `noindex, nofollow` (see de-indexing) |
 
-**CSP breakdown** (defined once in `worker/security-headers.ts`):
+**CSP breakdown** (defined once in `packages/security/src/index.ts`):
 
 ```
 default-src 'self'
@@ -124,7 +124,7 @@ upgrade-insecure-requests
 ```
 
 > ⚠️ **If you add a new external API call from the browser**, add its origin to
-> `connect-src` in `worker/security-headers.ts`, or the request
+> `connect-src` in `packages/security/src/index.ts`, or the request
 > will be blocked by CSP.
 
 ### 5. De-indexing (kept out of search) — `index.html` + headers + Cloudflare
@@ -139,7 +139,7 @@ Three layers:
    while allowing search crawl — which is required so crawlers actually *see* the
    `noindex` and drop the page from the index.
 
-There is intentionally **no** custom `public/robots.txt`: a blanket `Disallow: /`
+There is intentionally **no** custom `apps/web/public/robots.txt`: a blanket `Disallow: /`
 would stop crawlers from ever reading the `noindex` header (leaving bare URLs
 indexable) and conflicted with the managed file.
 
@@ -154,7 +154,7 @@ indexable) and conflicted with the managed file.
 Set/rotate it with:
 
 ```bash
-pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
+pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET
 ```
 
 ## Deploying
@@ -203,7 +203,7 @@ done
   ceiling, and blocking bots early is cheap.
 - **CSP vs. Google sign-in:** the production flow was exercised end to end on
   2026-07-15 without a CSP or redirect mismatch. Any new browser-side origin
-  must still be added to `worker/security-headers.ts`.
+  must still be added to `packages/security/src/index.ts`.
 - **Managed robots.txt** currently signals `search=yes`. Indexing is still
   prevented by the `noindex` header; flip the content signal to `search=no` from
   the dashboard if you want the extra signal.

@@ -11,7 +11,7 @@
 //   - The OAuth proxy only answers same-site browser requests (Origin allowlist)
 //     and rejects oversized bodies, so drive-by bots can't spam Google through it.
 
-import { SECURITY_HEADERS } from "./security-headers";
+import { SECURITY_HEADERS } from "@julian/security";
 
 // The native Workers rate-limiting binding: limit({ key }) -> { success }.
 interface RateLimiter {

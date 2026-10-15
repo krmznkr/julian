@@ -2,7 +2,7 @@ import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
-import { renderHeadersFile } from "./worker/security-headers";
+import { renderHeadersFile } from "@julian/security";
 
 const resolvePath = (...parts: string[]) => path.resolve(__dirname, ...parts);
 
@@ -16,7 +16,7 @@ const securityHeadersFile = (): Plugin => ({
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), securityHeadersFile()],
-  envDir: resolvePath("."),
+  envDir: resolvePath("../.."),
   envPrefix: ["VITE_"],
   resolve: {
     alias: {

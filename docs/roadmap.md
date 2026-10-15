@@ -83,13 +83,13 @@ Each phase is one or more PRs, merged green, deployable on its own.
 - [x] Single-source CSP with a test (later moves to `packages/security`).
 
 ### Phase 1: Workspace
-- [ ] `pnpm-workspace.yaml`, Turborepo, `packages/config`.
-- [ ] Move current app to `apps/web`, Worker to `apps/edge`, no behavior change.
+- [x] `pnpm-workspace.yaml`, Turborepo, `packages/config`.
+- [x] Move current app to `apps/web`, Worker to `apps/edge`, no behavior change.
 
 ### Phase 2: Packages
 - [ ] `packages/domain` from `src/domain` + year-grid helpers.
 - [ ] `packages/schema` and `packages/google` from `src/lib/effect` + `google-calendar.ts`.
-- [ ] `packages/security` from `worker/security-headers.ts`.
+- [x] `packages/security` from `worker/security-headers.ts`.
 
 ### Phase 3: Effect everywhere
 - [ ] Google services as Tags + Layers; tagged errors; retry `Schedule`.

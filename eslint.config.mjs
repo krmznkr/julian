@@ -3,17 +3,24 @@ import tsParser from "@typescript-eslint/parser";
 
 export default [
   {
-    ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**", "coverage/**"],
+    ignores: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/out/**",
+      "**/coverage/**",
+      "**/.turbo/**",
+    ],
   },
   {
-    files: ["src/**/*.ts", "src/**/*.tsx"],
+    files: ["apps/web/src/**/*.ts", "apps/web/src/**/*.tsx"],
     ignores: ["**/node_modules/**", "**/dist/**", "**/build/**"],
     plugins: { functional },
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+        tsconfigRootDir: `${import.meta.dirname}/apps/web`,
       },
     },
     rules: {
@@ -28,7 +35,7 @@ export default [
     },
   },
   {
-    files: ["worker/**/*.ts"],
+    files: ["apps/edge/src/**/*.ts", "packages/*/src/**/*.ts"],
     languageOptions: { parser: tsParser },
   },
   {
@@ -50,7 +57,7 @@ export default [
     // (`Context.Service`). Both are declaration syntax rather than OO design —
     // no inheritance, no mutable instance state, no methods on the class — so
     // the rule is disabled for the Effect layer only, not the app at large.
-    files: ["src/lib/effect/*.ts"],
+    files: ["apps/web/src/lib/effect/*.ts"],
     rules: {
       "functional/no-classes": "off",
     },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CONTENT_SECURITY_POLICY, SECURITY_HEADERS, renderHeadersFile } from "./security-headers";
+import { CONTENT_SECURITY_POLICY, SECURITY_HEADERS, renderHeadersFile } from ".";
 
 describe("security headers", () => {
   it("renders every header under a catch-all path", () => {
