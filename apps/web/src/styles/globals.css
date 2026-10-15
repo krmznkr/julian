@@ -281,12 +281,18 @@
   }
 }
 
+/* One landscape page: every month is rendered (see useYearGridVirtualization)
+   and the columns shrink to share the sheet's width. */
 @media print {
   @page {
-    margin: 12mm;
+    size: A4 landscape;
+    margin: 8mm;
   }
 
   :root {
+    --month-col-width: 80px;
+    --day-gutter-width: 1.75rem;
+    --grid-pad-x: 0;
     --background: #ffffff;
     --foreground: #111111;
     --card: #ffffff;
@@ -315,5 +321,27 @@
   [data-radix-popper-content-wrapper],
   [role="dialog"] {
     display: none !important;
+  }
+
+  html,
+  body,
+  #root,
+  #main-content {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .year-grid-height {
+    height: 620px;
+  }
+
+  .year-grid-rows {
+    grid-template-rows: repeat(31, 20px);
+  }
+
+  .year-grid {
+    height: auto !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
