@@ -1,7 +1,8 @@
 name: Infra
 
 # Plans the Alchemy stack (infra/) on PRs that touch it or the edge Worker, and
-# applies it only when run by hand. Releases apply it from deploy-stable.yml.
+# applies it only when run by hand. Releases and nightlies apply it from
+# deploy-stable.yml and nightly.yml.
 # Nothing here ever destroys resources.
 on:
   pull_request:
@@ -66,7 +67,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - if: steps.token.outputs.present == 'true'
         name: Plan
-        run: pnpm exec alchemy plan --stage prod --detailed
+        run: pnpm exec alchemy plan --stage prod --detailed --no-input
 
   apply:
     needs: plan
@@ -106,4 +107,4 @@ jobs:
         run: pnpm install --frozen-lockfile
       - if: steps.token.outputs.present == 'true'
         name: Apply
-        run: pnpm exec alchemy deploy --stage prod --yes
+        run: pnpm exec alchemy deploy --stage prod --yes --no-input

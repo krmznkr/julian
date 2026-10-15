@@ -53,7 +53,7 @@ jobs:
       - name: Apply the Alchemy stack
         if: vars.ALCHEMY_ENABLED == 'true'
         working-directory: infra
-        run: pnpm exec alchemy deploy --stage prod --yes
+        run: pnpm exec alchemy deploy --stage prod --yes --no-input
       - name: Find the version currently serving production
         id: current
         run: |

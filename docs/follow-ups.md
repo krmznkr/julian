@@ -59,7 +59,8 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 
 - **Bot blocklist:** `BLOCKED_USER_AGENTS` in `apps/edge/src/guards.ts`.
 - **Rate limits:** `SITE_RATELIMIT` (240/60s) and `OAUTH_RATELIMIT` (12/60s) in
-  `apps/edge/wrangler.jsonc` (`period` must be `10` or `60`).
+  `infra/src/config.ts` (`period` must be `10` or `60`); regenerate
+  `apps/edge/wrangler.jsonc` with `pnpm --filter @julian/infra wrangler:generate`.
 - **OAuth body cap:** `MAX_OAUTH_BODY_BYTES` in `apps/edge/src/oauth.ts`.
 
 ## Deferred / not doing (by decision)
