@@ -58,7 +58,7 @@ describe("useRenderedSegments", () => {
     const overnight = evt({
       id: "flight",
       start: "2026-03-05T23:00:00",
-      end: "2026-03-06T02:00:00",
+      end: "2026-03-06T23:30:00",
       allDay: false,
       isTimed: true,
     }).event;
@@ -78,8 +78,8 @@ describe("useRenderedSegments", () => {
     expect(result.current.bars.map(({ displayLane }) => displayLane)).toEqual([1, 2]);
     expect(result.current.multiDayLanes).toBe(2);
     expect(result.current.dayEvents.get(5)?.map(({ event }) => event.id)).toEqual([
-      "holiday",
       "flight",
+      "holiday",
       "meeting",
     ]);
     expect(result.current.dayEvents.get(6)?.map(({ event }) => event.id)).toEqual(["flight"]);

@@ -18,20 +18,14 @@ const overnight: CalendarEvent = {
 
 describe("timed year-view event chips", () => {
   it.each([
-    { name: "a short overnight event", event: overnight, month: 9, rows: "11 / 13" },
+    { name: "a short overnight event", event: overnight, month: 9, rows: "11 / 12" },
     {
-      name: "the first part across a month boundary",
+      name: "a short overnight event at a month boundary",
       event: { ...overnight, start: "2026-10-31T23:34:00", end: "2026-11-01T00:15:00" },
       month: 9,
       rows: "31 / 32",
     },
-    {
-      name: "the final part across a month boundary",
-      event: { ...overnight, start: "2026-10-31T23:34:00", end: "2026-11-01T00:15:00" },
-      month: 10,
-      rows: "1 / 2",
-    },
-  ])("keeps $name at calendar-day resolution", ({ event, month, rows }) => {
+  ])("keeps $name on its start day", ({ event, month, rows }) => {
     const segment = buildMonthSegments([event], 2026)[month].segments[0];
     render(
       <EventChip

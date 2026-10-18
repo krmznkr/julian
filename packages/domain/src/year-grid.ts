@@ -59,7 +59,15 @@ export function buildMonthSegments(
   for (const event of events) {
     const bounds = getEventBounds(event);
     if (!bounds) continue;
-    const { start, end, spanDays } = bounds;
+    const { start } = bounds;
+    // A short timed event that spills past midnight (e.g. 23:34–00:15) is shown
+    // on its start day only rather than as a two-day bar.
+    const isShortOvernight =
+      !event.allDay && bounds.spanDays > 1 && bounds.end.getTime() - start.getTime() < DAY_MS;
+    const end = isShortOvernight
+      ? new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1)
+      : bounds.end;
+    const spanDays = isShortOvernight ? 1 : bounds.spanDays;
 
     const clippedStart = clampDate(start, yearStart, yearEnd);
     const clippedEnd = clampDate(end, yearStart, yearEnd);
