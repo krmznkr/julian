@@ -33,13 +33,14 @@ describe("exclusive end boundaries", () => {
     expect(isTimedMultiDayEvent(new Date(item.start), new Date(item.end))).toBe(false);
   });
 
-  it("counts a short overnight event on both touched dates", () => {
+  it("places a short overnight event on its start day only", () => {
     const item = event("2026-06-15T23:30:00", "2026-06-16T00:30:00");
     expect(buildMonthSegments([item], 2026)[5].segments[0]).toMatchObject({
       startDay: 15,
-      endDay: 16,
-      lane: 1,
-      isMultiDay: true,
+      endDay: 15,
+      lane: 0,
+      isMultiDay: false,
+      isLastSegment: true,
     });
     expect(eventCalendarSpanDays(item)).toBe(2);
     expect(formatDateRange(item)).toBe("Jun 15 – Jun 16");
@@ -69,6 +70,21 @@ describe("exclusive end boundaries", () => {
     const months = buildMonthSegments([event("2026-05-31T23:00:00", "2026-06-01T00:00:00")], 2026);
     expect(months[4].segments[0]).toMatchObject({ startDay: 31, endDay: 31, isMultiDay: false });
     expect(months[5].segments).toEqual([]);
+  });
+
+  it("keeps a short overnight event at a month end out of the next month", () => {
+    const months = buildMonthSegments([event("2026-05-31T23:30:00", "2026-06-01T00:30:00")], 2026);
+    expect(months[4].segments[0]).toMatchObject({ startDay: 31, endDay: 31, isMultiDay: false });
+    expect(months[5].segments).toEqual([]);
+  });
+
+  it("still spans days for a timed event of 24h or more", () => {
+    const item = event("2026-06-15T20:00:00", "2026-06-16T21:00:00");
+    expect(buildMonthSegments([item], 2026)[5].segments[0]).toMatchObject({
+      startDay: 15,
+      endDay: 16,
+      isMultiDay: true,
+    });
   });
 
   it("marks year-clipped bars as continuations", () => {
@@ -120,7 +136,7 @@ const expectedPlacement: Record<string, { startDay: number; endDay: number; lane
   "America/Los_Angeles": { startDay: 9, endDay: 9, lane: 0 },
   "Europe/Paris": { startDay: 10, endDay: 10, lane: 0 },
   "Pacific/Auckland": { startDay: 10, endDay: 10, lane: 0 },
-  "Africa/Casablanca": { startDay: 9, endDay: 10, lane: 1 },
+  "Africa/Casablanca": { startDay: 9, endDay: 9, lane: 0 },
 };
 it.runIf(zone in expectedPlacement)(
   "places Google's offset timestamps in the displayed local timezone",
