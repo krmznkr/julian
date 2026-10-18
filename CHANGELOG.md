@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/krmznkr/julian/compare/v0.2.0...v0.2.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* show short overnight events on their start day only ([#50](https://github.com/krmznkr/julian/issues/50)) ([5bda41a](https://github.com/krmznkr/julian/commit/5bda41a2cac60e1e013eed7f31f3abe0fcab3333))
+
 ## [0.2.0](https://github.com/krmznkr/julian/compare/v0.1.5...v0.2.0) (2026-10-15)
 
 
