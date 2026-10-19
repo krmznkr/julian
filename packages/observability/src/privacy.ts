@@ -57,7 +57,9 @@ export const sanitizeSpan = (span: SpanJSON): SpanJSON => ({
   start_timestamp: span.start_timestamp,
   timestamp: span.timestamp,
   op: "app",
-  description: "Application performance",
+  // Sentry 10 applies this hook to transaction roots before beforeSendTransaction.
+  // Its segment marker also identifies roots that have an upstream parent.
+  description: span.is_segment === true ? pagePath(span.description) : "Application performance",
   data: {},
 });
 

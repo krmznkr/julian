@@ -30,6 +30,9 @@ allowlists for an app that handles personal calendar data:
   survive. Page paths become static categories such as `/calendar`, `/demo` and
   `/auth/callback`; unknown paths become `/other`. Selected years, days, search
   text, event/calendar titles, emails and OAuth values are not telemetry.
+  Sentry marks transaction roots as segments before running the span hook. Only
+  these roots retain a static route category; child spans keep a fixed label
+  and no data. This preserves route grouping through both SDK hooks.
 - PostHog uses its slim bundle with memory-only anonymous IDs and persistence
   disabled. It writes no analytics cookies or local storage, never identifies a
   person and respects Do Not Track. Autocapture, exceptions, session recording,
