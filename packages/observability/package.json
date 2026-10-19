@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@sentry/browser": "10.66.0",
-    "posthog-js": "1.404.1"
+    "posthog-js": "1.438.12"
   },
   "devDependencies": {
     "@julian/config": "workspace:*",
