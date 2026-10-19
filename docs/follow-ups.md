@@ -5,32 +5,28 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 
 ## Open action items
 
-- [ ] **Authorize the nightly OAuth redirect.** In Google Cloud project
-      `krmznkr-julian`, add `https://julian-nightly.krmznkr.com/auth/callback`
-      to the OAuth client's redirect URIs and
-      `https://julian-nightly.krmznkr.com` to its JavaScript origins. Blocked:
-      the Cloud console requires 2-step verification on `krmznkr@gmail.com`,
-      which must be enabled first. The Worker already allows the origin. While
-      this is open, nightly sign-in ends in `redirect_uri_mismatch` at Google.
-- [ ] **Authorize the local `127.0.0.1` callbacks** (same client):
-      `http://127.0.0.1:3000/auth/callback` and
-      `http://127.0.0.1:8787/auth/callback`, with their origins. See
-      [`development.md`](development.md#local-oauth).
-- [ ] **Scope the Cloudflare tokens.** Move `CLOUDFLARE_API_TOKEN` to the
-      `production` and `nightly` environment secrets, drop the repository copy,
-      and create the least-privilege `CLOUDFLARE_PREVIEW_TOKEN` for previews and
-      plans. Until then previews and plans skip. Scopes in
-      [`infrastructure.md`](infrastructure.md#one-time-owner-steps).
-- [ ] **Check the nightly custom domain.** `julian-nightly.krmznkr.com` is a
-      Worker custom domain (`custom_domain: true`), so the first successful
-      nightly deploy creates its DNS record and certificate; that needs the
-      deploy token's DNS and Workers Routes edit on the zone. Confirm it
-      resolves after the next nightly.
+- [x] **Authorize the nightly OAuth redirect.** Verified 2026-10-19 in Google
+      Cloud project `krmznkr-julian`: the nightly JavaScript origin and
+      `/auth/callback` redirect are saved in the production OAuth client.
+      Google 2-step verification is enabled on the public account.
+- [x] **Authorize the local `127.0.0.1` callbacks.** Both `:3000` and `:8787`
+      origins and `/auth/callback` redirects were saved and verified 2026-10-19.
+- [x] **Create environment and preview Cloudflare tokens.** Verified 2026-10-19:
+      `CLOUDFLARE_API_TOKEN` exists in the `production` and `nightly`
+      environments; least-privilege `CLOUDFLARE_PREVIEW_TOKEN` is set.
+- [ ] **Remove the repository Cloudflare deploy token after proof.** Keep the
+      repository-level `CLOUDFLARE_API_TOKEN` until a successful Nightly or
+      Deploy stable run proves deployment with the new environment secrets.
+      The release owner verifies that evidence and removes the repository copy.
+- [ ] **Verify the first non-Dependabot PR preview.** Confirm Preview deploys
+      with `CLOUDFLARE_PREVIEW_TOKEN`; Dependabot cannot read this secret.
+- [x] **Check the nightly custom domain.** `julian-nightly.krmznkr.com`
+      resolves and serves the nightly channel, verified 2026-10-19.
 - [x] **Set the nightly Worker secret.** `nightly.yml` now copies the
       `GOOGLE_CLIENT_SECRET` GitHub secret into the nightly Worker on every run.
 - [x] **Tag the baseline release.** `v0.1.5` marks the release-please baseline.
-- [ ] **Create the `production` and `nightly` GitHub environments** (optional
-      protection rules) used by the deploy workflows.
+- [x] **Create the `production` and `nightly` GitHub environments.** Both
+      environments and their deploy secrets were verified 2026-10-19.
 - [ ] **Turn on Cloudflare as code.** Widen the API token, bootstrap the Alchemy
       state store, review the adoption plan, apply once, then set the
       `ALCHEMY_ENABLED` repository variable. Steps in

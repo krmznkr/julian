@@ -11,7 +11,11 @@ describe("security headers", () => {
   });
 
   it("only allows the external origins the app calls", () => {
-    expect(CONTENT_SECURITY_POLICY).toContain("connect-src 'self' https://www.googleapis.com");
+    expect(
+      CONTENT_SECURITY_POLICY.split("; ").find((value) => value.startsWith("connect-src")),
+    ).toBe(
+      "connect-src 'self' https://www.googleapis.com https://o4511769287000064.ingest.de.sentry.io https://eu.i.posthog.com",
+    );
     expect(CONTENT_SECURITY_POLICY).toContain("frame-ancestors 'none'");
     expect(CONTENT_SECURITY_POLICY).not.toContain("'unsafe-eval'");
   });

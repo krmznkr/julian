@@ -17,6 +17,7 @@ export default [
       "apps/web/src/**/*.ts",
       "apps/web/src/**/*.tsx",
       "packages/domain/src/**/*.ts",
+      "packages/observability/src/**/*.ts",
       "packages/google/src/**/*.ts",
       "packages/release/src/**/*.ts",
       "apps/edge/src/**/*.ts",

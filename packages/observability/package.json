@@ -1,0 +1,23 @@
+{
+  "name": "@julian/observability",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Production browser telemetry with calendar-safe payload allowlists.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@sentry/browser": "10.66.0",
+    "posthog-js": "1.404.1"
+  },
+  "devDependencies": {
+    "@julian/config": "workspace:*",
+    "jsdom": "30.0.1"
+  }
+}

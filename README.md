@@ -46,16 +46,21 @@ flowchart LR
   edge["Cloudflare Worker<br/>apps/edge"]
   google["Google Calendar<br/>and Tasks APIs"]
   oauth["Google OAuth<br/>token endpoint"]
+  telemetry["Sentry + PostHog<br/>production telemetry"]
 
   browser -- "pages and assets" --> edge
   browser -- "PKCE code / refresh token" --> edge
   edge -- "adds client secret" --> oauth
   browser -- "bearer token, direct" --> google
+  browser -- "minimized errors, timings, page categories" --> telemetry
 ```
 
 The browser calls Google directly with its own access token; the Worker only
 serves assets and adds the client secret to token exchanges. There is no
-database. Details: [`docs/architecture.md`](docs/architecture.md).
+database. Production uses Sentry for minimized errors and 5% sampled performance
+traces, and cookieless PostHog page analytics. Calendar content, OAuth values and
+personal state are excluded. See [`docs/observability.md`](docs/observability.md).
+Details: [`docs/architecture.md`](docs/architecture.md).
 
 ## Repository layout
 
@@ -68,6 +73,7 @@ database. Details: [`docs/architecture.md`](docs/architecture.md).
 | `packages/domain`   | Pure calendar logic: dates, events, year-grid layout      |
 | `packages/google`   | Effect services for Google OAuth, Calendar, and Tasks     |
 | `packages/security` | Security headers shared by the Worker and the build       |
+| `packages/observability` | Production browser telemetry with privacy allowlists |
 | `packages/release`  | Version strings for each release channel                  |
 | `packages/config`   | Shared TypeScript configuration                           |
 | `infra`             | Cloudflare resources as code (Alchemy, Effect)            |
@@ -106,6 +112,7 @@ OAuth setup in [`docs/development.md`](docs/development.md).
 - [`docs/development.md`](docs/development.md): setup and commands.
 - [`docs/releasing.md`](docs/releasing.md): versioning, channels, rollout, rollback.
 - [`docs/infrastructure.md`](docs/infrastructure.md): Cloudflare as code with Alchemy.
+- [`docs/observability.md`](docs/observability.md): telemetry privacy and private source maps.
 - [`docs/security.md`](docs/security.md): threat model, edge hardening, smoke tests.
 - [`docs/follow-ups.md`](docs/follow-ups.md): known gaps and manual steps.
 - [`docs/roadmap.md`](docs/roadmap.md): what is done and what is next.
