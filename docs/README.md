@@ -39,6 +39,7 @@ flowchart LR
 | [`development.md`](development.md)         | You are setting up OAuth locally, running checks, or changing application data flow                    |
 | [`architecture.md`](architecture.md)       | You need system context, request/OAuth/data flows, browser storage, deployment, or failure behavior    |
 | [`security.md`](security.md)               | You are changing the Worker boundary, OAuth handling, rate limits, headers, or production verification |
+| [`observability.md`](observability.md) | You need telemetry privacy controls, source-map uploads, or production verification |
 | [`releasing.md`](releasing.md)             | You are cutting a release, deploying a channel, or rolling back                                        |
 | [`infrastructure.md`](infrastructure.md)   | You are changing Cloudflare config, Worker bindings, domains, zone settings, or the Alchemy stack      |
 | [`follow-ups.md`](follow-ups.md)           | You need current gaps, gotchas, tuning decisions, or explicitly deferred work                          |

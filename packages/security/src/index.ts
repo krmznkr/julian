@@ -6,6 +6,7 @@
 // Content-Security-Policy tuned to exactly what the app needs:
 //   - scripts/styles/assets are all same-origin (Vite output + bootstrap.js)
 //   - the browser calls our own /api/oauth (self) and the Google Calendar API
+//   - production telemetry calls the exact Sentry and EU PostHog ingest hosts
 //   - Google sign-in is a top-level navigation to accounts.google.com
 //   - images are same-origin or data URIs; nothing loads remote images
 //   - the page may never be framed (clickjacking) and can't be a frame target
@@ -18,7 +19,7 @@ export const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self' data:",
-  "connect-src 'self' https://www.googleapis.com",
+  "connect-src 'self' https://www.googleapis.com https://o4511769287000064.ingest.de.sentry.io https://eu.i.posthog.com",
   "form-action 'self' https://accounts.google.com",
   "upgrade-insecure-requests",
 ].join("; ");

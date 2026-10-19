@@ -1,0 +1,4 @@
+{
+  "extends": "@julian/config/tsconfig.base.json",
+  "include": ["src"]
+}

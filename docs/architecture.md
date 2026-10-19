@@ -21,6 +21,8 @@ flowchart LR
   googleAuth["Google OAuth"]
   calendar["Google Calendar API"]
   tasks["Google Tasks API"]
+  sentry["Sentry<br/>production browser errors + 5% traces"]
+  posthog["PostHog EU<br/>production page views + leaves"]
 
   user -->|"HTML, JS, CSS, /api/oauth/*"| worker
   worker --> siteLimit
@@ -30,13 +32,15 @@ flowchart LR
   user -->|"authorization navigation"| googleAuth
   user -->|"Bearer token"| calendar
   user -->|"Bearer token"| tasks
+  user -->|"minimized errors + timing"| sentry
+  user -->|"static page categories, temporary ID"| posthog
 
   classDef client fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:2px
   classDef edgeNode fill:#ede9fe,stroke:#7c3aed,color:#3b0764
   classDef external fill:#fef3c7,stroke:#d97706,color:#78350f
   class user client
   class worker,assets,siteLimit,oauthLimit edgeNode
-  class googleAuth,calendar,tasks external
+  class googleAuth,calendar,tasks,sentry,posthog external
 ```
 
 There is no application database, server session, queue, KV namespace, or
@@ -274,7 +278,7 @@ One domain serves two builds. The marketing pages are static HTML from
 | Route                         | Served by | Purpose                                                                   |
 | ----------------------------- | --------- | ------------------------------------------------------------------------- |
 | `/`                           | Worker    | Marketing home, or `302 /{yyyy}` when the `julian_session` cookie is set  |
-| `/home`, `/privacy`, `/terms` | marketing | Static pages, no JavaScript                                               |
+| `/home`, `/privacy`, `/terms` | marketing | Static pages with production-only telemetry                                               |
 | `/{yyyy}`                     | app       | Lazy-loaded year view; the current year adds today's month/day to the URL. Signed out, it offers sign-in or the demo |
 | `/{yyyy}/{mm}`                | app       | Redirects to `/{yyyy}?month=mm&day=1`                                     |
 | `/year/*`                     | Worker    | `301` to the same path without `/year`, query kept (legacy bookmarks)     |
@@ -348,11 +352,15 @@ then uploads or deploys. Channels, gradual rollout and rollback are described in
 | `VITE_GOOGLE_CLIENT_ID` | `.env` from `.env.example`             | Public value in deploy workflow | Embedded in static JS                |
 | `GOOGLE_CLIENT_ID`      | Wrangler variable                      | `infra/src/config.ts`           | Worker binding                       |
 | `GOOGLE_CLIENT_SECRET`  | Optional local Wrangler secret         | Never supplied to build         | Encrypted Worker secret              |
-| `CLOUDFLARE_API_TOKEN`  | Operator environment for manual deploy | Repository secret               | Consumed by Wrangler, not the Worker |
+| `CLOUDFLARE_API_TOKEN`  | Operator environment for manual deploy | Environment secret              | Consumed by Wrangler, not the Worker |
 
-The application has no third-party telemetry SDK. Operational evidence comes
-from GitHub Actions, Cloudflare Worker behavior, browser console/network
-inspection, and the production smoke tests in [`security.md`](security.md).
+Stable production pages use Sentry for minimized browser errors and 5% sampled
+performance traces, and cookieless PostHog page analytics. Calendar content,
+OAuth values and personal state are excluded by payload allowlists shared in
+`packages/observability`. The Worker has no telemetry SDK. See
+[`observability.md`](observability.md) for the data contract, production gate
+and private source-map upload. GitHub Actions and the smoke tests in
+[`security.md`](security.md) remain the deployment evidence.
 
 ## Failure behavior
 

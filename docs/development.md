@@ -23,6 +23,7 @@ A pnpm workspace orchestrated by Turborepo:
 | `packages/domain`   | `@julian/domain`    | Pure calendar logic: dates, events, year-grid layout    |
 | `packages/google`   | `@julian/google`    | Effect services for Google OAuth, Calendar, and Tasks   |
 | `packages/security` | `@julian/security`  | Security headers and the session-hint cookie            |
+| `packages/observability` | `@julian/observability` | Shared browser telemetry and privacy boundaries |
 | `packages/release`  | `@julian/release`   | Version and channel metadata for each build             |
 | `packages/config`   | `@julian/config`    | Shared TypeScript configuration                         |
 
@@ -122,9 +123,10 @@ a JavaScript origin and its `/auth/callback` as a redirect URI:
 | `wrangler dev`         | `http://127.0.0.1:8787`              | `http://127.0.0.1:8787/auth/callback`              |
 | Vite dev (start only)  | `http://127.0.0.1:3000`              | `http://127.0.0.1:3000/auth/callback`              |
 
-Registered today: production, plus `http://localhost:5173/auth/callback` and
-`http://localhost:3000/auth/callback` from earlier setups. The nightly and
-`127.0.0.1` entries are pending manual steps in [`follow-ups.md`](follow-ups.md).
+Verified on 2026-10-19: production, nightly and both `127.0.0.1` origins and
+callbacks above are registered in the production OAuth client. Earlier
+`localhost:5173` and `localhost:3000` callbacks were retained. Google 2-step
+verification is enabled on the public account.
 
 ## Data and state
 
@@ -132,6 +134,13 @@ After OAuth, the browser loads calendars and year events from Google Calendar
 and due tasks from Google Tasks. OAuth tokens, hidden-calendar selection,
 sidebar state, and theme preferences are stored in browser local storage.
 There is no Julian database.
+
+## Observability
+
+Telemetry is disabled locally, in PR previews and on nightly. It runs only in a
+stable production build on `julian.krmznkr.com`. No telemetry credentials are
+needed for development. Privacy controls and private deployment source maps are
+documented in [`observability.md`](observability.md).
 
 ## Architecture
 

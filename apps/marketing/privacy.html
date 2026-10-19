@@ -14,6 +14,7 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="stylesheet" href="/src/styles.css" />
     <title>Privacy · Julian</title>
+    <script type="module" src="/src/observability.ts"></script>
   </head>
   <body>
     <!-- @header -->
@@ -57,8 +58,24 @@
         Julian is served by Cloudflare Workers. To sign in, the Worker passes the one-time
         authorization code and refresh requests to Google with the app's client secret and returns
         Google's answer to your browser without storing it. Cloudflare processes request metadata
-        such as IP addresses to deliver the site and to rate-limit abuse. There are no analytics,
-        ads, or third-party trackers.
+        such as IP addresses to deliver the site and to rate-limit abuse. Julian has no ads.
+      </p>
+
+      <h2>Errors and traffic analytics</h2>
+      <p>
+        On the production site, Sentry receives minimized browser error reports and a 5% sample
+        of performance traces. Error text is replaced with a fixed label; reports retain app
+        stack locations and timing information to help fix bugs. PostHog receives page views and
+        page leaves in its EU region. Analytics use temporary in-memory identifiers, with no
+        analytics cookies, persistent identifiers, or person profiles, and respect Do Not Track.
+      </p>
+      <p>
+        Neither service receives your calendar events, task or calendar titles, email address,
+        Google tokens, browser preferences, page text, request bodies, cookies, or headers from
+        Julian. URLs are reduced to static page categories without query strings or fragments.
+        There is no session replay, automatic click collection, advertising profiling, or feature
+        flag collection. The services process network metadata such as IP addresses to receive
+        requests. Development, nightly and preview sites do not send these reports or analytics.
       </p>
 
       <h2>Contact</h2>

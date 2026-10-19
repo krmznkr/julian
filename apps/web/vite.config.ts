@@ -41,10 +41,12 @@ export default defineConfig({
     },
   },
   build: {
+    sourcemap: process.env.JULIAN_SOURCEMAPS === "true" ? "hidden" : false,
     rolldownOptions: {
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
+          if (id.includes("@sentry") || id.includes("posthog")) return "observability";
           if (id.includes("react-dom") || id.match(/[\\/]react[\\/]/)) return "react";
           if (id.includes("@tanstack")) return "tanstack";
           if (id.includes("radix-ui") || id.includes("@radix-ui")) return "radix";
