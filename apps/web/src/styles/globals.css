@@ -303,6 +303,8 @@
     --border: #d4d4d4;
     --muted: #f3f3f3;
     --muted-foreground: #4f4f4f;
+    /* Paper is always white, so the dark theme's lighter orange fails there. */
+    --accent-brand-text: #a34d0b;
   }
 
   html,

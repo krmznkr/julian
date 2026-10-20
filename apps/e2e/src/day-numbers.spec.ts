@@ -107,7 +107,11 @@ function measureDayNumbers(page: Page): Promise<Numeral[]> {
   });
 }
 
-async function expectReadableDayNumbers(page: Page, expected: Numeral["state"][]) {
+async function expectReadableDayNumbers(
+  page: Page,
+  expected: Numeral["state"][],
+  { todayIn = [] as Numeral["where"][] } = {},
+) {
   await page.waitForFunction(() =>
     document.getAnimations().every((animation) => animation.playState !== "running"),
   );
@@ -117,6 +121,12 @@ async function expectReadableDayNumbers(page: Page, expected: Numeral["state"][]
     expect(
       numerals.some((numeral) => numeral.state === state),
       state,
+    ).toBe(true);
+  }
+  for (const where of todayIn) {
+    expect(
+      numerals.some((numeral) => numeral.state === "today" && numeral.where === where),
+      `today in the ${where}`,
     ).toBe(true);
   }
   const unreadable = numerals
@@ -143,10 +153,33 @@ for (const colorScheme of ["light", "dark"] as const) {
 
     // Hide every calendar so no chip covers today's number, then move focus
     // off today so its own colour shows in both the cell and the day gutter.
-    const shown = page.getByRole("checkbox", { checked: true });
-    while ((await shown.count()) > 0) await shown.first().uncheck();
-    await expect(shown).toHaveCount(0);
+    await hideCalendars(page);
     await grid.focus();
-    await expectReadableDayNumbers(page, ["weekday", "weekend", "focused", "today"]);
+    await expectReadableDayNumbers(page, ["weekday", "weekend", "focused", "today"], {
+      todayIn: ["cell", "gutter"],
+    });
   });
+
+  test(`day numbers reach 4.5:1 when printed from the ${colorScheme} theme`, async ({
+    demo: page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    // Same setup as on screen: no chips over today, focus moved off today.
+    for (let step = 0; step < 4; step++) await page.keyboard.press("ArrowDown");
+    await hideCalendars(page);
+    await yearGrid(page).focus();
+
+    // Printing keeps the theme class but paints on white paper.
+    await page.emulateMedia({ colorScheme, media: "print" });
+    await page.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
+    await expectReadableDayNumbers(page, ["weekday", "weekend", "today"], {
+      todayIn: ["cell", "gutter"],
+    });
+  });
+}
+
+async function hideCalendars(page: Page) {
+  const shown = page.getByRole("checkbox", { checked: true });
+  while ((await shown.count()) > 0) await shown.first().uncheck();
+  await expect(shown).toHaveCount(0);
 }
