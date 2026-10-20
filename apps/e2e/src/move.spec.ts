@@ -12,7 +12,7 @@ test("an all-day event can be dragged to another day", async ({ demo: page }) =>
   const grid = yearGrid(page);
   await createDentist(page);
 
-  const chip = grid.getByRole("button", { name: /^Dentist, Mar 10/ });
+  const chip = grid.getByRole("button", { name: "Dentist", exact: true });
   const target = page.locator('[data-month-column="2"] [data-day-cell-frame="13"]');
   const box = await target.boundingBox();
   if (!box) throw new Error("No March 13 cell");
@@ -21,15 +21,14 @@ test("an all-day event can be dragged to another day", async ({ demo: page }) =>
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
   await page.mouse.up();
 
-  await expect(grid.getByRole("button", { name: /^Dentist, Mar 13/ })).toBeVisible();
-  await expect(grid.getByRole("button", { name: /^Dentist, Mar 10/ })).toHaveCount(0);
+  await expect(chip).toHaveAttribute("title", /Dentist · .*Mar 13/);
 });
 
 test("M moves the selected event from the keyboard", async ({ demo: page }) => {
   const grid = yearGrid(page);
   await createDentist(page);
 
-  await grid.getByRole("button", { name: /^Dentist, Mar 10/ }).click();
+  await grid.getByRole("button", { name: "Dentist", exact: true }).click();
   await expect(page.getByRole("option", { name: /Dentist/, selected: true })).toBeVisible();
   await page.keyboard.press("m");
   const move = page.getByRole("dialog", { name: "Move event" });
@@ -40,5 +39,8 @@ test("M moves the selected event from the keyboard", async ({ demo: page }) => {
   await expect(move).toBeHidden();
   await expect(grid).toBeFocused();
 
-  await expect(grid.getByRole("button", { name: /^Dentist, Apr 2/ })).toBeVisible();
+  await expect(grid.getByRole("button", { name: "Dentist", exact: true })).toHaveAttribute(
+    "title",
+    /Dentist · .*Apr 2/,
+  );
 });

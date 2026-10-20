@@ -9,7 +9,7 @@ test("an event can be created, renamed, and deleted in the demo", async ({ demo:
   await create.getByRole("textbox", { name: "Event title" }).fill("Dentist");
   await create.getByRole("button", { name: "Add event" }).click();
   await expect(create).toBeHidden();
-  const created = grid.getByRole("button", { name: /^Dentist, Mar 10/ });
+  const created = grid.getByRole("button", { name: "Dentist", exact: true });
   await expect(created).toBeVisible();
 
   await created.click();
@@ -21,14 +21,16 @@ test("an event can be created, renamed, and deleted in the demo", async ({ demo:
   await edit.getByRole("textbox", { name: "Event title" }).fill("Dentist check-up");
   await edit.getByRole("button", { name: "Save" }).click();
   await expect(edit).toBeHidden();
-  await expect(grid.getByRole("button", { name: /^Dentist check-up, Mar 10/ })).toBeVisible();
+  const renamed = grid.getByRole("button", { name: "Dentist check-up", exact: true });
+  await expect(renamed).toBeVisible();
+  await expect(renamed).toHaveAttribute("title", /Dentist check-up · .*Mar 10/);
 
   await page.keyboard.press("ControlOrMeta+Backspace");
   const remove = page.getByRole("dialog", { name: "Delete event?" });
   await expect(remove.getByRole("button", { name: "Delete" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(remove).toBeHidden();
-  await expect(grid.getByRole("button", { name: /^Dentist/ })).toHaveCount(0);
+  await expect(grid.getByRole("button", { name: "Dentist check-up", exact: true })).toHaveCount(0);
   await expect(grid).toHaveAttribute("aria-activedescendant", cellId(2, 10));
 });
 

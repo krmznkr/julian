@@ -80,7 +80,6 @@ function EventChip({
       draggable={event.allDay}
       data-event-chip="true"
       data-event-key={segment.id}
-      aria-label={`${segment.title}, ${formatDateRange(event)}, ${formatTimeRange(event)}${event.allDay && totalEventDays > 1 ? `, ${totalEventDays} days` : ""}`}
       title={`${event.title} · ${formatDateRange(event)} · ${formatTimeRange(event)}`}
       className={cn(
         getChipClassName(variant, fullWidth, event.allDay),

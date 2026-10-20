@@ -15,7 +15,6 @@ export const SingleDayDisplay = memo(function SingleDayDisplay({
         type="button"
         tabIndex={-1}
         data-event-key={first.segment.id}
-        aria-label={`${first.event.title}, All day`}
         title={`${first.event.title} · All day`}
         className="flex h-full min-w-0 flex-1 items-center gap-1 rounded-sm border-l-2 bg-background/80 px-1 text-left text-[10px] text-foreground hover:bg-accent"
         style={{ borderColor: first.event.calendarColor ?? "#8b8b8b" }}

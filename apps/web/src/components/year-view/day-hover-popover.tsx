@@ -11,7 +11,7 @@ const EventDetail = memo(function EventDetail({ item }: { item: DayEventItem | u
   const { calendars, onRequestMoveEvent } = useYearViewSharedData();
   const calendar = useMemo(
     () => calendars.find((entry) => entry.id === item?.event.calendarId),
-    [calendars, item?.event.calendarId],
+    [calendars, item?.event],
   );
 
   if (!item) {

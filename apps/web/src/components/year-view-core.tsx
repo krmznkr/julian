@@ -356,6 +356,7 @@ export default function YearViewCore({
           </AppShell>
 
           <EventFormDialog
+            key={mutations.create.isOpen ? "create-open" : "create-closed"}
             open={mutations.create.isOpen}
             mode="create"
             dateLabel={
@@ -373,6 +374,7 @@ export default function YearViewCore({
             restoreFocus={focusYearGrid}
           />
           <EventFormDialog
+            key={mutations.edit.isOpen ? "edit-open" : "edit-closed"}
             open={mutations.edit.isOpen}
             mode="edit"
             initialTitle={mutations.edit.target?.title ?? ""}
@@ -386,6 +388,7 @@ export default function YearViewCore({
             restoreFocus={focusYearGrid}
           />
           <MoveEventDialog
+            key={eventMove.target?.id ?? "closed"}
             event={eventMove.target}
             onMove={eventMove.move}
             onClose={eventMove.close}

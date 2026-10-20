@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/router";
 
 export function NotFoundScreen() {
-  const currentYear = new Date().getFullYear();
+  const [currentYear] = useState(() => new Date().getFullYear());
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background px-6 py-10 text-foreground">
