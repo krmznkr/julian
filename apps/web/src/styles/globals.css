@@ -46,6 +46,20 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/* Registered so getComputedStyle returns the resolved width in px: the year
+   grid's scroll and virtualisation maths read these two in JavaScript. */
+@property --month-col-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 220px;
+}
+
+@property --day-gutter-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 44px;
+}
+
 :root {
   --titlebar-height: env(titlebar-area-height, 0px);
   --radius: 0.625rem;
