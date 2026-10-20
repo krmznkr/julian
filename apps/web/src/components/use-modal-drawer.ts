@@ -88,7 +88,16 @@ export function useModalDrawer({
 
     if (open) {
       const active = document.activeElement;
-      openerRef.current = active instanceof HTMLElement && !drawer.contains(active) ? active : null;
+      // The body is no opener. Focus lands there when this same commit removed
+      // the focused element, such as suspended day details; closing then falls
+      // back instead of leaving focus on the body.
+      openerRef.current =
+        active instanceof HTMLElement &&
+        active.isConnected &&
+        active !== document.body &&
+        !drawer.contains(active)
+          ? active
+          : null;
       (tabStopsIn(drawer)[0] ?? drawer).focus({ preventScroll: true });
       return;
     }

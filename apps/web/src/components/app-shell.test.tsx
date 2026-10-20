@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { createPortal } from "react-dom";
 import { Dialog, DropdownMenu } from "radix-ui";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AppShell from "./app-shell";
+import { AppContentInertContext } from "./app-content-inert-context";
 import { DESKTOP_SIDEBAR_QUERY } from "./use-modal-drawer";
 
 // A controllable `matchMedia`, so a test can cross the 768px breakpoint.
@@ -44,9 +45,11 @@ function stubVisibility(isVisible: (element: HTMLElement) => boolean) {
 
 function Harness({
   sidebar,
+  content,
   onFallback = () => {},
 }: {
   sidebar?: React.ReactNode;
+  content?: React.ReactNode;
   onFallback?: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -85,8 +88,15 @@ function Harness({
       }
     >
       <div tabIndex={0}>Grid</div>
+      {content}
     </AppShell>
   );
+}
+
+// Like day details: a body-level portal the open drawer suspends.
+function SuspendedPortal() {
+  const suspended = useContext(AppContentInertContext);
+  return suspended ? null : createPortal(<button type="button">Sprint 14</button>, document.body);
 }
 
 // Closed, the drawer is inert, which hides it from role queries altogether.
@@ -307,6 +317,23 @@ describe("AppShell drawer keyboard behavior", () => {
     stubVisibility((element) => element.textContent !== "Open calendars");
     fireEvent.keyDown(inDrawer("Connect"), { key: "Escape" });
     expect(fallback).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back when focus was in a portal that opening the drawer suspends", () => {
+    stubViewport(false);
+    const fallback = vi.fn<() => void>(() => screen.getByText("Grid").focus());
+    render(<Harness content={<SuspendedPortal />} onFallback={fallback} />);
+    screen.getByRole("button", { name: "Sprint 14" }).focus();
+    // Safari does not focus a clicked button, so focus stays in the portal
+    // until the same commit removes it and drops focus to the body.
+    fireEvent.click(screen.getByRole("button", { name: "Open calendars" }));
+    expect(screen.queryByRole("button", { name: "Sprint 14" })).not.toBeInTheDocument();
+    expect(inDrawer("Connect")).toHaveFocus();
+
+    fireEvent.keyDown(inDrawer("Connect"), { key: "Escape" });
+    expect(fallback).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Grid")).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Sprint 14" })).toBeInTheDocument();
   });
 
   it("releases the modal when the window widens past the breakpoint", () => {
