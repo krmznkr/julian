@@ -52,8 +52,8 @@ export function useMediaQuery(query: string) {
  * closes it; closing returns focus to whatever opened it. Crossing into the
  * desktop layout closes it, because the drawer is hidden there.
  *
- * There is deliberately no focusin guard. The background is `inert` while the
- * drawer is open, so nothing behind it can take focus, and a shortcut that
+ * There is deliberately no focusin guard. The background is `inert` and its
+ * day-details portal is suspended while the drawer is open. A shortcut that
  * focuses something outside (`/`, Ctrl+K) closes the drawer first. Closing
  * only reclaims focus that the drawer still holds or has dropped to the body.
  * Focus already moved on purpose stays where it is.

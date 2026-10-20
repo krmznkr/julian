@@ -337,6 +337,23 @@ describe("DemoYearView on a narrow screen", () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it("suspends the background day portal and resumes its selected event after Escape", () => {
+    renderDemo({ month: 3, day: 27, details: true });
+    const panel = screen.getByRole("listbox", { name: "Events for March 27" });
+    const rewrite = within(panel).getByRole("option", { name: /Ship the calendar rewrite/ });
+    fireEvent.click(rewrite);
+    expect(rewrite).toHaveAttribute("aria-selected", "true");
+
+    const tasks = openDrawer();
+    expect(screen.queryByRole("listbox", { name: "Events for March 27" })).not.toBeInTheDocument();
+    fireEvent.keyDown(tasks, { key: "Escape" });
+    expect(screen.getByRole("button", { name: "Open calendars" })).toHaveFocus();
+    const resumed = screen.getByRole("listbox", { name: "Events for March 27" });
+    expect(within(resumed).getByRole("option", { selected: true })).toHaveTextContent(
+      "Ship the calendar rewrite",
+    );
+  });
+
   it("/ closes the drawer, then focuses search", () => {
     renderDemo();
     const tasks = openDrawer();

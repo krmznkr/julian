@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useModalDrawer } from "@/components/use-modal-drawer";
+import { AppContentInertContext } from "@/components/app-content-inert-context";
 
 export default function AppShell({
   sidebar,
@@ -100,7 +101,7 @@ export default function AppShell({
           inert={behindModal}
           className="flex min-h-0 min-w-0 flex-1 flex-col print:min-h-auto print:overflow-visible"
         >
-          {children}
+          <AppContentInertContext value={behindModal}>{children}</AppContentInertContext>
         </main>
       </div>
     </div>
