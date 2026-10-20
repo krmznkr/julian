@@ -131,6 +131,28 @@ Pushing to `main` no longer deploys production. To redeploy a release by hand,
 run **Deploy stable** from the Actions tab with its tag. The workflow rejects
 any ref that is not a `vX.Y.Z` tag.
 
+## Validating main by hand
+
+Merge the release PR only when **CI** is green on the exact commit `main`
+points at. That commit is what gets tagged and deployed. Green checks on a PR
+head, or on an older `main` commit, say nothing about the code a merge
+produced.
+
+A push to `main` usually runs CI, but merges made with `GITHUB_TOKEN`, such as
+Dependabot auto-merge, do not trigger workflows, so that commit gets no CI
+run at all. When `main` has no CI run, start one by hand. This runs the
+same three jobs and deploys nothing:
+
+```bash
+gh workflow run ci.yml --repo krmznkr/julian --ref main
+gh run list --repo krmznkr/julian --workflow ci.yml --branch main \
+  --event workflow_dispatch --limit 1 --json headSha,status,conclusion,url
+```
+
+The run checks out whatever `main` points at when it starts. Compare its
+`headSha` with `git rev-parse origin/main`. If `main` moved in between, the
+run validated a different commit; run it again.
+
 ## Rollback
 
 One command, from `apps/edge` with a Workers-scoped token:

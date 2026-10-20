@@ -81,6 +81,10 @@ Reports and traces are git-ignored. In CI, both run as separate jobs; the
 Playwright report and traces are uploaded when a test fails, and the
 Lighthouse reports on every run.
 
+CI runs on every pull request and every push to `main`. It can also be started
+by hand (`gh workflow run ci.yml --ref main`) when a commit on `main` has no
+run. See [Validating main by hand](releasing.md#validating-main-by-hand).
+
 ## Local OAuth
 
 Copy the public client-ID placeholder and fill it with the configured web client
