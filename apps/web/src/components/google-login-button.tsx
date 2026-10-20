@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { isAuthenticated, logout, startGoogleAuth } from "@/lib/google-calendar";
+import { hasStoredGoogleSession } from "@/lib/session";
 
 export function GoogleLoginButton({ onAuthChange }: { onAuthChange?: () => void }) {
   const [isAuth, setIsAuth] = useState(false);
@@ -8,6 +9,7 @@ export function GoogleLoginButton({ onAuthChange }: { onAuthChange?: () => void 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!hasStoredGoogleSession()) return;
     isAuthenticated().then(setIsAuth);
   }, []);
 
