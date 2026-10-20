@@ -13,6 +13,8 @@ import {
   daysInMonth,
   digitFromKeyboardCode,
   resolveArrowMoveStep,
+  isActivationKey,
+  isAppChromeTarget,
   shouldHandleGridKeys,
   type KeyboardCell,
 } from "@/components/year-view/year-grid-keyboard";
@@ -362,6 +364,8 @@ export function useYearGridKeyboard({
       if (event.ctrlKey || event.metaKey) return;
       // An open overlay owns the keyboard.
       if (helpOpen || commandPaletteOpen || mutationDialogOpen) return;
+      // Enter and Space on a top-bar or banner control press that control.
+      if (isActivationKey(event) && isAppChromeTarget(event.target)) return;
 
       if (event.key === "?" || (event.key === "/" && event.shiftKey)) {
         if (!shouldHandleGridKeys(event.target, dayPanelOpen)) return;

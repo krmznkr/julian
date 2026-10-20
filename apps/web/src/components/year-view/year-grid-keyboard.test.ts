@@ -4,6 +4,8 @@ import {
   clampCell,
   digitFromKeyboardCode,
   firstDayOfMonth,
+  isActivationKey,
+  isAppChromeTarget,
   lastDayOfMonth,
   moveCellByDays,
   moveCellByMonths,
@@ -126,5 +128,36 @@ describe("shouldHandleGridKeys", () => {
     expect(shouldHandleGridKeys(sidebar, false)).toBe(false);
     expect(shouldHandleGridKeys(dialog, false)).toBe(false);
     expect(shouldHandleGridKeys(sidebar, true)).toBe(true);
+  });
+
+  it("keeps every key inside the narrow-screen drawer, even with day details open", () => {
+    const drawer = document.createElement("aside");
+    drawer.setAttribute("data-mobile-sidebar", "");
+    const checkbox = document.createElement("button");
+    drawer.append(checkbox);
+
+    expect(shouldHandleGridKeys(drawer, false)).toBe(false);
+    expect(shouldHandleGridKeys(checkbox, true)).toBe(false);
+  });
+});
+
+describe("activation keys on app chrome", () => {
+  it("recognizes Enter and Space", () => {
+    expect(isActivationKey({ key: "Enter", code: "Enter" })).toBe(true);
+    expect(isActivationKey({ key: " ", code: "Space" })).toBe(true);
+    expect(isActivationKey({ key: "Unidentified", code: "Space" })).toBe(true);
+    expect(isActivationKey({ key: "ArrowDown", code: "ArrowDown" })).toBe(false);
+  });
+
+  it("only treats top-bar and banner controls as chrome", () => {
+    const chrome = document.createElement("div");
+    chrome.setAttribute("data-app-chrome", "");
+    const button = document.createElement("button");
+    chrome.append(button);
+
+    expect(isAppChromeTarget(button)).toBe(true);
+    expect(isAppChromeTarget(document.createElement("button"))).toBe(false);
+    expect(isAppChromeTarget(null)).toBe(false);
+    expect(isAppChromeTarget(window)).toBe(false);
   });
 });

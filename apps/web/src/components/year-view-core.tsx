@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 import AppShell from "@/components/app-shell";
 import { TooltipProvider } from "@/components/tooltip";
 import { ROW_HEIGHT } from "@/components/year-helpers";
@@ -86,7 +87,6 @@ export default function YearViewCore({
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const focusSearch = useCallback(() => searchInputRef.current?.focus(), []);
 
   // The grid owns its own focus; it hands us a callback so dialogs can return
   // focus to the cell the visitor came from after they close.
@@ -184,6 +184,19 @@ export default function YearViewCore({
     dispatch({ type: "MOBILE_SIDEBAR_OPEN_CHANGED", open });
   }, []);
 
+  // A shortcut that moves focus outside the drawer closes it first: everything
+  // behind the drawer is inert until the close commits, and committing it
+  // synchronously lets the drawer restore focus before the shortcut moves it.
+  const closeMobileSidebarNow = useCallback(() => {
+    if (!state.mobileSidebarOpen) return;
+    flushSync(() => dispatch({ type: "MOBILE_SIDEBAR_OPEN_CHANGED", open: false }));
+  }, [state.mobileSidebarOpen]);
+
+  const focusSearch = useCallback(() => {
+    closeMobileSidebarNow();
+    searchInputRef.current?.focus();
+  }, [closeMobileSidebarNow]);
+
   const navigation = useYearNavigation({
     year,
     initialYear,
@@ -194,7 +207,10 @@ export default function YearViewCore({
     onJumpedToToday: useCallback(() => setFocusTodaySignal((value) => value + 1), []),
   });
 
-  const onToggleCommandPalette = useCallback(() => setCommandPaletteOpen((open) => !open), []);
+  const onToggleCommandPalette = useCallback(() => {
+    closeMobileSidebarNow();
+    setCommandPaletteOpen((open) => !open);
+  }, [closeMobileSidebarNow]);
 
   useYearViewShortcuts({
     onToggleCommandPalette,
@@ -282,6 +298,7 @@ export default function YearViewCore({
             sidebarCollapsed={state.sidebarCollapsed}
             mobileSidebarOpen={state.mobileSidebarOpen}
             onMobileSidebarOpenChange={onMobileSidebarOpenChange}
+            onRestoreFocusFallback={focusYearGrid}
             topbar={<YearViewTopBar />}
             banner={banner}
             sidebar={

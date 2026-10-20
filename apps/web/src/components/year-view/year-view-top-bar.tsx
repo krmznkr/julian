@@ -139,11 +139,6 @@ export default function YearViewTopBar() {
     ],
   );
 
-  const handleCommandOpenChange = (open: boolean) => {
-    setCommandPaletteOpen(open);
-    if (!open) focusYearGrid();
-  };
-
   const handleHelpOpenChange = (open: boolean) => {
     setKeyboardHelpOpen(open);
     if (!open) focusYearGrid();
@@ -192,8 +187,9 @@ export default function YearViewTopBar() {
 
       <YearViewCommandPalette
         open={commandPaletteOpen}
-        onOpenChange={handleCommandOpenChange}
+        onOpenChange={setCommandPaletteOpen}
         commands={commandItems}
+        restoreFocus={focusYearGrid}
       />
       <TopBarKeyboardShortcuts open={keyboardHelpOpen} onOpenChange={handleHelpOpenChange} />
     </header>

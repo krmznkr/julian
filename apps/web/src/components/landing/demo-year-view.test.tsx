@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { YearViewRouterPort } from "@/components/year-view/year-view-ports";
 import { AppProviders } from "@/providers";
 import { DemoYearView } from "./demo-year-view";
+import { DESKTOP_SIDEBAR_QUERY } from "@/components/use-modal-drawer";
 
 // The demo is the real year view on an in-memory store, so these tests drive
 // the whole UI through the same roles a visitor would use.
@@ -280,5 +281,116 @@ describe("DemoYearView", () => {
     expect(navigate).toHaveBeenLastCalledWith(
       expect.objectContaining({ search: { month: 10, day: 15 } }),
     );
+  });
+});
+
+describe("DemoYearView on a narrow screen", () => {
+  // Below 768px the sidebar is a modal drawer. Reduced motion keeps the tour off.
+  const narrow = (query: string) => ({
+    ...reducedMotion(query),
+    matches: query !== DESKTOP_SIDEBAR_QUERY,
+  });
+  const drawer = () =>
+    document.querySelector<HTMLElement>('aside[role="dialog"][aria-label="Calendars"]')!;
+  const openDrawer = () => {
+    const opener = screen.getByRole("button", { name: "Open calendars" });
+    opener.focus();
+    fireEvent.click(opener);
+    return within(drawer()).getAllByRole("checkbox").at(-1)!;
+  };
+
+  beforeEach(() => {
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get: () => 10_000,
+    });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 15, 9));
+    vi.stubGlobal("matchMedia", narrow);
+  });
+  afterEach(() => {
+    cleanup();
+    if (clientWidth) Object.defineProperty(HTMLElement.prototype, "clientWidth", clientWidth);
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it("opens the drawer from the keyboard with focus inside it", () => {
+    renderDemo();
+    const opener = screen.getByRole("button", { name: "Open calendars" });
+    opener.focus();
+    // Enter on a top-bar control presses it; the grid does not claim it.
+    expect(fireEvent.keyDown(opener, { key: "Enter" })).toBe(true);
+    expect(fireEvent.keyDown(opener, { key: " ", code: "Space" })).toBe(true);
+    fireEvent.click(opener);
+    expect(drawer()).toHaveAttribute("aria-hidden", "false");
+    expect(drawer().contains(document.activeElement)).toBe(true);
+    expect(screen.getByRole("main", { hidden: true })).toHaveAttribute("inert");
+  });
+
+  it("keeps grid keys inside the drawer from moving the grid behind it", () => {
+    const { navigate } = renderDemo({ month: 3, day: 27, details: true });
+    const tasks = openDrawer();
+    navigate.mockClear();
+    expect(fireEvent.keyDown(tasks, { key: "ArrowDown" })).toBe(true);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("/ closes the drawer, then focuses search", () => {
+    renderDemo();
+    const tasks = openDrawer();
+    tasks.focus();
+    fireEvent.keyDown(tasks, { key: "/" });
+    expect(drawer()).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByRole("searchbox", { name: "Search events" })).toHaveFocus();
+  });
+
+  it.each([{ ctrlKey: true }, { metaKey: true }])(
+    "%o+K closes the drawer and focuses the command palette, then the grid",
+    async (modifier) => {
+      renderDemo();
+      const tasks = openDrawer();
+      tasks.focus();
+      fireEvent.keyDown(tasks, { key: "k", ...modifier });
+      expect(drawer()).toHaveAttribute("aria-hidden", "true");
+      const commands = await screen.findByRole("dialog", { name: "Commands" });
+      await waitFor(() => expect(within(commands).getByRole("combobox")).toHaveFocus());
+
+      fireEvent.keyDown(within(commands).getByRole("combobox"), { key: "Escape" });
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog", { name: "Commands" })).not.toBeInTheDocument(),
+      );
+      expect(grid()).toHaveFocus();
+    },
+  );
+
+  it("keeps search typing and command input shortcuts with their input", async () => {
+    renderDemo();
+    const search = screen.getByRole("searchbox", { name: "Search events" });
+    search.focus();
+    expect(fireEvent.keyDown(search, { key: "/" })).toBe(true);
+    expect(fireEvent.keyDown(search, { key: "k", ctrlKey: true })).toBe(true);
+    expect(search).toHaveFocus();
+    expect(screen.queryByRole("dialog", { name: "Commands" })).not.toBeInTheDocument();
+    openDrawer();
+    fireEvent.keyDown(document.activeElement!, { key: "k", ctrlKey: true });
+    const commands = await screen.findByRole("dialog", { name: "Commands" });
+    const input = within(commands).getByRole("combobox");
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(fireEvent.keyDown(input, { key: "/" })).toBe(true);
+    expect(input).toHaveFocus();
+  });
+
+  it("leaves focus with a dialog that a command opened", async () => {
+    renderDemo();
+    press("k", { ctrlKey: true });
+    const commands = await screen.findByRole("dialog", { name: "Commands" });
+    fireEvent.click(within(commands).getByText("Show keyboard shortcuts"));
+    const help = await screen.findByRole("dialog", { name: "Keyboard shortcuts" });
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Commands" })).not.toBeInTheDocument(),
+    );
+    expect(help.contains(document.activeElement)).toBe(true);
   });
 });
