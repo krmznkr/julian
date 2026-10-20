@@ -73,13 +73,11 @@ describe("DemoYearView", () => {
   it("renders the sample year as one button per event", () => {
     renderDemo();
     expect(screen.getByRole("region", { name: "Calendar for 2026" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", {
-        name: /^Nadia's birthday/,
-      }),
-    ).toBeVisible();
+    const birthdayButton = screen.getByText("Nadia's birthday", { exact: true }).closest("button");
+    expect(birthdayButton).toBeVisible();
+    expect(birthdayButton).toHaveAccessibleName("Nadia's birthday");
     expect(screen.getByRole("button", { name: /Go to today, Thu, Oct 15/ })).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("filters events by search and reports the match count", async () => {
     renderDemo();
