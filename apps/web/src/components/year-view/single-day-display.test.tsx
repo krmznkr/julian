@@ -45,7 +45,9 @@ describe("single-day display", () => {
         ]}
       />,
     );
-    expect(screen.getByRole("button", { name: "Holiday, All day" })).toBeInTheDocument();
+    const holiday = screen.getByRole("button", { name: "Holiday" });
+    expect(holiday).toBeInTheDocument();
+    expect(holiday).toHaveAttribute("title", "Holiday · All day");
     expect(screen.getByRole("button", { name: "Show all 2 all-day events" })).toHaveTextContent(
       "+1",
     );

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { clampCell, type KeyboardCell } from "@/components/year-view/year-grid-keyboard";
 import { useYearGridVirtualization } from "@/components/year-view/use-year-grid-virtualization";
 import { canMoveEvent } from "@/components/year-view/use-event-move";
@@ -9,7 +9,7 @@ export function useYearGridState(props: YearGridProps) {
   const { months, calendars, year, scrollRef, monthNames, canModifyEvent, onRequestMoveEvent } =
     props;
 
-  const today = new Date();
+  const [today] = useState(() => new Date());
   const isCurrentYear = year === today.getFullYear();
   const todayDay = today.getDate();
   const todayMonth = today.getMonth();

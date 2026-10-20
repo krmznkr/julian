@@ -19,7 +19,10 @@ export function useMonthDayPanel(
   layerRef: RefObject<HTMLDivElement | null>,
   rowHeight: number,
 ) {
-  const [anchorRect, setAnchorRect] = useState<DayPanelAnchorRect | null>(null);
+  const [anchor, setAnchor] = useState<{
+    element: HTMLDivElement;
+    rect: DayPanelAnchorRect;
+  } | null>(null);
 
   const open = openDay !== null;
   const items = (openDay !== null ? dayEvents.get(openDay) : undefined) ?? NO_ITEMS;
@@ -28,16 +31,19 @@ export function useMonthDayPanel(
   useEffect(() => {
     const layer = layerRef.current;
     if (!layer || openDay === null) {
-      setAnchorRect(null);
+      setAnchor(null);
       return;
     }
 
     const rect = layer.getBoundingClientRect();
-    setAnchorRect({
-      left: rect.left,
-      top: rect.top + (openDay - 1) * rowHeight,
-      width: rect.width,
-      height: rowHeight,
+    setAnchor({
+      element: layer,
+      rect: {
+        left: rect.left,
+        top: rect.top + (openDay - 1) * rowHeight,
+        width: rect.width,
+        height: rowHeight,
+      },
     });
   }, [layerRef, openDay, rowHeight]);
 
@@ -46,9 +52,9 @@ export function useMonthDayPanel(
       open,
       items,
       label,
-      anchorRect,
-      anchorEl: layerRef.current,
+      anchorRect: anchor?.rect ?? null,
+      anchorEl: anchor?.element ?? null,
     }),
-    [anchorRect, items, label, layerRef, open],
+    [anchor, items, label, open],
   );
 }

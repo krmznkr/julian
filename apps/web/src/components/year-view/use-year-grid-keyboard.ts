@@ -234,10 +234,9 @@ export function useYearGridKeyboard({
 
   // Opening a day selects its first event, so Enter and E have a target.
   useEffect(() => {
-    if (!dialogCell) {
-      setDialogActiveKey(undefined);
-      return;
-    }
+    if (!dialogCell) return;
+    // Keep the listbox's active option valid when its day or events change.
+    // oxlint-disable-next-line react/set-state-in-effect
     setDialogActiveKey((current) => {
       const nextKey = dialogItems.some((item) => item.key === current)
         ? current
@@ -247,6 +246,8 @@ export function useYearGridKeyboard({
   }, [announceEvent, dialogCell, dialogItems]);
 
   useEffect(() => {
+    // Updating the live announcement is the accessibility side effect of the selected event changing.
+    // oxlint-disable-next-line react/set-state-in-effect
     if (activeEvent) announceEvent(activeEvent.event.title);
   }, [activeEvent, announceEvent]);
 
@@ -267,6 +268,8 @@ export function useYearGridKeyboard({
 
   useEffect(() => {
     if (focusTodaySignal === 0) return;
+    // This effect synchronizes the grid with an external focus-today signal.
+    // oxlint-disable-next-line react/set-state-in-effect
     setActiveCell(todayCell);
     setDialogCell(null);
     setDialogActiveKey(undefined);

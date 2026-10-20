@@ -23,7 +23,7 @@ import type { CalendarEvent } from "@julian/domain";
  * Each visited year keeps its own events until the demo is reset.
  */
 function useDemoStore(year: number) {
-  const today = useMemo(() => new Date(), []);
+  const [today] = useState(() => new Date());
   const seed = useMemo(() => buildDemoYear(year, today), [today, year]);
   const eventsRef = useRef<Record<number, CalendarEvent[]>>({ [year]: seed.events });
   const nextIdRef = useRef(0);
@@ -144,7 +144,7 @@ function useDemoStore(year: number) {
   const initialData = useMemo(
     () => ({
       calendars: seed.calendars,
-      selectedCalendarIds: selectionRef.current,
+      selectedCalendarIds: seed.calendars.map((calendar) => calendar.id),
       events: seed.events,
     }),
     [seed],

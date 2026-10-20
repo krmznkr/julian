@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -49,12 +49,6 @@ export default function EventFormDialog({
 }: EventFormDialogProps) {
   const [title, setTitle] = useState(initialTitle ?? "");
   const inputRef = useRef<HTMLInputElement | null>(null);
-
-  // Seed the field from the current event each time the dialog opens so an edit
-  // starts from the existing title and a create starts blank.
-  useEffect(() => {
-    if (open) setTitle(initialTitle ?? "");
-  }, [open, initialTitle]);
 
   const copy = COPY[mode];
   const trimmed = title.trim();

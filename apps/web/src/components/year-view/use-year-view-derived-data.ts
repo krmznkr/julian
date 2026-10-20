@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { buildEventKey, buildMonthSegments } from "@julian/domain";
 import { matchesEventQuery } from "@/components/year-view/event-search";
 import type { YearSourceFailure } from "@/components/year-view/year-view-ports";
@@ -41,14 +41,14 @@ export function useYearViewDerivedData({
     [],
   );
 
+  const [today] = useState(() => new Date());
   const todayLongLabel = useMemo(() => {
-    const today = new Date();
     return formatDate(today, {
       weekday: "short",
       month: "short",
       day: "numeric",
     });
-  }, [formatDate]);
+  }, [formatDate, today]);
 
   // A partial failure is the interesting case: the year rendered, but some of
   // it is missing. Without this the visitor sees a normal, complete-looking

@@ -53,15 +53,14 @@ test("an all-day event moves to another day by touch", async ({ demo: page }) =>
   await create.getByRole("button", { name: "Add event" }).tap();
   await expect(create).toBeHidden();
 
-  await yearGrid(page)
-    .getByRole("button", { name: /^Dentist, Mar 10/ })
-    .tap();
+  const dentist = yearGrid(page).getByRole("button", { name: "Dentist", exact: true });
+  await dentist.tap();
   await page.getByRole("button", { name: "Move to another day" }).tap();
   const move = page.getByRole("dialog", { name: "Move event" });
   await move.getByLabel("Start date").fill("2026-03-12");
   await move.getByRole("button", { name: "Move" }).tap();
   await expect(move).toBeHidden();
-  await expect(yearGrid(page).getByRole("button", { name: /^Dentist, Mar 12/ })).toBeAttached();
+  await expect(dentist).toHaveAttribute("title", /Dentist · .*Mar 12/);
 });
 
 test("touch targets in the top bar are at least 32px", async ({ demo: page }) => {

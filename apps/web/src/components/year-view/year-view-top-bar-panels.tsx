@@ -25,7 +25,6 @@ export function CommandPaletteTrigger({ open, onOpen }: { open: boolean; onOpen:
       type="button"
       aria-haspopup="dialog"
       aria-expanded={open}
-      aria-label="Open command palette"
       onClick={onOpen}
       className="hidden h-8 min-w-[9.5rem] items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 md:inline-flex"
     >

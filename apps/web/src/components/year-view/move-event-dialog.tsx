@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,12 +28,8 @@ export default function MoveEventDialog({
   onClose,
   restoreFocus,
 }: MoveEventDialogProps) {
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(() => event?.start.slice(0, 10) ?? "");
   const inputId = useId();
-
-  useEffect(() => {
-    if (event) setDate(event.start.slice(0, 10));
-  }, [event]);
 
   const submit = (formEvent: FormEvent) => {
     formEvent.preventDefault();
