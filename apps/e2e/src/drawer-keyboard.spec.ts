@@ -8,11 +8,19 @@ const drawer = (page: Page) => page.getByRole("dialog", { name: "Calendars" });
 const opener = (page: Page) => page.getByRole("button", { name: "Open calendars" });
 const search = (page: Page) => page.getByRole("searchbox", { name: "Search events" });
 
+// The drawer slides in over 150ms. A click before it settles can miss it and
+// land on the backdrop, which closes it.
+const drawerSettled = (page: Page) =>
+  expect
+    .poll(async () => (await drawer(page).boundingBox())?.x, { message: "drawer slid in" })
+    .toBe(0);
+
 async function openWithKeyboard(page: Page) {
   // Day details may already be open. Enter still activates the focused opener.
   await opener(page).focus();
   await page.keyboard.press("Enter");
   await expect(drawer(page)).toBeVisible();
+  await drawerSettled(page);
 }
 
 const focusInsideDrawer = (page: Page) =>
@@ -112,6 +120,7 @@ for (const width of [320, 412, 767]) {
         await expect(details).toHaveCount(0);
         await expect(page.getByRole("option", { name: /Sprint 14/ })).toHaveCount(0);
 
+        await drawerSettled(page);
         // The old portal's actual pointer position must now hit Calendars.
         // Clicking empty drawer space focuses its tabindex=-1 container itself.
         await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
