@@ -64,7 +64,8 @@ pnpm test:lighthouse
   (override with `E2E_PORT`) and
   covers the marketing pages, the URL scheme, the demo, grid keyboard navigation,
   search, moving events by drag and keyboard, the one-page print, creating/renaming/deleting an
-  event, the theme toggle, day-number contrast in both themes, and a Pixel 7 viewport with touch input. The clock is pinned so the
+  event, the theme toggle, day-number contrast in both themes, a Pixel 7 viewport with touch input, and
+  the current month opening fully in view on phones. The clock is pinned so the
   sample year is deterministic. Open the last run with
   `pnpm --filter @julian/e2e exec playwright show-report`; failed tests keep a
   trace in `apps/e2e/test-results`.

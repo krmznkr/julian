@@ -31,7 +31,7 @@ export function useYearViewViewport({
     (targetMonth: number) => {
       const container = scrollRef.current;
       if (!container) return;
-      scrollMonthIntoView(container, monthHeaderRefs.current[targetMonth], targetMonth);
+      scrollMonthIntoView(container, monthHeaderRefs.current, targetMonth);
     },
     [monthHeaderRefs, scrollRef],
   );

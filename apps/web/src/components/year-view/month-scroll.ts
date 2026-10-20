@@ -2,43 +2,120 @@ import { useEffect, type RefObject } from "react";
 
 export const FALLBACK_MONTH_WIDTH = 220;
 export const MONTH_GAP_PX = 4;
+const FALLBACK_GUTTER_WIDTH = 44;
+
+/**
+ * Read a length custom property from the root as pixels.
+ *
+ * The sizes are registered with `@property` in `globals.css`, so the computed
+ * value is a resolved length ("196px") rather than the authored
+ * `clamp(...)` or `rem` expression. Falls back when the property is missing or
+ * unresolved, which happens in jsdom and before first paint.
+ */
+function readRootLength(name: string, fallback: number): number {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  if (!/^-?\d*\.?\d+px$/.test(raw)) return fallback;
+  const parsed = Number.parseFloat(raw);
+  return parsed > 0 ? parsed : fallback;
+}
 
 /**
  * The rendered width of one month column.
  *
  * Layout is driven by the `--month-col-width` custom property so CSS stays the
  * single source of truth for sizing, but the virtualiser and the scroll-to-month
- * maths both need the number in JS. Falls back when the property is missing,
- * which happens in jsdom and before first paint.
+ * maths both need the number in JS.
  */
 export function readMonthColumnWidth(): number {
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue("--month-col-width")
-    .trim();
-  const parsed = Number.parseFloat(raw.replace("px", ""));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : FALLBACK_MONTH_WIDTH;
+  return readRootLength("--month-col-width", FALLBACK_MONTH_WIDTH);
+}
+
+/** The width of the sticky date gutter that covers the grid's left edge. */
+function readDayGutterWidth(): number {
+  return readRootLength("--day-gutter-width", FALLBACK_GUTTER_WIDTH);
 }
 
 /**
- * Scroll a month into the centre of the viewport rather than pinning it left,
- * so the months either side stay visible for context.
+ * The scroll position that centres a month in the part of the grid the reader
+ * can see: right of the sticky date gutter. When the month is wider than that
+ * area, its start is kept just right of the gutter instead.
  *
- * Uses the real element when it is mounted; virtualisation means a far-away
- * month may not be, in which case the position is computed from the column
- * width instead.
+ * `monthLeft` is the month's left edge in scroll-content coordinates.
  */
+export function monthCenterScrollLeft({
+  monthLeft,
+  monthWidth,
+  viewportWidth,
+  gutterWidth,
+}: {
+  monthLeft: number;
+  monthWidth: number;
+  viewportWidth: number;
+  gutterWidth: number;
+}): number {
+  const margin = Math.max(0, (viewportWidth - gutterWidth - monthWidth) / 2);
+  return Math.max(0, monthLeft - gutterWidth - margin);
+}
+
+/** An element's left edge in the scroll container's content coordinates. */
+function contentLeft(container: HTMLElement, element: HTMLElement): number {
+  return (
+    element.getBoundingClientRect().left -
+    container.getBoundingClientRect().left -
+    container.clientLeft +
+    container.scrollLeft
+  );
+}
+
+/**
+ * Where a month starts, in content coordinates. Virtualisation means a
+ * far-away month may not be mounted; its position is then counted from any
+ * month that is, so padding, gutter and gaps are measured rather than assumed.
+ */
+function monthContentLeft(
+  container: HTMLElement,
+  monthElements: ReadonlyArray<HTMLElement | null | undefined>,
+  monthIndex: number,
+  monthWidth: number,
+): number {
+  const own = monthElements[monthIndex];
+  if (own) return contentLeft(container, own);
+  const anchorIndex = monthElements.findIndex(Boolean);
+  const anchor = monthElements[anchorIndex];
+  const span = monthWidth + MONTH_GAP_PX;
+  return anchor
+    ? contentLeft(container, anchor) + (monthIndex - anchorIndex) * span
+    : monthIndex * span;
+}
+
+/**
+ * The scroll position that centres a month in the visible grid rather than
+ * pinning it left, so the months either side stay visible for context.
+ */
+export function monthScrollLeft(
+  container: HTMLElement,
+  monthElements: ReadonlyArray<HTMLElement | null | undefined>,
+  monthIndex: number,
+): number {
+  const monthWidth = monthElements[monthIndex]?.offsetWidth || readMonthColumnWidth();
+  return monthCenterScrollLeft({
+    monthLeft: monthContentLeft(container, monthElements, monthIndex, monthWidth),
+    monthWidth,
+    viewportWidth: container.clientWidth,
+    gutterWidth: readDayGutterWidth(),
+  });
+}
+
+/** Smoothly scroll a month into the centre of the visible grid. */
 export function scrollMonthIntoView(
   container: HTMLElement,
-  monthElement: HTMLElement | null | undefined,
+  monthElements: ReadonlyArray<HTMLElement | null | undefined>,
   monthIndex: number,
-  behavior: ScrollBehavior = "smooth",
 ): void {
-  const left = monthElement
-    ? monthElement.offsetLeft - (container.clientWidth - monthElement.offsetWidth) / 2
-    : monthIndex * (readMonthColumnWidth() + MONTH_GAP_PX) -
-      (container.clientWidth - readMonthColumnWidth()) / 2;
-
-  container.scrollTo({ left: Math.max(0, left), behavior });
+  container.scrollTo({
+    left: monthScrollLeft(container, monthElements, monthIndex),
+    behavior: "smooth",
+  });
 }
 
 /**
