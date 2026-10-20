@@ -24,7 +24,7 @@ export default function YearGridDayColumn({
               key={`day-${index}`}
               className={cn(
                 "year-grid-text-day relative flex items-center justify-center border-b border-border/80 text-foreground/70",
-                isTodayRow && "font-semibold text-[var(--accent-brand)]",
+                isTodayRow && "font-semibold text-[var(--accent-brand-text)]",
                 isJumpDay && "bg-primary/10 text-foreground",
               )}
               aria-label={isTodayRow ? todayLongLabel : undefined}

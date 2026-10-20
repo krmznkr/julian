@@ -80,9 +80,10 @@ const DayCell = memo(function DayCell({
         {exists && (
           <span
             className={cn(
-              "year-grid-text-micro pointer-events-none absolute right-0.5 top-0.5 z-20 select-none rounded-[2px] px-0.5 tabular-nums text-muted-foreground/45",
-              isWeekend && "text-muted-foreground/55",
-              isToday && "font-semibold text-[var(--accent-brand)]",
+              // Foreground at 60% keeps 4.5:1 on the plain, weekend and today
+              // rows in both themes while staying quieter than event titles.
+              "year-grid-text-micro pointer-events-none absolute right-0.5 top-0.5 z-20 select-none rounded-[2px] px-0.5 tabular-nums text-foreground/60",
+              isToday && "font-semibold text-[var(--accent-brand-text)]",
               isKeyboardFocused && "text-foreground/80",
               hasContent && "bg-background/55 backdrop-blur-[1px]",
             )}
