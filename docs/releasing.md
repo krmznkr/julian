@@ -134,9 +134,13 @@ any ref that is not a `vX.Y.Z` tag.
 ## Validating main by hand
 
 Merge the release PR only when **CI** is green on the exact commit `main`
-points at. That commit is what gets tagged and deployed. Green checks on a PR
-head, or on an older `main` commit, say nothing about the code a merge
-produced.
+points at. That commit is not itself tagged or deployed: merging the release PR
+adds a new commit on top of it with the version bump and `CHANGELOG.md`, and
+release-please tags that merge commit `vX.Y.Z` for **Deploy stable**. The
+release commit changes only release metadata, so the application code it ships
+is the code on `main` just before the merge, and that is what this check
+validates. Green checks on a PR head, or on an older `main` commit, say nothing
+about that code.
 
 A push to `main` usually runs CI, but merges made with `GITHUB_TOKEN`, such as
 Dependabot auto-merge, do not trigger workflows, so that commit gets no CI
@@ -149,9 +153,20 @@ gh run list --repo krmznkr/julian --workflow ci.yml --branch main \
   --event workflow_dispatch --limit 1 --json headSha,status,conclusion,url
 ```
 
-The run checks out whatever `main` points at when it starts. Compare its
-`headSha` with `git rev-parse origin/main`. If `main` moved in between, the
-run validated a different commit; run it again.
+The run checks out whatever `main` points at when it starts, so `main` may
+have moved since. Right before deciding to merge, read the current `main` from
+GitHub rather than a local `origin/main`, which can be stale, and compare:
+
+```bash
+main_sha=$(gh api repos/krmznkr/julian/commits/main --jq .sha)
+gh run list --repo krmznkr/julian --workflow ci.yml --commit "$main_sha" \
+  --json event,status,conclusion,url
+```
+
+Merge only if a `push` or `workflow_dispatch` run listed there has
+`"conclusion": "success"`. An empty list means no CI run covers the current
+`main`: start one and check again. If `main` moves before you merge, repeat the
+check for the new commit.
 
 ## Rollback
 
