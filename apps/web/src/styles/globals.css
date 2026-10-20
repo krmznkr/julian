@@ -81,6 +81,8 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   --accent-brand: #c45d10;
+  /* Brand orange for small text: --accent-brand is below 4.5:1 on white. */
+  --accent-brand-text: #a34d0b;
   --month-col-width: clamp(196px, 34vw, 252px);
   --day-gutter-width: 2.75rem;
   --grid-pad-x: 1rem;
@@ -119,6 +121,7 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
   --accent-brand: #e8843a;
+  --accent-brand-text: #e8843a;
 }
 
 @media (min-width: 640px) {
