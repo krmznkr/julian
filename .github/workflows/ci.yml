@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Merges made with GITHUB_TOKEN (Dependabot auto-merge) do not trigger push
+  # runs, so main can be left unchecked. Run by hand to validate it; see
+  # docs/releasing.md.
+  workflow_dispatch:
 
 permissions:
   contents: read
