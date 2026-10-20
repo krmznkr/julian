@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/krmznkr/julian/compare/v0.2.1...v0.3.0) (2026-10-20)
+
+
+### Features
+
+* add production error tracking and page analytics ([#53](https://github.com/krmznkr/julian/issues/53)) ([21995ea](https://github.com/krmznkr/julian/commit/21995ea3e3a5e7403f34c56c6616e9a767ef9e68))
+
 ## [0.2.1](https://github.com/krmznkr/julian/compare/v0.2.0...v0.2.1) (2026-10-18)
 
 
