@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.1](https://github.com/krmznkr/julian/compare/v0.3.0...v0.3.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* align event names with visible labels ([#57](https://github.com/krmznkr/julian/issues/57)) ([5e5a0ba](https://github.com/krmznkr/julian/commit/5e5a0ba7cc03fde8eaeef8b9f7be6864721b5aac))
+* keep the current month fully in view on phones ([#61](https://github.com/krmznkr/julian/issues/61)) ([26ef65e](https://github.com/krmznkr/julian/commit/26ef65eb8f07e08936ac2151edc431ca17acddc8))
+* make the calendars drawer keyboard accessible ([#63](https://github.com/krmznkr/julian/issues/63)) ([cec026c](https://github.com/krmznkr/julian/commit/cec026c48bafd4a0f755141c75de11a631855b7c))
+* make year-grid day numbers readable in both themes ([#60](https://github.com/krmznkr/julian/issues/60)) ([23cd8e8](https://github.com/krmznkr/julian/commit/23cd8e8bf2e67f3d585d063f22b9b3c569191718))
+
 ## [0.3.0](https://github.com/krmznkr/julian/compare/v0.2.1...v0.3.0) (2026-10-20)
 
 
