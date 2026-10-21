@@ -19,6 +19,10 @@ function modKeyLabel() {
   return isMacPlatform() ? "⌘" : "Ctrl";
 }
 
+function isInOpenDialog(element: Element | null) {
+  return element?.closest("[data-slot='dialog-content'][data-state='open']") != null;
+}
+
 export function CommandPaletteTrigger({ open, onOpen }: { open: boolean; onOpen: () => void }) {
   return (
     <button
@@ -47,15 +51,24 @@ export function YearViewCommandPalette({
   open,
   onOpenChange,
   commands,
+  restoreFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   commands: CommandItemDef[];
+  /** Runs once the palette has closed, unless a command opened another dialog. */
+  restoreFocus: () => void;
 }) {
   return (
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
+      onCloseAutoFocus={(closeEvent) => {
+        // Radix would return focus to whatever had it on open, which may be
+        // gone (the drawer) or would steal it from a dialog a command opened.
+        closeEvent.preventDefault();
+        if (!isInOpenDialog(document.activeElement)) restoreFocus();
+      }}
       title="Commands"
       description="Search for a command to run"
     >

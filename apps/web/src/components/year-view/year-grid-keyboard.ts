@@ -25,8 +25,19 @@ export function isTypingTarget(target: EventTarget | null) {
   return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
 }
 
+export function isActivationKey(event: Pick<KeyboardEvent, "key" | "code">) {
+  return event.key === "Enter" || event.key === " " || event.code === "Space";
+}
+
+/** A control in the top bar or banner, outside both the grid and the sidebar. */
+export function isAppChromeTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && target.closest("[data-app-chrome]") !== null;
+}
+
 export function shouldHandleGridKeys(target: EventTarget | null, dayPanelOpen: boolean) {
   if (isTypingTarget(target)) return false;
+  // The narrow-screen drawer is a modal: the grid behind it stays still.
+  if (target instanceof HTMLElement && target.closest("[data-mobile-sidebar]")) return false;
   if (dayPanelOpen) return true;
   if (!(target instanceof HTMLElement)) return true;
   if (target.closest("[data-sidebar-root]")) return false;

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo } from "react";
+import { memo, useContext, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { DISPLAY_TIME_ZONE, formatDateRange, formatTimeRange } from "@julian/domain";
 import type { DayPanelAnchorRect } from "@/components/year-view/use-month-day-panel";
@@ -6,6 +6,7 @@ import type { DayEventItem } from "@/components/year-view/use-month-column";
 import { useYearViewSharedData } from "@/components/year-view/year-view-context";
 import { openEventInGoogle } from "@/lib/open-event";
 import { cn } from "@/lib/utils";
+import { AppContentInertContext } from "@/components/app-content-inert-context";
 
 const EventDetail = memo(function EventDetail({ item }: { item: DayEventItem | undefined }) {
   const { calendars, onRequestMoveEvent } = useYearViewSharedData();
@@ -207,15 +208,19 @@ export function DayHoverPopover({
   anchorRect: DayPanelAnchorRect | null;
   onSelect: (key: string) => void;
 }) {
+  // Keep the owning day/selection state, but suspend this background portal
+  // while Calendars is modal. Its body target cannot inherit main's DOM inert.
+  const contentInert = useContext(AppContentInertContext);
+  const visible = open && !contentInert;
   const itemsByKey = useMemo(() => new Map(items.map((item) => [item.key, item])), [items]);
   const activeItem = activeKey ? itemsByKey.get(activeKey) : items[0];
 
   useEffect(() => {
-    if (!open || !activeKey) return;
+    if (!visible || !activeKey) return;
     document.getElementById(`day-panel-event-${activeKey}`)?.scrollIntoView({ block: "nearest" });
-  }, [activeKey, open]);
+  }, [activeKey, visible]);
 
-  if (!open || !anchorEl || !anchorRect) {
+  if (!visible || !anchorEl || !anchorRect) {
     return null;
   }
 
