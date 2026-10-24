@@ -7,7 +7,7 @@ import { BlockedClient, SiteRateLimited, rejectOAuth } from "./errors";
 // and ignore robots.txt. Matched case-insensitively as substrings of the UA.
 // Well-behaved browsers and social link-preview bots (LinkedIn/Slack/etc.) are
 // intentionally NOT here, so sharing the link from a resume still works.
-export const BLOCKED_USER_AGENTS: ReadonlyArray<string> = [
+const BLOCKED_USER_AGENTS: ReadonlyArray<string> = [
   "ahrefsbot",
   "semrushbot",
   "mj12bot",
@@ -37,8 +37,7 @@ export const BLOCKED_USER_AGENTS: ReadonlyArray<string> = [
 
 // Best-effort client identity for rate limiting. Cloudflare always sets
 // CF-Connecting-IP at the edge; the fallback keeps `wrangler dev` working.
-export const clientIp = (request: Request): string =>
-  request.headers.get("CF-Connecting-IP") ?? "0.0.0.0";
+const clientIp = (request: Request): string => request.headers.get("CF-Connecting-IP") ?? "0.0.0.0";
 
 // A missing UA is treated as a bot too: real browsers always send one.
 export const rejectBots = (request: Request): Effect.Effect<void, BlockedClient> => {

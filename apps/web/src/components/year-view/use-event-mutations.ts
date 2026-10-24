@@ -6,7 +6,7 @@ import type { YearViewEventApi, YearViewFailure } from "@/components/year-view/y
 import { useLatestFiber } from "@/lib/effect/use-latest-fiber";
 import type { CalendarEvent, CalendarSummary } from "@julian/domain";
 
-export type MutationSlot<T> = {
+type MutationSlot<T> = {
   readonly target: T | null;
   readonly isOpen: boolean;
   readonly submitting: boolean;

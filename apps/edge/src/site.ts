@@ -13,7 +13,7 @@ import { hasSessionHint } from "@julian/security/session-hint";
 import { Clock, Effect } from "effect";
 import { WorkerEnv } from "./env";
 
-export const MARKETING_HOME = "/home";
+const MARKETING_HOME = "/home";
 
 const LEGACY_YEAR_PATH = /^\/year\/(\d{4})(\/.*)?$/;
 

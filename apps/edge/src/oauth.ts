@@ -25,11 +25,11 @@ const LOCAL_ORIGINS = [
   "http://127.0.0.1:8787",
 ];
 
-export const allowedOrigins = (channel: string): ReadonlySet<string> =>
+const allowedOrigins = (channel: string): ReadonlySet<string> =>
   new Set(channel === "dev" ? [...DEPLOYED_ORIGINS, ...LOCAL_ORIGINS] : DEPLOYED_ORIGINS);
 
 // OAuth JSON bodies are tiny; anything larger is abuse or a bug.
-export const MAX_OAUTH_BODY_BYTES = 4096;
+const MAX_OAUTH_BODY_BYTES = 4096;
 
 export const OAUTH_PREFIX = "/api/oauth/";
 
