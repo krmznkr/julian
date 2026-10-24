@@ -88,8 +88,10 @@ security headers, which catches entry-module errors that only workerd reports.
 `.github/workflows/preview.yml` runs `wrangler versions upload --preview-alias
 pr-<N>`: a new version of the production Worker that receives no traffic, reachable
 at its preview URL. The workflow comments that URL on the PR and updates the
-comment on later pushes. Fork PRs and runs without `CLOUDFLARE_PREVIEW_TOKEN`
-skip.
+comment on later pushes. If Preview URLs are disabled for the Worker
+(Cloudflare dashboard: Worker > Settings > Domains & Routes), wrangler prints no
+URL and the comment gives only the version ID; deploys do not turn them on. Fork
+PRs and runs without `CLOUDFLARE_PREVIEW_TOKEN` skip.
 
 Previews run on a `workers.dev` origin that the OAuth origin lock does not
 allow (`apps/edge/src/oauth.ts`), so Google sign-in fails there by design; the

@@ -59,9 +59,10 @@ jobs:
           url=$(grep -oE 'Version Preview Alias URL: https://[^ ]+' upload.log | awk '{print $5}' || true)
           version_id=$(grep -oE 'Worker Version ID: [0-9a-f-]+' upload.log | awk '{print $4}')
           test -n "$version_id"
-          # Cloudflare only issues preview URLs once a deployment has enabled them.
+          # wrangler prints the URL only when Preview URLs are enabled for the
+          # Worker. Deploys do not change that setting.
           if [ -z "$url" ]; then
-            echo "::warning::Version $version_id uploaded, but Cloudflare returned no preview URL yet."
+            echo "::warning::Cloudflare returned no preview URL for version $version_id. Preview URLs may be disabled for the Worker (Cloudflare dashboard: Worker > Settings > Domains & Routes > Preview URLs)."
           fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
@@ -74,10 +75,16 @@ jobs:
           VERSION: ${{ steps.build.outputs.version }}
         run: |
           marker="<!-- julian-preview -->"
-          if [ -n "$URL" ]; then preview="**Preview:** $URL"; else preview="**Preview:** version \`$VERSION_ID\` uploaded; Cloudflare has not issued a preview URL yet (it appears after the next production deploy enables preview URLs)."; fi
+          if [ -n "$URL" ]; then
+            preview="**Preview:** $URL"
+            note=" Google sign-in is disabled on previews (origin not allowed); the demo works."
+          else
+            preview="**Preview:** Cloudflare returned no preview URL for version \`$VERSION_ID\`. Preview URLs may be disabled for the Worker (Cloudflare dashboard: Worker > Settings > Domains & Routes > Preview URLs)."
+            note=""
+          fi
           body="$marker
           $preview
-          Version \`$VERSION\`. Google sign-in is disabled on previews (origin not allowed); the demo works."
+          Version \`$VERSION\`.$note"
           existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
             --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -n 1)
           if [ -n "$existing" ]; then
