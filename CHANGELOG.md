@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/krmznkr/julian/compare/v0.3.1...v0.3.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* show Ctrl in shortcut help on Linux and Windows ([#65](https://github.com/krmznkr/julian/issues/65)) ([ba14b11](https://github.com/krmznkr/julian/commit/ba14b11a198d2b7cdcfb284d738e179cee62f11c))
+
 ## [0.3.1](https://github.com/krmznkr/julian/compare/v0.3.0...v0.3.1) (2026-10-21)
 
 
