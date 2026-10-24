@@ -178,30 +178,55 @@ export function resolveDayTypeaheadInput({
     : { nextBuffer: "", commitDay: digit, pendingDay: null };
 }
 
-export const YEAR_GRID_SHORTCUTS = [
-  { keys: "↑ ↓ ← →", action: "Move active day (or event when day details are open)" },
-  { keys: "Shift ↑ ↓", action: "Move one week" },
-  { keys: "Shift ← →", action: "Move three months" },
-  { keys: "Alt ↑ ↓", action: "Move one month" },
-  { keys: "Alt ← →", action: "Move one year" },
-  { keys: "Enter", action: "Open day details, or open selected event when details are open" },
-  { keys: "Space", action: "Toggle day details" },
-  { keys: "[  ]", action: "Previous / next event (alternative)" },
-  { keys: "Home / End", action: "First / last day of month" },
-  { keys: "PgUp / PgDn", action: "Move one week" },
-  { keys: "1-31", action: "Jump to day in active month" },
-  { keys: "Shift 1-12", action: "Jump to month (keeps the active day)" },
-  { keys: "Shift Enter", action: "Open day in Google Calendar" },
-  { keys: "N", action: "Create an event on the active day" },
-  { keys: "E", action: "Edit the selected event (in day details)" },
-  { keys: "M", action: "Move the selected all-day event to another day (in day details)" },
-  { keys: "⌘⌫", action: "Delete the selected event (in day details)" },
-  { keys: "Escape", action: "Close day details" },
-  { keys: "T", action: "Jump to today" },
-  { keys: "R", action: "Refresh events" },
-  { keys: "Shift T", action: "Toggle theme" },
-  { keys: "S", action: "Toggle sidebar" },
-  { keys: "/", action: "Search events (Escape clears)" },
-  { keys: "?", action: "Show keyboard shortcuts dialog" },
-  { keys: "⌘K", action: "Open command palette" },
-] as const;
+/** The browser's platform string, or "" where there is no `navigator` (tests, SSR). */
+export function currentPlatform() {
+  return typeof navigator === "undefined" ? "" : navigator.platform;
+}
+
+/** Apple platforms label the Command key. Every chord also accepts Ctrl. */
+function isMacPlatform(platform: string) {
+  return /Mac|iPhone|iPod|iPad/.test(platform);
+}
+
+export function modKeyLabel(platform: string) {
+  return isMacPlatform(platform) ? "⌘" : "Ctrl";
+}
+
+/**
+ * Rows of the keyboard shortcuts dialog. Labels only: the handlers accept
+ * both Ctrl and Meta on every platform, so `platform` just picks the names
+ * people see on their keyboard.
+ */
+export function yearGridShortcuts(platform: string) {
+  const mac = isMacPlatform(platform);
+  return [
+    { keys: "↑ ↓ ← →", action: "Move active day (or event when day details are open)" },
+    { keys: "Shift ↑ ↓", action: "Move one week" },
+    { keys: "Shift ← →", action: "Move three months" },
+    { keys: "Alt ↑ ↓", action: "Move one month" },
+    { keys: "Alt ← →", action: "Move one year" },
+    { keys: "Enter", action: "Open day details, or open selected event when details are open" },
+    { keys: "Space", action: "Toggle day details" },
+    { keys: "[  ]", action: "Previous / next event (alternative)" },
+    { keys: "Home / End", action: "First / last day of month" },
+    { keys: "PgUp / PgDn", action: "Move one week" },
+    { keys: "1-31", action: "Jump to day in active month" },
+    { keys: "Shift 1-12", action: "Jump to month (keeps the active day)" },
+    { keys: "Shift Enter", action: "Open day in Google Calendar" },
+    { keys: "N", action: "Create an event on the active day" },
+    { keys: "E", action: "Edit the selected event (in day details)" },
+    { keys: "M", action: "Move the selected all-day event to another day (in day details)" },
+    {
+      keys: mac ? "⌘⌫" : "Ctrl Backspace",
+      action: "Delete the selected event (in day details)",
+    },
+    { keys: "Escape", action: "Close day details" },
+    { keys: "T", action: "Jump to today" },
+    { keys: "R", action: "Refresh events" },
+    { keys: "Shift T", action: "Toggle theme" },
+    { keys: "S", action: "Toggle sidebar" },
+    { keys: "/", action: "Search events (Escape clears)" },
+    { keys: "?", action: "Show keyboard shortcuts dialog" },
+    { keys: mac ? "⌘K" : "Ctrl K", action: "Open command palette" },
+  ];
+}

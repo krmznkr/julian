@@ -405,6 +405,9 @@ describe("DemoYearView on a narrow screen", () => {
     const commands = await screen.findByRole("dialog", { name: "Commands" });
     fireEvent.click(within(commands).getByText("Show keyboard shortcuts"));
     const help = await screen.findByRole("dialog", { name: "Keyboard shortcuts" });
+    // jsdom reports an empty navigator.platform, so the labels use Ctrl.
+    expect(within(help).getByText("Ctrl K")).toBeInTheDocument();
+    expect(within(help).getByText("Ctrl Backspace")).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.queryByRole("dialog", { name: "Commands" })).not.toBeInTheDocument(),
     );

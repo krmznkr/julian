@@ -1,17 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   applyArrowMoveStep,
   clampCell,
+  currentPlatform,
   digitFromKeyboardCode,
   firstDayOfMonth,
   isActivationKey,
   isAppChromeTarget,
   lastDayOfMonth,
+  modKeyLabel,
   moveCellByDays,
   moveCellByMonths,
   resolveDayTypeaheadInput,
   resolveArrowMoveStep,
   shouldHandleGridKeys,
+  yearGridShortcuts,
 } from "@/components/year-view/year-grid-keyboard";
 
 describe("year-grid keyboard helpers", () => {
@@ -159,5 +162,55 @@ describe("activation keys on app chrome", () => {
     expect(isAppChromeTarget(document.createElement("button"))).toBe(false);
     expect(isAppChromeTarget(null)).toBe(false);
     expect(isAppChromeTarget(window)).toBe(false);
+  });
+});
+
+describe("platform shortcut labels", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const keysFor = (platform: string, action: string) =>
+    yearGridShortcuts(platform).find((entry) => entry.action === action)?.keys;
+
+  it.each([
+    ["Linux x86_64", "Ctrl"],
+    ["Linux armv81", "Ctrl"],
+    ["Win32", "Ctrl"],
+    ["", "Ctrl"],
+    ["MacIntel", "⌘"],
+    ["iPhone", "⌘"],
+    ["iPad", "⌘"],
+  ])("labels the modifier on %j as %s", (platform, label) => {
+    expect(modKeyLabel(platform)).toBe(label);
+  });
+
+  it.each(["Linux x86_64", "Win32"])("names Ctrl, never ⌘, on %s", (platform) => {
+    expect(keysFor(platform, "Open command palette")).toBe("Ctrl K");
+    expect(keysFor(platform, "Delete the selected event (in day details)")).toBe("Ctrl Backspace");
+    expect(yearGridShortcuts(platform).some((entry) => entry.keys.includes("⌘"))).toBe(false);
+  });
+
+  it.each(["MacIntel", "iPhone"])("keeps the Command glyphs on %s", (platform) => {
+    expect(keysFor(platform, "Open command palette")).toBe("⌘K");
+    expect(keysFor(platform, "Delete the selected event (in day details)")).toBe("⌘⌫");
+    expect(yearGridShortcuts(platform).some((entry) => entry.keys.includes("Ctrl"))).toBe(false);
+  });
+
+  it("lists the same actions on every platform", () => {
+    const actions = (platform: string) => yearGridShortcuts(platform).map((entry) => entry.action);
+    expect(actions("Win32")).toEqual(actions("MacIntel"));
+  });
+
+  it("reads navigator.platform", () => {
+    vi.stubGlobal("navigator", { platform: "MacIntel" });
+    expect(currentPlatform()).toBe("MacIntel");
+  });
+
+  it("falls back to Ctrl labels without a navigator", () => {
+    vi.stubGlobal("navigator", undefined);
+    expect(currentPlatform()).toBe("");
+    expect(modKeyLabel(currentPlatform())).toBe("Ctrl");
+    expect(keysFor(currentPlatform(), "Open command palette")).toBe("Ctrl K");
   });
 });

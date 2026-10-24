@@ -1,4 +1,8 @@
-import { YEAR_GRID_SHORTCUTS } from "@/components/year-view/year-grid-keyboard";
+import {
+  currentPlatform,
+  modKeyLabel,
+  yearGridShortcuts,
+} from "@/components/year-view/year-grid-keyboard";
 import {
   CommandDialog,
   CommandEmpty,
@@ -9,15 +13,6 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-function isMacPlatform() {
-  if (typeof navigator === "undefined") return false;
-  return /Mac|iPhone|iPod|iPad/.test(navigator.platform);
-}
-
-function modKeyLabel() {
-  return isMacPlatform() ? "⌘" : "Ctrl";
-}
 
 function isInOpenDialog(element: Element | null) {
   return element?.closest("[data-slot='dialog-content'][data-state='open']") != null;
@@ -34,7 +29,7 @@ export function CommandPaletteTrigger({ open, onOpen }: { open: boolean; onOpen:
     >
       <span className="truncate">Commands</span>
       <kbd className="ml-auto rounded border border-border/60 bg-background/80 px-1 py-0.5 font-mono text-[10px] leading-none text-muted-foreground">
-        {modKeyLabel()}K
+        {modKeyLabel(currentPlatform())}K
       </kbd>
     </button>
   );
@@ -109,7 +104,7 @@ export function TopBarKeyboardShortcuts({
           <DialogTitle>Keyboard shortcuts</DialogTitle>
         </DialogHeader>
         <dl className="grid max-h-[min(60vh,28rem)] gap-x-6 gap-y-2 overflow-y-auto sm:grid-cols-2">
-          {YEAR_GRID_SHORTCUTS.map((entry) => (
+          {yearGridShortcuts(currentPlatform()).map((entry) => (
             <div
               key={`${entry.keys}-${entry.action}`}
               className="flex items-start justify-between gap-3 text-sm"
