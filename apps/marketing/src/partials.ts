@@ -5,7 +5,7 @@
 // static HTML with no client JavaScript.
 import { GOOGLE_SCOPES } from "@julian/google/config";
 
-export const REPOSITORY_URL = "https://github.com/krmznkr/julian";
+const REPOSITORY_URL = "https://github.com/krmznkr/julian";
 export const ISSUES_URL = `${REPOSITORY_URL}/issues`;
 
 // Why each requested scope is needed, in the words the privacy page uses.

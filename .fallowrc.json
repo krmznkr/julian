@@ -15,6 +15,7 @@
     "apps/marketing/vite.config.ts",
     "apps/marketing/vitest.config.ts",
     "packages/*/vitest.config.ts",
+    "packages/release/src/cli.ts",
     "infra/alchemy.run.ts",
     "infra/scripts/generate-wrangler.ts",
     "infra/vitest.config.ts"

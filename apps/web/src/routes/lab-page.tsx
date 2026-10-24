@@ -86,8 +86,6 @@ const sampleEvents: CalendarEvent[] = [
 
 const noop = () => {};
 
-// Loaded through a dynamic import in router.tsx, which fallow does not follow.
-// fallow-ignore-next-line unused-export
 export function LabPage() {
   const month = useMemo(() => buildMonthSegments(sampleEvents, 2026)[8], []);
   const eventMap = useMemo(

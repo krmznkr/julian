@@ -24,13 +24,13 @@ export interface Env {
   APP_COMMIT?: string;
 }
 
-export interface BuildInfo {
+interface BuildInfo {
   readonly version: string;
   readonly channel: string;
   readonly commit: string;
 }
 
-export interface WorkerEnvShape {
+interface WorkerEnvShape {
   readonly assets: Env["ASSETS"];
   readonly googleClientId: string;
   // An unset secret becomes an empty value: it is reported per request as

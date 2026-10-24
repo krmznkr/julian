@@ -1,6 +1,8 @@
 // Single source of truth for the Cloudflare setup. The Alchemy stack reads it
 // directly; apps/edge/wrangler.jsonc is rendered from it (see wrangler.ts).
 
+// Reference value for the Cloudflare account; nothing imports it yet.
+// fallow-ignore-next-line unused-export
 export const ACCOUNT_ID = "93527c9983d1c08638cb9c1de99f0450";
 export const ZONE_NAME = "krmznkr.com";
 export const COMPATIBILITY_DATE = "2026-07-04";

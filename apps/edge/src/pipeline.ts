@@ -24,7 +24,7 @@ import { serveSite } from "./site";
 
 // Copies a response and layers the hardening headers on top. Existing headers
 // (content-type, cache-control from the assets binding, etc.) are preserved.
-export const withSecurityHeaders = (response: Response): Response => {
+const withSecurityHeaders = (response: Response): Response => {
   const headers = new Headers(response.headers);
   Object.entries(SECURITY_HEADERS).forEach(([key, value]) => headers.set(key, value));
   return new Response(response.body, {
@@ -40,7 +40,7 @@ const json = (data: unknown, status: number): Response =>
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 
-export const toResponse = (error: EdgeError): Response => {
+const toResponse = (error: EdgeError): Response => {
   switch (error._tag) {
     case "BlockedClient":
       return new Response("Forbidden", { status: 403 });
@@ -56,14 +56,14 @@ export const toResponse = (error: EdgeError): Response => {
   }
 };
 
-export const VERSION_PATH = "/version.json";
+const VERSION_PATH = "/version.json";
 
 const serveVersion = Effect.fn("edge.version")(function* () {
   const { build } = yield* WorkerEnv;
   return json(build, 200);
 });
 
-export const handle = Effect.fn("edge.request")(function* (request: Request) {
+const handle = Effect.fn("edge.request")(function* (request: Request) {
   yield* rejectBots(request);
   yield* enforceSiteRateLimit(request);
   const { pathname } = new URL(request.url);

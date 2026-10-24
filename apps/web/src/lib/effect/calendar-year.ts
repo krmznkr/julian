@@ -13,7 +13,7 @@ import { GoogleCalendarApi } from "@julian/google/google-calendar-api";
 import { GoogleTasks, type GoogleTasksShape } from "@julian/google/google-tasks";
 import { AppConfig } from "@julian/google/config";
 
-export interface YearData {
+interface YearData {
   readonly calendars: ReadonlyArray<CalendarSummary>;
   readonly selectedCalendarIds: ReadonlyArray<string>;
   readonly events: ReadonlyArray<CalendarEvent>;

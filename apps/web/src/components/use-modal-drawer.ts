@@ -23,13 +23,13 @@ function canTakeFocus(element: HTMLElement) {
 }
 
 /** The drawer's Tab stops, in document order. */
-export function tabStopsIn(container: HTMLElement): HTMLElement[] {
+function tabStopsIn(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
     (element) => element.tabIndex >= 0 && canTakeFocus(element),
   );
 }
 
-export function useMediaQuery(query: string) {
+function useMediaQuery(query: string) {
   const subscribe = useCallback(
     (onChange: () => void) => {
       const list = window.matchMedia(query);

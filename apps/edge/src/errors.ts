@@ -11,7 +11,7 @@ export class BlockedClient extends Schema.TaggedError<BlockedClient>()("BlockedC
 export class SiteRateLimited extends Schema.TaggedError<SiteRateLimited>()("SiteRateLimited", {}) {}
 
 // JSON rejections for the OAuth proxy, in Google's `error` / `error_description` shape.
-export class OAuthRejected extends Schema.TaggedError<OAuthRejected>()("OAuthRejected", {
+class OAuthRejected extends Schema.TaggedError<OAuthRejected>()("OAuthRejected", {
   status: Schema.Number,
   error: Schema.String,
   description: Schema.optional(Schema.String),
