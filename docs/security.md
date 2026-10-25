@@ -161,6 +161,13 @@ There is intentionally **no** custom `apps/web/public/robots.txt`: a blanket `Di
 would stop crawlers from ever reading the `noindex` header (leaving bare URLs
 indexable) and conflicted with the managed file.
 
+Link previews are separate from search. The landing page, `/demo` and the app
+shell carry Open Graph and `twitter:card` tags with an absolute
+`/og-image.png` URL on the build's channel origin (`packages/release/src/share.ts`),
+so a link pasted into LinkedIn, Slack, Discord or iMessage shows a title, a
+description and an image. Those bots are not on the blocked list, and the
+`noindex` signals above stay in place. There is no sitemap.
+
 ### 6. Secret handling — `README.md`, `.github/actions/build-web`, `scripts/deploy-web.sh`
 
 - `VITE_GOOGLE_CLIENT_ID` is **public** by design (OAuth client identifier).
