@@ -132,6 +132,31 @@ describe("site routing", () => {
     expect(html.status).toBe(404);
   });
 
+  it.each([
+    "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+    "LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)",
+    "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)",
+    "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)",
+    "Twitterbot/1.0",
+  ])("lets the link-preview bot %j fetch /demo and the share image", async (ua) => {
+    const assets = vi.fn<Env["ASSETS"]["fetch"]>(async (request) =>
+      new URL(request.url).pathname === "/og-image.png"
+        ? new Response("png", { headers: { "Content-Type": "image/png" } })
+        : new Response("demo", { headers: { "Content-Type": "text/html" } }),
+    );
+    const page = await serve(
+      new Request(`${ORIGIN}/demo`, { headers: { "User-Agent": ua, Accept: "text/html" } }),
+      makeEnv(assets),
+    );
+    expect(page.status).toBe(200);
+    const image = await serve(
+      new Request(`${ORIGIN}/og-image.png`, { headers: { "User-Agent": ua, Accept: "image/*" } }),
+      makeEnv(assets),
+    );
+    expect(image.status).toBe(200);
+    expect(image.headers.get("Content-Type")).toBe("image/png");
+  });
+
   it("serves the marketing .html files as they are", async () => {
     const response = await serve(
       new Request(`${ORIGIN}/home.html`, { headers: { "User-Agent": "Mozilla/5.0" } }),
