@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/krmznkr/julian/compare/v0.3.2...v0.3.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* **ci:** stop promising preview URLs after the next deploy ([#67](https://github.com/krmznkr/julian/issues/67)) ([6b64e59](https://github.com/krmznkr/julian/commit/6b64e59fb1cbfa8378bf0badaf1ca7ab578fad04))
+* **deps:** patch undici, body-parser, vitest and fallow advisories ([#69](https://github.com/krmznkr/julian/issues/69)) ([518b0ea](https://github.com/krmznkr/julian/commit/518b0eafd449c8aafee2dd66583f9f755c9091fe))
+
 ## [0.3.2](https://github.com/krmznkr/julian/compare/v0.3.1...v0.3.2) (2026-10-24)
 
 
