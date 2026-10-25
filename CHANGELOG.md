@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/krmznkr/julian/compare/v0.3.3...v0.4.0) (2026-10-25)
+
+
+### Features
+
+* add link-preview metadata and share image ([#73](https://github.com/krmznkr/julian/issues/73)) ([fb92a55](https://github.com/krmznkr/julian/commit/fb92a55fc2a75d1ad86749388d475a1089ba6edf))
+
+
+### Bug Fixes
+
+* **deps:** override transitive zod to 4.6.7 for GHSA-mrhx-c7xc-m3w5 ([#71](https://github.com/krmznkr/julian/issues/71)) ([e226f7f](https://github.com/krmznkr/julian/commit/e226f7ffe9d82fee45dd90279d22b2c4161dbbbb))
+
 ## [0.3.3](https://github.com/krmznkr/julian/compare/v0.3.2...v0.3.3) (2026-10-24)
 
 
