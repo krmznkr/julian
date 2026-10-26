@@ -44,3 +44,18 @@ it("offers the current year, home, and history back when a page is missing", () 
   fireEvent.click(screen.getByRole("button", { name: "Go back" }));
   expect(back).toHaveBeenCalledOnce();
 });
+
+it.each([null, "fetch failed", { message: { private: "calendar details" } }])(
+  "keeps route recovery available for a non-Error throw: %j",
+  (error) => {
+    const reset = vi.fn<() => void>();
+    render(<RouteErrorScreen error={error} reset={reset} context="Calendar" />);
+    expect(
+      screen.getByRole("heading", { name: "We couldn't finish loading calendar" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("fetch failed")).not.toBeInTheDocument();
+    expect(screen.queryByText("calendar details")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(reset).toHaveBeenCalledOnce();
+  },
+);

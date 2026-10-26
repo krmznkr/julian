@@ -5,7 +5,7 @@ export function RouteErrorScreen({
   reset,
   context,
 }: {
-  error: Error;
+  error: unknown;
   reset: () => void;
   context: string;
 }) {

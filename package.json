@@ -28,20 +28,20 @@
     "clean:artifacts": "rm -rf apps/*/dist apps/*/coverage packages/*/coverage apps/e2e/playwright-report apps/e2e/test-results apps/e2e/.lighthouseci .turbo **/*.tsbuildinfo"
   },
   "devDependencies": {
-    "@effect/language-service": "0.87.4",
+    "@effect/language-service": "0.87.5",
     "@types/node": "26.6.5",
-    "@typescript-eslint/parser": "^8.71.2",
+    "@typescript-eslint/parser": "^8.72.0",
     "@vitest/coverage-v8": "4.1.12",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "eslint-plugin-functional": "^10.0.1",
-    "fallow": "3.34.0",
+    "fallow": "3.35.0",
     "husky": "9.1.7",
     "lint-staged": "17.6.0",
-    "oxfmt": "0.62.0",
-    "oxlint": "1.76.0",
+    "oxfmt": "0.74.0",
+    "oxlint": "1.89.0",
     "typescript": "6.0.3",
     "vitest": "4.1.12",
-    "turbo": "2.11.8"
+    "turbo": "2.11.10"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

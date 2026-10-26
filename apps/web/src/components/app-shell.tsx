@@ -23,13 +23,13 @@ export default function AppShell({
   onRestoreFocusFallback?: () => void;
   children: ReactNode;
 }) {
-  const drawer = useModalDrawer({
+  const { drawerRef, backdropRef, onKeyDown, modal } = useModalDrawer({
     open: mobileSidebarOpen,
     onOpenChange: onMobileSidebarOpenChange,
     onRestoreFocusFallback,
   });
   // While the drawer is a modal, everything behind it is out of reach.
-  const behindModal = drawer.modal;
+  const behindModal = modal;
 
   return (
     <div className="flex h-[100svh] flex-col overflow-hidden bg-background text-foreground">
@@ -43,7 +43,7 @@ export default function AppShell({
       ) : null}
       <div className="flex-1 min-h-0 flex overflow-hidden">
         <button
-          ref={drawer.backdropRef}
+          ref={backdropRef}
           type="button"
           className={cn(
             "fixed inset-0 z-40 bg-black/40 transition-opacity print:hidden md:hidden",
@@ -56,7 +56,7 @@ export default function AppShell({
           tabIndex={-1}
         />
         <aside
-          ref={drawer.drawerRef}
+          ref={drawerRef}
           className={cn(
             "fixed inset-y-0 left-0 z-50 w-72 border-r border-border/60 bg-card shadow-xl transition-transform print:hidden md:hidden",
             mobileSidebarOpen ? "translate-x-0" : "-translate-x-full",
@@ -69,7 +69,7 @@ export default function AppShell({
           inert={!mobileSidebarOpen}
           // Focusable as a fallback target, never a Tab stop of its own.
           tabIndex={-1}
-          onKeyDown={drawer.onKeyDown}
+          onKeyDown={onKeyDown}
           data-mobile-sidebar=""
         >
           <div className="h-full overflow-y-auto px-4 py-4 scrollbar-minimal" data-sidebar-root="">
