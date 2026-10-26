@@ -8,7 +8,7 @@ export function GlobalErrorScreen({
   description = "Please try again. If this keeps happening, refresh the page.",
   homeLabel = "Go home",
 }: {
-  error?: Error | null;
+  error?: unknown;
   onRetry?: () => void;
   eyebrow?: string;
   title?: string;
@@ -23,7 +23,7 @@ export function GlobalErrorScreen({
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-card-foreground">{title}</h1>
         <p className="mt-4 text-sm text-muted-foreground">{description}</p>
-        {error?.message ? (
+        {error instanceof Error && error.message ? (
           <p className="mt-3 rounded-xl border border-border/70 bg-muted/35 px-4 py-3 text-left text-xs text-muted-foreground">
             {error.message}
           </p>
