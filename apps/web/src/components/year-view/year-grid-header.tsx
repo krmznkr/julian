@@ -29,7 +29,10 @@ export default function YearGridHeader({
   visibleMonths: MonthSegments[];
 }) {
   return (
-    <div className="sticky top-0 z-20 min-w-max border-b border-border/80 bg-background/95 shadow-sm backdrop-blur">
+    <div
+      data-year-grid-header=""
+      className="sticky top-0 z-20 min-w-max border-b border-border/80 bg-background/95 shadow-sm backdrop-blur"
+    >
       <div className="flex min-w-max gap-1" style={{ height: YEAR_GRID_MONTH_HEADER_HEIGHT }}>
         <div
           className="sticky left-0 z-20 w-[var(--day-gutter-width)] shrink-0 border-r border-border/80 bg-background/90 backdrop-blur"

@@ -173,22 +173,56 @@ const DayPanelList = memo(function DayPanelList({
   );
 });
 
-function getPanelPosition(anchorRect: DayPanelAnchorRect) {
+type PanelPosition = { left: number; maxHeight: number } & (
+  | { top: number; bottom?: never }
+  | { bottom: number; top?: never }
+);
+
+/**
+ * Beside the day, starting at its row when the tallest panel fits below it.
+ * Lower down, the panel grows upward from the row's bottom edge instead, so it
+ * stays next to its day whatever its height rather than parking at a fixed
+ * height far above a day near the bottom of the screen.
+ *
+ * On screens too narrow for the panel to sit beside the day it overlays the
+ * grid, so it keeps a fixed height clear of the bottom edge instead.
+ */
+export function getPanelPosition(
+  anchorRect: DayPanelAnchorRect,
+  viewport: { width: number; height: number } = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  },
+): PanelPosition {
   const panelWidth = 544;
-  const panelMaxHeight = Math.min(window.innerHeight * 0.6, 480);
+  const panelMaxHeight = Math.min(viewport.height * 0.6, 480);
   const sideOffset = 6;
   const padding = 8;
   const fitsRight =
-    anchorRect.left + anchorRect.width + sideOffset + panelWidth <= window.innerWidth - padding;
+    anchorRect.left + anchorRect.width + sideOffset + panelWidth <= viewport.width - padding;
+  const fitsLeft = anchorRect.left - panelWidth - sideOffset >= padding;
   const left = fitsRight
     ? anchorRect.left + anchorRect.width + sideOffset
     : Math.max(padding, anchorRect.left - panelWidth - sideOffset);
-  const top = Math.min(
-    anchorRect.top,
-    Math.max(padding, window.innerHeight - panelMaxHeight - padding),
-  );
 
-  return { left, top, maxHeight: panelMaxHeight };
+  if (!fitsRight && !fitsLeft) {
+    const top = Math.min(
+      anchorRect.top,
+      Math.max(padding, viewport.height - panelMaxHeight - padding),
+    );
+    return { left, top, maxHeight: panelMaxHeight };
+  }
+
+  if (anchorRect.top + panelMaxHeight <= viewport.height - padding) {
+    return { left, top: anchorRect.top, maxHeight: panelMaxHeight };
+  }
+
+  const bottom = Math.max(padding, viewport.height - anchorRect.top - anchorRect.height);
+  return {
+    left,
+    bottom,
+    maxHeight: Math.min(panelMaxHeight, viewport.height - bottom - padding),
+  };
 }
 
 export function DayHoverPopover({
@@ -235,6 +269,7 @@ export function DayHoverPopover({
       style={{
         left: panelPosition.left,
         top: panelPosition.top,
+        bottom: panelPosition.bottom,
         maxHeight: panelPosition.maxHeight,
       }}
     >
