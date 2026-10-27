@@ -3,10 +3,11 @@
 // One Worker serves two static builds from one assets directory: the marketing
 // pages (`/home`, `/privacy`, `/terms`, built as `home.html`, `privacy.html` and
 // `terms.html`) and the calendar app (everything else, through the SPA fallback
-// to `index.html`).
+// to `index.html`; `/demo` has its own `demo.html` with the demo's share tags).
 //
 //   /            marketing landing, or 302 to /{yyyy} when the session hint is set
 //   /year/...    301 to the same path without `/year`, keeping the query
+//   /demo/...    the `/demo` page for any route below it, without a redirect
 //   file paths   a real 404 when no such asset exists and it is not a navigation
 //   anything     the assets binding
 import { hasSessionHint } from "@julian/security/session-hint";
@@ -16,6 +17,8 @@ import { WorkerEnv } from "./env";
 const MARKETING_HOME = "/home";
 
 const LEGACY_YEAR_PATH = /^\/year\/(\d{4})(\/.*)?$/;
+
+const DEMO = "/demo";
 
 const redirect = (location: string, status: 301 | 302, headers: Record<string, string> = {}) =>
   new Response(null, { status, headers: { Location: location, ...headers } });
@@ -50,6 +53,19 @@ const looksLikeFile = (pathname: string): boolean => {
   );
 };
 
+// `/demo/2026?month=10&day=27` is the URL a visitor copies after the app's
+// redirect from `/demo`. Serve it `demo.html`, so link previews show the demo's
+// title and canonical `/demo` URL instead of the generic shell's. The address
+// bar and query stay as they are. `/demo/` itself is left to the assets
+// binding (it redirects to `/demo`), and file-like paths keep the 404 rules.
+const isDemoRoute = (pathname: string): boolean =>
+  pathname.startsWith(`${DEMO}/`) && pathname.length > DEMO.length + 1 && !looksLikeFile(pathname);
+
+const demoPage = (request: Request): Request => {
+  const url = new URL(request.url);
+  return new Request(new URL(`${DEMO}${url.search}`, url), request);
+};
+
 const isNavigation = (request: Request): boolean => {
   const mode = request.headers.get("Sec-Fetch-Mode");
   return mode === null
@@ -74,6 +90,8 @@ export const serveSite = Effect.fn("edge.site")(function* (request: Request) {
 
   const legacy = LEGACY_YEAR_PATH.exec(url.pathname);
   if (legacy) return redirect(`/${legacy[1]}${legacy[2] ?? ""}${url.search}`, 301);
+
+  if (isDemoRoute(url.pathname)) return yield* fetchAsset(demoPage(request));
 
   const asset = yield* fetchAsset(request);
   if (looksLikeFile(url.pathname) && !isNavigation(request) && isSpaFallback(url.pathname, asset)) {

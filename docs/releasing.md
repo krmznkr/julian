@@ -82,6 +82,10 @@ Management Read if the Alchemy plan should run.
 CI also boots the Worker with `wrangler dev` against the fresh build
 (`scripts/smoke-edge.sh`) and checks `/version.json` and `/` for a 200 with the
 security headers, which catches entry-module errors that only workerd reports.
+It also checks that `/demo` and deep demo links such as
+`/demo/2026?month=10&day=27&details=false` carry the demo title and `og:url`
+`/demo`, that `/2026` keeps the generic shell, and that a missing
+`/demo/nope.js` script is a 404.
 
 ### Preview (every PR)
 

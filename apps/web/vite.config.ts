@@ -22,7 +22,8 @@ const DEMO_TITLE = "Julian demo · Your whole year on one screen";
 
 // Link-preview tags for the app shell, plus `demo.html`: the same shell under
 // its own title, which static assets serve at `/demo` as they serve `home.html`
-// at `/home`. Deeper demo paths still get the shell through the SPA fallback.
+// at `/home`. The Worker (apps/edge/src/site.ts) also serves it for deeper demo
+// routes such as `/demo/2026`, so a copied demo link keeps the demo's tags.
 const sharePreviews = (): Plugin => ({
   name: "julian:share-previews",
   apply: "build",

@@ -76,6 +76,7 @@ flowchart TD
   root -->|"yes"| year["302 /{yyyy}"] --> headers
   root -->|"no"| asset
   site -->|"/year/*"| legacy["301 to /{yyyy}…"] --> headers
+  site -->|"/demo/{route}"| demo["ASSETS.fetch /demo<br/>same URL, demo share tags"] --> headers
   site -->|"anything else"| asset --> headers
   oauth -->|"yes"| origin
   origin -->|"no"| reject["4xx JSON response"]
@@ -282,7 +283,7 @@ One domain serves two builds. The marketing pages are static HTML from
 | `/{yyyy}`                     | app       | Lazy-loaded year view; the current year adds today's month/day to the URL. Signed out, it offers sign-in or the demo |
 | `/{yyyy}/{mm}`                | app       | Redirects to `/{yyyy}?month=mm&day=1`                                     |
 | `/year/*`                     | Worker    | `301` to the same path without `/year`, query kept (legacy bookmarks)     |
-| `/demo`, `/demo/{yyyy}`       | app       | The real year view on sample data; `/demo` opens the current year         |
+| `/demo`, `/demo/{yyyy}`       | app       | The real year view on sample data; `/demo` opens the current year. The Worker serves route-like `/demo/…` paths the `/demo` page, keeping the external URL and query while supplying the demo's title and canonical `og:url` `/demo`. File-like paths keep their existing handling |
 | `/demo/{yyyy}/{mm}`           | app       | Redirects to `/demo/{yyyy}?month=mm&day=1`                                |
 | `/auth/callback`              | app       | Validates OAuth state and exchanges the single-use code                   |
 | `/api/oauth/*`                | Worker    | Token exchange and refresh                                                |
