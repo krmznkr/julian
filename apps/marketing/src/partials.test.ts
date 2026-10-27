@@ -3,9 +3,26 @@ import path from "node:path";
 import { GOOGLE_SCOPES } from "@julian/google/config";
 import { withShareMeta } from "@julian/release/share";
 import { describe, expect, it } from "vitest";
-import { ISSUES_URL, SCOPE_PURPOSES, renderPartials, renderScopes } from "./partials";
+import {
+  ISSUES_URL,
+  SCOPE_PURPOSES,
+  breakAtSlashes,
+  renderPartials,
+  renderScopes,
+} from "./partials";
 
 const ORIGIN = "https://julian.krmznkr.com";
+
+// What a reader sees and copies: `<wbr>` adds no text, and entities decode.
+const visibleText = (html: string) =>
+  html
+    .replaceAll("<wbr>", "")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&amp;", "&");
+
+const codeContents = (html: string) =>
+  [...html.matchAll(/<code>(.*?)<\/code>/g)].map(([, inner]) => inner ?? "");
 
 // As the build does it: preview tags, then the shared chrome.
 const rendered = (name: string) =>
@@ -20,8 +37,27 @@ describe("marketing partials", () => {
   it("explains every scope sign-in requests, and only those", () => {
     expect(new Set(Object.keys(SCOPE_PURPOSES))).toEqual(new Set(GOOGLE_SCOPES));
     const html = renderScopes();
-    GOOGLE_SCOPES.forEach((scope) => expect(html).toContain(`<code>${scope}</code>`));
+    expect(codeContents(html).map(visibleText)).toEqual(GOOGLE_SCOPES);
     expect(html).not.toContain("userinfo");
+  });
+
+  it("lets each scope wrap only at a path boundary, keeping the scope name whole", () => {
+    codeContents(renderScopes()).forEach((code) => {
+      const lines = code.split("<wbr>").filter((line) => line !== "");
+      // Every possible line ends at a slash, and "https://" stays together.
+      lines.slice(0, -1).forEach((line) => expect(line).toMatch(/[^/]\/+$/));
+      expect(lines[0]).toBe("https://");
+      expect(lines.at(-1)).toMatch(/^(calendar|tasks)\.[a-z]+$/);
+    });
+  });
+
+  it("escapes a URL while marking its path breaks", () => {
+    const url = "https://example.test/a<b>&c//d";
+    const html = breakAtSlashes(url);
+    expect(html).not.toMatch(/<(?!wbr>)/);
+    expect(html).not.toMatch(/&(?!(amp|lt|gt);)/);
+    expect(visibleText(html)).toBe(url);
+    expect(html.split("<wbr>")).toEqual(["https://", "example.test/", "a&lt;b&gt;&amp;c//", "d"]);
   });
 
   it("refuses a scope the privacy page does not explain", () => {
@@ -49,7 +85,9 @@ describe("marketing partials", () => {
 
   it("states the privacy facts", () => {
     const html = rendered("privacy");
-    expect(html).toContain("<code>https://www.googleapis.com/auth/calendar.events</code>");
+    expect(codeContents(html).map(visibleText)).toContain(
+      "https://www.googleapis.com/auth/calendar.events",
+    );
     expect(html).toMatch(/local storage/);
     expect(html).toMatch(/Cloudflare/);
   });

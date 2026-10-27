@@ -21,6 +21,11 @@ export const SCOPE_PURPOSES: Readonly<Record<string, string>> = {
 const escapeHtml = (text: string) =>
   text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
+// Escapes a URL and lets it wrap only after a slash, never between the two of
+// "//". A narrow screen then breaks the scope at a path boundary instead of
+// mid-word. `<wbr>` adds no text, so the visible and copied URL stay exact.
+export const breakAtSlashes = (url: string) => escapeHtml(url).replaceAll(/\/+/g, "$&<wbr>");
+
 const header = `<header class="site-header">
   <a class="brand" href="/home" aria-label="Julian home"><svg width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M8 32C14.2667 21.6 22.9333 16 32 16C41.0667 16 49.7333 21.6 56 32C49.7333 42.4 41.0667 48 32 48C22.9333 48 14.2667 42.4 8 32Z" stroke="currentColor" stroke-width="4.75" stroke-linecap="round" stroke-linejoin="round" /><circle cx="32" cy="32" r="8.25" fill="currentColor" /></svg>Julian</a>
   <nav aria-label="Main">
@@ -42,7 +47,7 @@ export function renderScopes(scopes: ReadonlyArray<string> = GOOGLE_SCOPES): str
   const items = scopes.map((scope) => {
     const purpose = SCOPE_PURPOSES[scope];
     if (purpose === undefined) throw new Error(`No privacy wording for the scope ${scope}`);
-    return `  <li><code>${escapeHtml(scope)}</code>: to ${escapeHtml(purpose)}.</li>`;
+    return `  <li><code>${breakAtSlashes(scope)}</code>: to ${escapeHtml(purpose)}.</li>`;
   });
   return `<ul class="scopes">\n${items.join("\n")}\n</ul>`;
 }
