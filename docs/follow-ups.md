@@ -29,6 +29,17 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
       (`ce6890d`), no event or trace had been seen in Sentry as of 2026-10-20
       02:41:40Z. Confirm one arrives tagged with the release (see
       [`observability.md`](observability.md#verification)).
+- [ ] **Drop the `@puppeteer/browsers` override once LHCI moves on.**
+      `@lhci/cli` 0.15.1 pins `lighthouse` 12.6.1, which pulls
+      `puppeteer-core` 24.43.1 and with it `@puppeteer/browsers` 2.13.2 and
+      the unpatched `extract-zip` 2.0.1 (CVE-2026-56876, CVE-2026-19693).
+      The root `pnpm.overrides` entry
+      `puppeteer-core@24.43.1>@puppeteer/browsers` swaps in 3.2.6, the line
+      that replaced `extract-zip`. It exports the same symbols puppeteer-core
+      24 imports, and Lighthouse only uses puppeteer-core to connect to the
+      Chrome that chrome-launcher starts. When an `@lhci/cli` release ships
+      Lighthouse 13 (puppeteer-core 25 already uses `@puppeteer/browsers` 3),
+      upgrade it, delete the override, and run `pnpm test:lighthouse`.
 - [x] **Check the nightly custom domain.** `julian-nightly.krmznkr.com`
       resolves and serves the nightly channel, verified 2026-10-19.
 - [x] **Set the nightly Worker secret.** `nightly.yml` now copies the
