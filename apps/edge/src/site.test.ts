@@ -73,16 +73,136 @@ describe("site routing", () => {
     expect(assets).not.toHaveBeenCalled();
   });
 
-  it.each(["/home", "/privacy", "/terms", "/2026", "/2026/03", "/demo/2026", "/year/abc"])(
-    "hands %s to the assets binding unchanged",
-    async (path) => {
+  it.each([
+    "/home",
+    "/privacy",
+    "/terms",
+    "/2026",
+    "/2026/03",
+    "/year/abc",
+    "/demo",
+    "/demo/",
+    "/demo-other",
+    "/democracy",
+    "/calendar",
+    "/auth/callback",
+  ])("hands %s to the assets binding unchanged", async (path) => {
+    const assets = echoAssets();
+    const response = await serve(get(path, "julian_session=1"), makeEnv(assets));
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe(`asset ${path}`);
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=60");
+  });
+
+  it.each([
+    ["/demo/2026", ""],
+    ["/demo/2026/", ""],
+    ["/demo/2026/03", ""],
+    ["/demo/2026", "?month=10&day=27&details=false"],
+    ["/demo/2026/03", "?month=3&day=10"],
+  ])("serves the /demo page for the deep demo link %s%s", async (path, search) => {
+    const assets = echoAssets();
+    const response = await serve(get(`${path}${search}`, "julian_session=1"), makeEnv(assets));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Location")).toBeNull();
+    expect(await response.text()).toBe("asset /demo");
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=60");
+    expect(response.headers.get("Content-Security-Policy")).not.toBeNull();
+    expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+    expect(assets).toHaveBeenCalledOnce();
+    const [forwarded] = assets.mock.calls[0] ?? [];
+    expect(forwarded?.url).toBe(`${ORIGIN}/demo${search}`);
+    expect(forwarded?.headers.get("Cookie")).toBe("julian_session=1");
+    expect(forwarded?.headers.get("User-Agent")).toBe("Mozilla/5.0");
+  });
+
+  it("keeps the method of a HEAD request for a deep demo link", async () => {
+    const assets = vi.fn<Env["ASSETS"]["fetch"]>(
+      async () => new Response(null, { headers: { "Content-Type": "text/html" } }),
+    );
+    const response = await serve(
+      new Request(`${ORIGIN}/demo/2026`, {
+        method: "HEAD",
+        headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
+      }),
+      makeEnv(assets),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("text/html");
+    const [forwarded] = assets.mock.calls[0] ?? [];
+    expect(forwarded?.method).toBe("HEAD");
+    expect(new URL(forwarded?.url ?? "").pathname).toBe("/demo");
+  });
+
+  it.each([
+    "/demo/nope.js",
+    "/demo/2026/app.css",
+    "/demo/.env",
+    "/demo/.git/config",
+    "/demo/_headers",
+  ])("keeps the 404 for a non-navigation request to the missing file %s", async (path) => {
+    const assets = echoAssets();
+    const response = await serve(
+      new Request(`${ORIGIN}${path}`, {
+        headers: { "User-Agent": "Mozilla/5.0", "Sec-Fetch-Mode": "no-cors" },
+      }),
+      makeEnv(assets),
+    );
+    expect(response.status).toBe(404);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("Content-Security-Policy")).not.toBeNull();
+    expect(new URL(assets.mock.calls[0]?.[0].url ?? "").pathname).toBe(path);
+  });
+
+  it("does not turn a navigation to a file-like demo path into the demo page", async () => {
+    const response = await serve(
+      new Request(`${ORIGIN}/demo/nope.js`, {
+        headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html,*/*" },
+      }),
+      makeEnv(echoAssets()),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("asset /demo/nope.js");
+  });
+
+  it("serves an existing file below /demo as it is", async () => {
+    const assets = vi.fn<Env["ASSETS"]["fetch"]>(
+      async () => new Response("png", { headers: { "Content-Type": "image/png" } }),
+    );
+    const response = await serve(
+      new Request(`${ORIGIN}/demo/shot.png`, {
+        headers: { "User-Agent": "Mozilla/5.0", "Sec-Fetch-Mode": "no-cors" },
+      }),
+      makeEnv(assets),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("image/png");
+    expect(new URL(assets.mock.calls[0]?.[0].url ?? "").pathname).toBe("/demo/shot.png");
+  });
+
+  it.each(["", "curl/8.0", "Mozilla/5.0 (compatible; AhrefsBot/7.0)"])(
+    "still blocks %j on a deep demo link before any asset fetch",
+    async (ua) => {
       const assets = echoAssets();
-      const response = await serve(get(path, "julian_session=1"), makeEnv(assets));
-      expect(response.status).toBe(200);
-      expect(await response.text()).toBe(`asset ${path}`);
-      expect(response.headers.get("Cache-Control")).toBe("public, max-age=60");
+      const response = await serve(
+        new Request(`${ORIGIN}/demo/2026?month=10`, { headers: { "User-Agent": ua } }),
+        makeEnv(assets),
+      );
+      expect(response.status).toBe(403);
+      expect(response.headers.get("Content-Security-Policy")).not.toBeNull();
+      expect(assets).not.toHaveBeenCalled();
     },
   );
+
+  it("still rate limits a deep demo link before any asset fetch", async () => {
+    const assets = echoAssets();
+    const response = await serve(get("/demo/2026"), {
+      ...makeEnv(assets),
+      SITE_RATELIMIT: { limit: async () => ({ success: false }) },
+    });
+    expect(response.status).toBe(429);
+    expect(assets).not.toHaveBeenCalled();
+  });
 
   it.each(["/nope.js", "/robots.txt", "/_headers", "/.env", "/.git/config", "/assets/missing.css"])(
     "answers a non-navigation request for the missing file %s with 404",
@@ -138,24 +258,37 @@ describe("site routing", () => {
     "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)",
     "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)",
     "Twitterbot/1.0",
-  ])("lets the link-preview bot %j fetch /demo and the share image", async (ua) => {
-    const assets = vi.fn<Env["ASSETS"]["fetch"]>(async (request) =>
-      new URL(request.url).pathname === "/og-image.png"
-        ? new Response("png", { headers: { "Content-Type": "image/png" } })
-        : new Response("demo", { headers: { "Content-Type": "text/html" } }),
-    );
-    const page = await serve(
-      new Request(`${ORIGIN}/demo`, { headers: { "User-Agent": ua, Accept: "text/html" } }),
-      makeEnv(assets),
-    );
-    expect(page.status).toBe(200);
-    const image = await serve(
-      new Request(`${ORIGIN}/og-image.png`, { headers: { "User-Agent": ua, Accept: "image/*" } }),
-      makeEnv(assets),
-    );
-    expect(image.status).toBe(200);
-    expect(image.headers.get("Content-Type")).toBe("image/png");
-  });
+  ])(
+    "lets the link-preview bot %j fetch /demo, a deep demo link and the share image",
+    async (ua) => {
+      const assets = vi.fn<Env["ASSETS"]["fetch"]>(async (request) =>
+        new URL(request.url).pathname === "/og-image.png"
+          ? new Response("png", { headers: { "Content-Type": "image/png" } })
+          : new Response(`page ${new URL(request.url).pathname}`, {
+              headers: { "Content-Type": "text/html" },
+            }),
+      );
+      const page = await serve(
+        new Request(`${ORIGIN}/demo`, { headers: { "User-Agent": ua, Accept: "text/html" } }),
+        makeEnv(assets),
+      );
+      expect(page.status).toBe(200);
+      const deep = await serve(
+        new Request(`${ORIGIN}/demo/2026?month=10&day=27&details=false`, {
+          headers: { "User-Agent": ua, Accept: "text/html" },
+        }),
+        makeEnv(assets),
+      );
+      expect(deep.status).toBe(200);
+      expect(await deep.text()).toBe("page /demo");
+      const image = await serve(
+        new Request(`${ORIGIN}/og-image.png`, { headers: { "User-Agent": ua, Accept: "image/*" } }),
+        makeEnv(assets),
+      );
+      expect(image.status).toBe(200);
+      expect(image.headers.get("Content-Type")).toBe("image/png");
+    },
+  );
 
   it("serves the marketing .html files as they are", async () => {
     const response = await serve(
