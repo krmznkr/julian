@@ -190,6 +190,9 @@ kbd {
   font-size: 1.25rem;
 }
 
+/* The scope URLs carry <wbr> after each slash (partials.ts), so they wrap at
+   path boundaries. Breaking anywhere is only the fallback for a segment wider
+   than the line, so the page never scrolls sideways. */
 .scopes code {
   overflow-wrap: anywhere;
 }
