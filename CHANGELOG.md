@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/krmznkr/julian/compare/v0.4.0...v0.4.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* keep a late-month today fully in view ([#76](https://github.com/krmznkr/julian/issues/76)) ([209b910](https://github.com/krmznkr/julian/commit/209b910381332786f51b00b2dacc442b32dcb818))
+* keep demo metadata on deep links ([#78](https://github.com/krmznkr/julian/issues/78)) ([cec8606](https://github.com/krmznkr/julian/commit/cec8606f961c09f5b684ade5bc00bc8da97ffce7))
+
 ## [0.4.0](https://github.com/krmznkr/julian/compare/v0.3.3...v0.4.0) (2026-10-25)
 
 
