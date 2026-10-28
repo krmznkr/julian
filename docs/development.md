@@ -84,7 +84,10 @@ pnpm test:lighthouse
 
 Reports and traces are git-ignored. In CI, both run as separate jobs; the
 Playwright report and traces are uploaded when a test fails, and the
-Lighthouse reports on every run.
+Lighthouse reports on every run. The e2e job caches Playwright's headless
+Chromium and the apt packages it needs, keyed by Ubuntu release and Playwright
+version. A cold install was slow because of the Ubuntu mirror, not the browser
+download. Lighthouse uses the Chrome that comes with the runner image.
 
 CI runs on every pull request and every push to `main`. It can also be started
 by hand (`gh workflow run ci.yml --ref main`) when a commit on `main` has no
