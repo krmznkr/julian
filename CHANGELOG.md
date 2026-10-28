@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2](https://github.com/krmznkr/julian/compare/v0.4.1...v0.4.2) (2026-10-27)
+
+
+### Bug Fixes
+
+* **deps:** drop extract-zip from the Lighthouse toolchain ([#79](https://github.com/krmznkr/julian/issues/79)) ([f9abd52](https://github.com/krmznkr/julian/commit/f9abd5293faf1a3870a8729b5af68a178c4aefb3))
+* **marketing:** wrap privacy scope URLs only at slashes ([#81](https://github.com/krmznkr/julian/issues/81)) ([b531261](https://github.com/krmznkr/julian/commit/b53126177c6e9fbec35b7d19a6e0cc0a0bb1a34e))
+
 ## [0.4.1](https://github.com/krmznkr/julian/compare/v0.4.0...v0.4.1) (2026-10-27)
 
 
