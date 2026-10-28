@@ -74,7 +74,10 @@ pnpm test:lighthouse
   sample year is deterministic. Open the last run with
   `pnpm --filter @julian/e2e exec playwright show-report`; failed tests keep a
   trace in `apps/e2e/test-results`.
-- **axe** (`src/a11y.spec.ts`) fails on any serious or critical violation. The
+- **axe** (`src/a11y.spec.ts`) fails on any serious or critical violation. It
+  scans the demo with its banner and tour row visible and `/home`, `/privacy`,
+  and `/terms` in light and dark themes on desktop and a Pixel 7 with touch input.
+  Desktop scans also cover open day details and the event dialog. The
   moderate findings that remain are listed, with reasons, at the top of that
   file.
 - **Lighthouse CI** (`lighthouserc.json`) runs three mobile-emulated passes over

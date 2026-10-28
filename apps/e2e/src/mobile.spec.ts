@@ -1,7 +1,7 @@
 import { devices, type Page } from "@playwright/test";
 import { YEAR, expect, test, yearGrid } from "./fixtures";
 
-test.use({ ...devices["Pixel 7"] });
+test.use({ ...devices["Pixel 7"], viewport: { width: 412, height: 915 } });
 
 test("the demo works on a narrow mobile viewport", async ({ demo: page }) => {
   await expect(page.getByRole("button", { name: "Connect my Google Calendar" })).toBeVisible();
@@ -77,6 +77,41 @@ test("touch targets in the top bar are at least 32px", async ({ demo: page }) =>
 const monthHeaderTop = (page: Page) =>
   page.locator("[data-year-grid-header]").evaluate((header) => header.getBoundingClientRect().top);
 
+/** Composite the notice text over its actual banner and ancestor backgrounds. */
+async function noticeLegibility(page: Page) {
+  return page
+    .getByText("Changes stay here.")
+    .locator("xpath=..")
+    .evaluate((notice) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) throw new Error("No 2D canvas context");
+      const paint = (color: string) => {
+        context.fillStyle = color;
+        context.fillRect(0, 0, 1, 1);
+      };
+      const luminance = () => {
+        const [r = 0, g = 0, b = 0] = Array.from(context.getImageData(0, 0, 1, 1).data.slice(0, 3))
+          .map((value) => value / 255)
+          .map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const ancestors: Element[] = [];
+      for (let node: Element | null = notice; node; node = node.parentElement) ancestors.push(node);
+      paint("#ffffff");
+      ancestors.reverse().forEach((node) => paint(getComputedStyle(node).backgroundColor));
+      const background = luminance();
+      paint(getComputedStyle(notice).color);
+      const foreground = luminance();
+      return {
+        fontSize: Number.parseFloat(getComputedStyle(notice).fontSize),
+        ratio:
+          (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05),
+      };
+    });
+}
+
 for (const colorScheme of ["light", "dark"] as const) {
   test.describe(`${colorScheme} theme`, () => {
     test.use({ colorScheme });
@@ -89,6 +124,9 @@ for (const colorScheme of ["light", "dark"] as const) {
       // The month headers sat at 285px before the banner and tour row were
       // compacted to one row each; keep them within the top 200px.
       expect(await monthHeaderTop(page)).toBeLessThanOrEqual(200);
+      const notice = await noticeLegibility(page);
+      expect(notice.fontSize).toBeGreaterThanOrEqual(12);
+      expect(notice.ratio).toBeGreaterThanOrEqual(colorScheme === "light" ? 5 : 4.5);
     });
   });
 }

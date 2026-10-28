@@ -1,10 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
-import type { Page } from "@playwright/test";
+import { devices, type Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 /**
  * Serious and critical violations fail the run. Moderate findings that remain
- * are deliberate:
+ * are deliberate, including the same heading and region findings on phones:
  * - `page-has-heading-one`: the demo *is* the app; its first heading is
  *   the sidebar's "Calendars", and an invisible h1 would only exist for the scan.
  * - `region`: the demo banner sits above the app shell's landmarks so it reads
@@ -63,3 +63,48 @@ for (const path of ["/home", "/privacy", "/terms"]) {
     });
   }
 }
+
+// Keep phone scans focused here instead of doubling every test with a project.
+test.describe("on a Pixel 7 with touch input", () => {
+  // defaultBrowserType is worker-scoped, so use only the device's context options.
+  const phone = devices["Pixel 7"];
+  test.use({
+    viewport: { width: 412, height: 915 },
+    screen: { width: 412, height: 915 },
+    userAgent: phone.userAgent,
+    deviceScaleFactor: phone.deviceScaleFactor,
+    isMobile: phone.isMobile,
+    hasTouch: phone.hasTouch,
+  });
+
+  for (const colorScheme of ["light", "dark"] as const) {
+    test.describe(`${colorScheme} theme`, () => {
+      test.use({ colorScheme });
+
+      test("the demo banner and tour have no serious accessibility violations", async ({
+        demo: page,
+      }) => {
+        await expect(page.getByText("Changes stay here.")).toBeVisible();
+        for (const name of [
+          "Connect my Google Calendar",
+          "Watch 15s tour",
+          "Add sample event",
+          "Reset demo",
+        ]) {
+          await expect(page.getByRole("button", { name })).toBeInViewport({ ratio: 1 });
+        }
+        await expectNoSeriousViolations(page);
+      });
+
+      for (const path of ["/home", "/privacy", "/terms"]) {
+        test(`the marketing page ${path} has no serious accessibility violations`, async ({
+          page,
+        }) => {
+          await page.goto(path);
+          await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+          await expectNoSeriousViolations(page);
+        });
+      }
+    });
+  }
+});
