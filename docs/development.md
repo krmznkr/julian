@@ -68,7 +68,8 @@ pnpm test:lighthouse
   event, the theme toggle, shortcut-help labels for Linux, Windows and macOS (Ctrl or ⌘),
   day-number contrast in both themes, a Pixel 7 viewport with touch input, the
   narrow-screen Calendars drawer from the keyboard (focus, Tab, Escape, `/`, Ctrl/⌘K, resizing),
-  the current month opening fully in view on phones, and a late-month today staying fully in view
+  the current month opening fully in view on phones, the demo banner and tour row staying compact on
+  phones (month headers within the top 200px on a Pixel 7, nothing clipped at 320px), and a late-month today staying fully in view
   on load, under the arrow keys and beside the tour's day details on desktop and Pixel 7. The clock is pinned so the
   sample year is deterministic. Open the last run with
   `pnpm --filter @julian/e2e exec playwright show-report`; failed tests keep a

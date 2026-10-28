@@ -25,19 +25,24 @@ export function DemoPage({ year }: { year: number }) {
       year={year}
       router={router}
       banner={
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-border/40 bg-muted/40 px-3 py-2 text-center text-sm sm:px-6">
-          <span className="rounded border border-border bg-background px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
-            Demo · Sample data
-          </span>
-          <span className="text-muted-foreground">Try it here. Changes stay in this demo.</span>
-          <a href="/home" className="text-xs underline underline-offset-2">
-            About Julian
-          </a>
+        // Below md (phones) the banner is one row: a short notice that wraps
+        // to two lines beside Connect. From md up it keeps the centred layout.
+        <div className="flex flex-wrap items-center gap-2 bg-muted/40 px-3 py-1 text-xs md:justify-center md:gap-x-3 md:gap-y-1 md:border-b md:border-border/40 md:px-6 md:py-2 md:text-center md:text-sm">
+          <p className="min-w-40 flex-1 text-[11px] leading-[14px] text-muted-foreground md:contents md:text-sm md:leading-5">
+            <span className="font-semibold text-foreground md:rounded md:border md:border-border md:bg-background md:px-2 md:py-0.5 md:text-xs md:uppercase md:tracking-wide">
+              Demo · Sample data
+            </span>
+            <span className="md:hidden">. Changes stay here. </span>
+            <span className="hidden md:inline">Try it here. Changes stay in this demo.</span>
+            <a href="/home" className="text-foreground underline underline-offset-2 md:text-xs">
+              About Julian
+            </a>
+          </p>
           <button
             type="button"
             onClick={connectGoogle}
             disabled={connecting}
-            className="inline-flex h-7 items-center rounded-full bg-foreground px-3.5 text-xs font-medium text-background transition-opacity hover:opacity-85 disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex h-8 shrink-0 items-center rounded-full bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-85 disabled:cursor-wait disabled:opacity-60 md:h-7 md:px-3.5"
           >
             {connecting ? "Connecting…" : "Connect my Google Calendar"}
           </button>
