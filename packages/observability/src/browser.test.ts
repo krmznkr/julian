@@ -28,25 +28,55 @@ describe("SDK privacy configuration", () => {
     expect(sentry).toMatchObject({
       environment: "production",
       release: "sha",
-      sendDefaultPii: false,
+      traceLifecycle: "stream",
       defaultIntegrations: false,
       tracesSampleRate: 0.05,
       tracePropagationTargets: [],
       sendClientReports: false,
-      enableLogs: false,
-      integrations: ["global-handlers", "browser-errors", { traceFetch: false, traceXHR: false }],
+      integrations: [
+        "global-handlers",
+        "browser-errors",
+        { traceFetch: false, traceXHR: false },
+        expect.objectContaining({ name: "JulianDropTraceTransactionName" }),
+      ],
     });
+    // Sentry 11 replaced sendDefaultPii with dataCollection, which defaults to on.
+    expect(sentry.dataCollection).toEqual({
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+      graphQL: { document: false, variables: false },
+      genAI: { inputs: false, outputs: false },
+      mcp: { inputs: false, outputs: false },
+      databaseQueryData: false,
+      queues: false,
+      stackFrameVariables: false,
+      frameContextLines: 0,
+    });
+    // Ignored by span streaming, and v11 warns in the console when it is set.
+    expect(sentry).not.toHaveProperty("beforeSendTransaction");
     expect(sentry.beforeBreadcrumb?.({ message: "private" }, {})).toBeNull();
+    expect(sentry.beforeSendLog?.({ level: "info", message: "private" })).toBeNull();
+    expect(
+      sentry.beforeSendMetric?.({ name: "private", type: "counter", value: 1, attributes: {} }),
+    ).toBeNull();
     expect(
       await sentry.beforeSend?.({ type: undefined, message: "private" }, {}),
     ).not.toHaveProperty("message");
     expect(
-      await sentry.beforeSendTransaction?.(
-        { type: "transaction", transaction: "/2026?code=secret" },
-        {},
-      ),
-    ).toMatchObject({ transaction: "/calendar" });
-    expect(sentry.beforeSendSpan).toBeDefined();
+      sentry.beforeSendSpan?.({
+        trace_id: "a".repeat(32),
+        span_id: "b".repeat(16),
+        name: "Navigation",
+        start_timestamp: 1,
+        end_timestamp: 2,
+        status: "ok",
+        is_segment: true,
+        attributes: { "url.full": "https://julian.krmznkr.com/2026?code=secret" },
+      }),
+    ).toMatchObject({ name: "/calendar", attributes: { "sentry.release": "sha" } });
     expect(posthogInit.mock.calls[0]?.[1]).toMatchObject({
       api_host: "https://eu.i.posthog.com",
       autocapture: false,
