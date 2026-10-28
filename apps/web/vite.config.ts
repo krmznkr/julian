@@ -18,6 +18,20 @@ const securityHeadersFile = (): Plugin => ({
   },
 });
 
+// The Worker caches `<name>-<hash>.js|css` under `/assets/` and `/_marketing/`
+// for a year (apps/edge/src/cache.ts). Only the bundler may write there, so a
+// hand-placed public file can never be served as immutable.
+const bundlerOnlyAssetDirs = (): Plugin => ({
+  name: "julian:bundler-only-asset-dirs",
+  apply: "build",
+  buildStart() {
+    const taken = ["assets", "_marketing"].filter((dir) => existsSync(resolvePath("public", dir)));
+    if (taken.length > 0) {
+      this.error(`apps/web/public/${taken.join(", ")} is reserved for hashed build output.`);
+    }
+  },
+});
+
 const DEMO_TITLE = "Julian demo · Your whole year on one screen";
 
 // Link-preview tags for the app shell, plus `demo.html`: the same shell under
@@ -58,7 +72,14 @@ const marketingPages = (): Plugin => ({
 });
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), securityHeadersFile(), sharePreviews(), marketingPages()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    bundlerOnlyAssetDirs(),
+    securityHeadersFile(),
+    sharePreviews(),
+    marketingPages(),
+  ],
   define: buildDefines,
   envDir: resolvePath("../.."),
   envPrefix: ["VITE_"],
