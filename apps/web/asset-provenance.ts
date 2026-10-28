@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { cpSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { Manifest, Plugin, Rolldown } from "vite";
 
@@ -48,19 +48,45 @@ const bundleDigests = (bundle: Rolldown.OutputBundle): Digests =>
 
 const manifestPath = (outDir: string) => path.join(outDir, ".vite/manifest.json");
 
+const missingManifest = (file: string) =>
+  `${file} is missing, so the copied build cannot be checked.`;
+
+const readManifest = (outDir: string): Manifest => {
+  const file = manifestPath(outDir);
+  if (!existsSync(file)) throw new Error(missingManifest(file));
+  return JSON.parse(readFileSync(file, "utf8")) as Manifest;
+};
+
+/**
+ * Copies the build in `from` into `to`, leaving out its `.vite/` manifest and
+ * any script or stylesheet in a reserved directory (or its source map) that
+ * the manifest does not list. Turbo restores a cached `dist/` over the old one
+ * without clearing it, so an earlier build's files can sit beside the current
+ * ones; copying them would fail the check below.
+ */
+export const copyBuildOutput = (from: string, to: string): void => {
+  const listed = new Set(manifestFiles(readManifest(from)));
+  cpSync(from, to, {
+    recursive: true,
+    filter: (source) => {
+      const file = toPosix(path.relative(from, source));
+      const script = file.replace(/\.map$/, "");
+      return file !== ".vite" && (!isPinned(script) || listed.has(script));
+    },
+  });
+};
+
 /**
  * The digest of every pinned script and stylesheet that the manifest of the
  * build in `outDir` lists, read from that build's own output. A listed file
  * that is not there gets no digest, so a copy of it would count as unemitted.
  */
-export const copiedBuildDigests = (outDir: string): Digests => {
-  const manifest = JSON.parse(readFileSync(manifestPath(outDir), "utf8")) as Manifest;
-  return new Map(
-    manifestFiles(manifest)
+export const copiedBuildDigests = (outDir: string): Digests =>
+  new Map(
+    manifestFiles(readManifest(outDir))
       .filter((file) => isPinned(file) && existsSync(path.join(outDir, file)))
       .map((file) => [file, digest(readFileSync(path.join(outDir, file)))]),
   );
-};
 
 /** Merges digests from several builds. Two builds may not emit different bytes under one name. */
 export const mergeDigests = (sources: readonly Digests[]): Digests => {
@@ -129,6 +155,13 @@ type Options = {
  * Limit: a plugin whose `closeBundle` is also `order: "post"` and that sorts
  * after this one (a later `enforce: "post"` plugin) still writes after the
  * check. Builds with `write: false`, or that already failed, are not checked.
+ *
+ * Scope: this proves bundler provenance at build time. One rewrite comes
+ * later, and it is trusted: the nightly and stable deploy workflows run
+ * `pnpm sentry:sourcemaps` on this `dist/` before upload, and its
+ * `sentry-cli sourcemaps inject` adds a deterministic debug ID to each script
+ * under the same file name. The rewritten build is the one deployed, so every
+ * URL in it still matches its bytes for that deploy.
  */
 export const bundlerOnlyAssetDirs = ({ copiedBuilds }: Options): Plugin => {
   let dirs: { root: string; publicDir: string; outDir: string } | undefined;
@@ -178,7 +211,7 @@ export const bundlerOnlyAssetDirs = ({ copiedBuilds }: Options): Plugin => {
         if (!dirs || !emitted) return;
         const missing = copiedBuilds.map(manifestPath).filter((file) => !existsSync(file));
         if (missing.length > 0) {
-          this.error(`${missing.join(", ")} is missing, so the copied build cannot be checked.`);
+          this.error(missingManifest(missing.join(", ")));
         }
         const expected = mergeDigests([emitted, ...copiedBuilds.map(copiedBuildDigests)]);
         const { unemitted, altered } = unprovenScriptsAndStyles(dirs.outDir, expected);

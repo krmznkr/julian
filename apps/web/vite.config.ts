@@ -1,4 +1,4 @@
-import { cpSync, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
@@ -6,7 +6,7 @@ import react from "@vitejs/plugin-react";
 import { currentBuildInfo } from "@julian/release/node";
 import { siteOrigin, withShareMeta, withTitle } from "@julian/release/share";
 import { renderHeadersFile } from "@julian/security";
-import { bundlerOnlyAssetDirs } from "./asset-provenance.ts";
+import { bundlerOnlyAssetDirs, copyBuildOutput } from "./asset-provenance.ts";
 import { buildDefines } from "./build-defines.ts";
 
 const resolvePath = (...parts: string[]) => path.resolve(import.meta.dirname, ...parts);
@@ -48,8 +48,9 @@ const sharePreviews = (): Plugin => ({
 
 // The marketing pages (@julian/marketing, built first by Turborepo) ship in the
 // same assets directory, so the Worker serves both from one binding. Its
-// manifest (`.vite/`) is not deployed: `bundlerOnlyAssetDirs` reads it, with the
-// original files, to check every copied script and stylesheet.
+// manifest (`.vite/`) is not deployed: `copyBuildOutput` copies only the scripts
+// and stylesheets it lists, and `bundlerOnlyAssetDirs` reads it, with the
+// original files, to check every copied one.
 const marketingPages = (): Plugin => ({
   name: "julian:marketing-pages",
   apply: "build",
@@ -57,10 +58,7 @@ const marketingPages = (): Plugin => ({
     if (!existsSync(marketingDist)) {
       this.error("apps/marketing/dist is missing: build @julian/marketing first.");
     }
-    cpSync(marketingDist, options.dir ?? resolvePath("dist"), {
-      recursive: true,
-      filter: (source) => path.basename(source) !== ".vite",
-    });
+    copyBuildOutput(marketingDist, options.dir ?? resolvePath("dist"));
   },
 });
 

@@ -316,7 +316,13 @@ or `.css` file there is listed in neither the web bundle nor the marketing
 build's Vite manifest. It also fails if the file's SHA-256 differs from the web
 bundle's final output or from the original file in `apps/marketing/dist`. The
 manifest (`apps/marketing/dist/.vite/manifest.json`) is not copied into the
-deployed assets.
+deployed assets, and neither are scripts or styles the manifest does not list:
+a Turbo cache restore can leave an earlier build's files in
+`apps/marketing/dist`. The check proves what the bundler emitted at build time.
+After it, the nightly and stable deploy workflows make one trusted rewrite:
+`sentry-cli sourcemaps inject` adds a deterministic debug ID to each script
+under the same name, before upload. The rewritten build is the one deployed,
+so its URLs and bytes stay consistent for that deploy.
 
 ## Browser storage
 

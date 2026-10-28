@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Build tooling and its tests are not app markup: keep their words out of the CSS. */
+@source not "../../asset-provenance*.ts";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));

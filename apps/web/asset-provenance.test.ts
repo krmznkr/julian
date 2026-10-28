@@ -16,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   bundlerOnlyAssetDirs,
   copiedBuildDigests,
+  copyBuildOutput,
   digest,
   manifestFiles,
   mergeDigests,
@@ -106,8 +107,17 @@ const writeFrom = (
   };
 };
 
-// Copies a whole build into the output as apps/web/vite.config.ts copies the
-// marketing pages, leaving out its `.vite/` manifest.
+// Copies a build into the output as apps/web/vite.config.ts copies the
+// marketing pages.
+const copyListed = (from: string): Plugin => ({
+  name: "test:copy-listed",
+  writeBundle(options) {
+    copyBuildOutput(from, options.dir ?? "");
+  },
+});
+
+// Copies a whole build, unlisted files included, leaving out its `.vite/`
+// manifest: what the guard must catch if the copy step ever stops filtering.
 const copyBuild = (from: string): Plugin => ({
   name: "test:copy-build",
   writeBundle(options) {
@@ -228,6 +238,76 @@ describe("copiedBuildDigests", () => {
     rmSync(path.join(outDir, "_marketing/browser-eJafZdG_.js"));
 
     expect([...copiedBuildDigests(outDir).keys()]).not.toContain("_marketing/browser-eJafZdG_.js");
+  });
+});
+
+const toPosixPath = (file: string) => file.split(path.sep).join("/");
+
+const filesUnder = (dir: string) =>
+  readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => !entry.isDirectory())
+    .map((entry) => toPosixPath(path.relative(dir, path.join(entry.parentPath, entry.name))))
+    .sort();
+
+describe("copyBuildOutput", () => {
+  it("copies the listed files, their source maps and the pages, not the manifest", () => {
+    const from = writeMarketingBuild([
+      "_marketing/browser-eJafZdG_.js.map",
+      "_marketing/observability-miiFSapg.js.map",
+      "privacy.html",
+    ]);
+
+    copyBuildOutput(from, path.join(root, "out"));
+
+    expect(filesUnder(path.join(root, "out"))).toEqual([
+      "_marketing/browser-eJafZdG_.js",
+      "_marketing/browser-eJafZdG_.js.map",
+      "_marketing/logo-a1b2c3d4.svg",
+      "_marketing/observability-DN_rWpjU.css",
+      "_marketing/observability-miiFSapg.js",
+      "_marketing/observability-miiFSapg.js.map",
+      "home.html",
+      "privacy.html",
+    ]);
+  });
+
+  // A Turbo cache restore writes a build's outputs over apps/marketing/dist
+  // without removing an earlier build's files.
+  it("leaves out stale scripts, stylesheets and source maps the manifest does not list", () => {
+    const from = writeMarketingBuild([
+      "_marketing/browser-BZqGd55G.js",
+      "_marketing/browser-BZqGd55G.js.map",
+      "_marketing/observability-DMGK6C2U.js",
+      "_marketing/observability-0ld0ld00.css",
+      "_marketing/nested/stale-12345678.js",
+    ]);
+
+    copyBuildOutput(from, path.join(root, "out"));
+
+    expect(filesUnder(path.join(root, "out"))).toEqual([
+      "_marketing/browser-eJafZdG_.js",
+      "_marketing/logo-a1b2c3d4.svg",
+      "_marketing/observability-DN_rWpjU.css",
+      "_marketing/observability-miiFSapg.js",
+      "home.html",
+    ]);
+  });
+
+  it("keeps other files in the reserved directories", () => {
+    const from = writeMarketingBuild(["_marketing/font-12345678.woff2"]);
+
+    copyBuildOutput(from, path.join(root, "out"));
+
+    expect(filesUnder(path.join(root, "out"))).toContain("_marketing/font-12345678.woff2");
+  });
+
+  it("fails when the build has no manifest", () => {
+    const from = path.join(root, "marketing");
+    write("marketing/home.html");
+
+    expect(() => copyBuildOutput(from, path.join(root, "out"))).toThrow(
+      `${path.join(from, ".vite/manifest.json")} is missing, so the copied build cannot be checked.`,
+    );
   });
 });
 
@@ -376,11 +456,28 @@ describe("bundlerOnlyAssetDirs", () => {
     const marketing = writeMarketingBuild();
 
     await expect(
-      buildApp({ copiedBuilds: [marketing], plugins: [copyBuild(marketing)] }),
+      buildApp({ copiedBuilds: [marketing], plugins: [copyListed(marketing)] }),
     ).resolves.toBeDefined();
     expect(distFile("_marketing/observability-miiFSapg.js")).toBe(
       "/* built _marketing/observability-miiFSapg.js */",
     );
+  });
+
+  it("passes when the copied build's directory also holds an earlier build's files", async () => {
+    const marketing = writeMarketingBuild([
+      "_marketing/browser-BZqGd55G.js",
+      "_marketing/observability-DMGK6C2U.js",
+    ]);
+
+    await expect(
+      buildApp({ copiedBuilds: [marketing], plugins: [copyListed(marketing)] }),
+    ).resolves.toBeDefined();
+    expect(readdirSync(path.join(root, "dist/_marketing")).sort()).toEqual([
+      "browser-eJafZdG_.js",
+      "logo-a1b2c3d4.svg",
+      "observability-DN_rWpjU.css",
+      "observability-miiFSapg.js",
+    ]);
   });
 
   it("fails the build when a copy adds a hashed-looking file no manifest lists", async () => {
