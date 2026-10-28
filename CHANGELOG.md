@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.3](https://github.com/krmznkr/julian/compare/v0.4.2...v0.4.3) (2026-10-28)
+
+
+### Bug Fixes
+
+* **a11y:** improve phone demo notice and axe coverage ([#88](https://github.com/krmznkr/julian/issues/88)) ([4b14baf](https://github.com/krmznkr/julian/commit/4b14baff167a6c6869f6d8caf9053571b5a11697))
+* **demo:** compact the phone demo banner and tour row ([#87](https://github.com/krmznkr/julian/issues/87)) ([8e6b850](https://github.com/krmznkr/julian/commit/8e6b85069f830cfbfc973fcddcf2ac5b698c05af))
+* **deps:** migrate observability to @sentry/browser 11 ([#86](https://github.com/krmznkr/julian/issues/86)) ([44f6fe8](https://github.com/krmznkr/julian/commit/44f6fe800214e4acb1449eadf55c667eb379b927))
+
+
+### Performance
+
+* **edge:** cache content-hashed JS/CSS as immutable ([#82](https://github.com/krmznkr/julian/issues/82)) ([032f92d](https://github.com/krmznkr/julian/commit/032f92d814520629377cda05c690b1aec63821ee))
+
 ## [0.4.2](https://github.com/krmznkr/julian/compare/v0.4.1...v0.4.2) (2026-10-27)
 
 
