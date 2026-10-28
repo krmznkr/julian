@@ -23,6 +23,9 @@ describe("DemoPage", () => {
   it("labels the sample data and links back to the marketing site", () => {
     render(<DemoPage year={2026} />);
     expect(screen.getByText("Demo · Sample data")).toBeInTheDocument();
+    // Phones get the short notice, wider screens the full one; CSS picks which shows.
+    expect(screen.getByText(". Changes stay here.", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("Try it here. Changes stay in this demo.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "About Julian" })).toHaveAttribute("href", "/home");
   });
 
