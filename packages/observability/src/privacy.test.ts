@@ -147,6 +147,7 @@ describe("telemetry privacy boundary", () => {
       "sentry.op": "app",
       "sentry.release": "release-sha",
       "sentry.environment": "production",
+      "sentry.segment.name": expected,
       "sentry.segment.name.source": "route",
     });
     expect(JSON.stringify(clean)).not.toContain(secret);

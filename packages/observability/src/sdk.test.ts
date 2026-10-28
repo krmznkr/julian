@@ -315,6 +315,7 @@ describe("Sentry wire payload", () => {
             "sentry.op",
             "sentry.release",
             "sentry.segment.id",
+            "sentry.segment.name",
             "sentry.segment.name.source",
           ],
         },
@@ -341,6 +342,46 @@ describe("Sentry wire payload", () => {
         exception: { values: [{ value: "Unhandled application error" }] },
       });
       expect(errors[0]).not.toHaveProperty("user");
+    } finally {
+      await Sentry.close();
+    }
+  });
+
+  it("keeps a custom root span name out of the envelope trace header", async () => {
+    // Sentry copies a root span's name into the trace header unless its source
+    // is "url". beforeSendSpan cannot reach that header.
+    const envelopes: Array<[Record<string, unknown>, unknown[]]> = [];
+    const secret = "private-calendar-title-alice@example.com-ya29.oauth-token";
+    Sentry.init({
+      ...sentryOptions("release-sha"),
+      transport: () => ({
+        send: (envelope) => {
+          envelopes.push(JSON.parse(JSON.stringify(envelope)));
+          return Promise.resolve({ statusCode: 200 });
+        },
+        flush: () => Promise.resolve(true),
+      }),
+    });
+    try {
+      Sentry.withScope((scope) => {
+        scope.setPropagationContext({ traceId: "b".repeat(32), sampleRand: 0.01 });
+        Sentry.startSpan(
+          { name: secret, attributes: { "sentry.segment.name.source": "custom" } },
+          () => {
+            Sentry.captureException(new Error(secret));
+          },
+        );
+      });
+      await Sentry.flush(2000);
+      expect(envelopes.length).toBeGreaterThan(0);
+      expect(JSON.stringify(envelopes)).not.toContain(secret);
+      const traceHeaders = envelopes.flatMap(([header]) =>
+        header["trace"] === undefined ? [] : [header["trace"]],
+      );
+      // The span envelope carries a trace header; the scrubbed error event has none.
+      expect(traceHeaders).toHaveLength(1);
+      expect(traceHeaders[0]).toMatchObject({ trace_id: "b".repeat(32), sampled: "true" });
+      expect(traceHeaders[0]).not.toHaveProperty("transaction");
     } finally {
       await Sentry.close();
     }

@@ -30,6 +30,22 @@ const SENTRY_DATA_COLLECTION = {
   frameContextLines: 0,
 } as const satisfies BrowserOptions["dataCollection"];
 
+// The envelope's `trace` header (dynamic sampling context) copies the root
+// span's name whenever its source is not "url". beforeSendSpan cannot reach
+// that header, so drop the name wherever Sentry builds one.
+type Integration = Extract<BrowserOptions["integrations"], readonly unknown[]>[number];
+
+const dropTraceTransactionName: Integration = {
+  name: "JulianDropTraceTransactionName",
+  setup: (client) => {
+    client.on("createDsc", (dsc) => {
+      // Sentry ignores the hook's return value and reads this object afterwards.
+      // eslint-disable-next-line functional/immutable-data
+      delete dsc.transaction;
+    });
+  },
+};
+
 export const sentryOptions = (release: string): BrowserOptions => ({
   dsn: SENTRY_DSN,
   release,
@@ -45,6 +61,7 @@ export const sentryOptions = (release: string): BrowserOptions => ({
     Sentry.globalHandlersIntegration(),
     Sentry.browserApiErrorsIntegration(),
     Sentry.browserTracingIntegration({ traceFetch: false, traceXHR: false }),
+    dropTraceTransactionName,
   ],
   tracesSampleRate: 0.05,
   tracePropagationTargets: [],

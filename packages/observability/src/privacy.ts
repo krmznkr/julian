@@ -108,17 +108,16 @@ const stringAttribute = (span: StreamedSpanJSON, key: string): string | undefine
 export const sanitizeStreamedSpan = (span: StreamedSpanJSON, release: string): StreamedSpanJSON => {
   const segment = span.is_segment === true;
   const segmentId = hexId(stringAttribute(span, "sentry.segment.id"), 16);
+  // Streamed pageload and navigation roots are named "Pageload" and
+  // "Navigation"; the page URL is an attribute. Reduce it to a route category.
+  const name = segment
+    ? pagePath(stringAttribute(span, "url.full") ?? stringAttribute(span, "url.path") ?? span.name)
+    : CHILD_SPAN_NAME;
   return {
     trace_id: hexId(span.trace_id, 32) ?? "0".repeat(32),
     span_id: hexId(span.span_id, 16) ?? "0".repeat(16),
     parent_span_id: hexId(span.parent_span_id, 16),
-    // Streamed pageload and navigation roots are named "Pageload" and
-    // "Navigation"; the page URL is an attribute. Reduce it to a route category.
-    name: segment
-      ? pagePath(
-          stringAttribute(span, "url.full") ?? stringAttribute(span, "url.path") ?? span.name,
-        )
-      : CHILD_SPAN_NAME,
+    name,
     start_timestamp: span.start_timestamp,
     end_timestamp: span.end_timestamp,
     status: span.status === "ok" ? "ok" : "error",
@@ -129,7 +128,7 @@ export const sanitizeStreamedSpan = (span: StreamedSpanJSON, release: string): S
       "sentry.environment": "production",
       ...(segmentId ? { "sentry.segment.id": segmentId } : {}),
       // The name is now a static category, not a URL Sentry should re-derive.
-      ...(segment ? { "sentry.segment.name.source": "route" } : {}),
+      ...(segment ? { "sentry.segment.name": name, "sentry.segment.name.source": "route" } : {}),
     },
   };
 };

@@ -33,7 +33,12 @@ describe("SDK privacy configuration", () => {
       tracesSampleRate: 0.05,
       tracePropagationTargets: [],
       sendClientReports: false,
-      integrations: ["global-handlers", "browser-errors", { traceFetch: false, traceXHR: false }],
+      integrations: [
+        "global-handlers",
+        "browser-errors",
+        { traceFetch: false, traceXHR: false },
+        expect.objectContaining({ name: "JulianDropTraceTransactionName" }),
+      ],
     });
     // Sentry 11 replaced sendDefaultPii with dataCollection, which defaults to on.
     expect(sentry.dataCollection).toEqual({

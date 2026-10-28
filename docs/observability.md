@@ -40,11 +40,15 @@ allowlists for an app that handles personal calendar data:
   shape). Every span passes the span hook. Pageload and navigation roots
   become their static route category; child spans keep a fixed label. Each
   span keeps only its generated IDs, timings, an ok/error status, the release,
-  `environment=production`, `op=app` and the generated segment ID. Names,
-  URLs, user fields, DOM selectors, status messages and links are dropped.
-  Streamed web-vital spans use fixed names, not DOM selectors that could
-  contain an `aria-label`. The static span shape used by transaction events
-  passes an equivalent allowlist.
+  `environment=production`, `op=app`, the generated segment ID and, on roots,
+  the static route category as the segment name. Names, URLs, user fields, DOM
+  selectors, status messages and links are dropped. Streamed web-vital spans
+  are named from a component name or a fixed fallback, not DOM selectors that
+  could contain an `aria-label`, and the span hook renames them anyway. The
+  envelope's `trace` header copies a root span's name unless Sentry derived it
+  from the URL; the span hook cannot reach that header, so a small integration
+  deletes the name whenever Sentry builds the header. The static span shape
+  used by transaction events passes an equivalent allowlist.
 - PostHog uses its slim bundle with memory-only anonymous IDs and persistence
   disabled. It writes no analytics cookies or local storage, never identifies a
   person and respects Do Not Track. Autocapture, exceptions, session recording,
@@ -101,9 +105,13 @@ After a stable release, the release owner should:
 2. Confirm the build commit appears in Sentry with its private source maps.
 3. Exercise the app and check the Sentry Issues feed. Do not inject real
    calendar data into a verification error.
-4. Check PostHog Activity for `$pageview` with `app=julian` and
+4. Check that a sampled trace arrives in Sentry's trace explorer with a static
+   route name such as `/demo`. Sentry 11 streams spans in a newer envelope
+   format, and local tests cannot prove the project accepts it. Traces are
+   sampled at 5%, so this can take several page loads.
+5. Check PostHog Activity for `$pageview` with `app=julian` and
    `environment=production`; inspect properties for the documented allowlist.
-5. Check that nightly and PR previews send no telemetry.
+6. Check that nightly and PR previews send no telemetry.
 
 Ingestion and source-map processing require the deployment to run. Local tests
 cannot prove either service accepted events. Because anonymous IDs disappear
