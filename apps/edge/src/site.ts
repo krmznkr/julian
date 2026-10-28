@@ -9,9 +9,11 @@
 //   /year/...    301 to the same path without `/year`, keeping the query
 //   /demo/...    the `/demo` page for any route below it, without a redirect
 //   file paths   a real 404 when no such asset exists and it is not a navigation
-//   anything     the assets binding
+//   anything     the assets binding; content-hashed scripts and styles leave
+//                with a one-year immutable Cache-Control (cache.ts)
 import { hasSessionHint } from "@julian/security/session-hint";
 import { Clock, Effect } from "effect";
+import { withHashedAssetCaching } from "./cache";
 import { WorkerEnv } from "./env";
 
 const MARKETING_HOME = "/home";
@@ -97,5 +99,5 @@ export const serveSite = Effect.fn("edge.site")(function* (request: Request) {
   if (looksLikeFile(url.pathname) && !isNavigation(request) && isSpaFallback(url.pathname, asset)) {
     return NOT_FOUND();
   }
-  return asset;
+  return withHashedAssetCaching(request, asset);
 });
