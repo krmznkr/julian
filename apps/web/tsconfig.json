@@ -6,5 +6,12 @@
     "paths": { "@/*": ["./src/*"] },
     "types": ["vite/client"]
   },
-  "include": ["src", "build-defines.ts", "vite.config.ts", "vitest.config.ts"]
+  "include": [
+    "src",
+    "asset-provenance.ts",
+    "asset-provenance.test.ts",
+    "build-defines.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
 }

@@ -308,8 +308,14 @@ immutable` (`apps/edge/src/cache.ts`), so a returning visitor loads them from
 the browser cache without a request. Only a 200 or 304 answer to a GET or HEAD
 with no query string and a JavaScript or CSS type qualifies. HTML,
 `/bootstrap.js`, `/version.json`, other files, redirects and errors keep their
-revalidating or `no-store` headers. The web build fails if `public/` places
-files in either directory, so only the bundler writes there.
+revalidating or `no-store` headers. Only a bundler may write scripts and styles
+in either directory, and the web build enforces this (`apps/web/asset-provenance.ts`).
+It fails at the start if `public/` has either directory. It fails at the end if
+the output has a `.js` or `.css` file there that neither the web bundle nor the
+marketing build's Vite manifest lists. The end check catches files written by
+the marketing copy step or any other plugin. The manifest
+(`apps/marketing/dist/.vite/manifest.json`) is not copied into the deployed
+assets.
 
 ## Browser storage
 

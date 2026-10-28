@@ -45,7 +45,12 @@ export default [
     },
   },
   {
-    files: ["apps/edge/src/**/*.ts", "packages/security/src/**/*.ts"],
+    files: [
+      "apps/edge/src/**/*.ts",
+      "packages/security/src/**/*.ts",
+      // Build tooling beside apps/web/vite.config.ts; its test is linted.
+      "apps/web/asset-provenance*.ts",
+    ],
     languageOptions: { parser: tsParser },
   },
   {

@@ -13,12 +13,12 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "asset-provenance.test.ts"],
     setupFiles: [root("src/test/setup-dom.ts")],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
-      include: ["src/**/*.ts", "src/**/*.tsx"],
+      include: ["src/**/*.ts", "src/**/*.tsx", "asset-provenance.ts"],
       exclude: [
         "**/*.test.ts",
         "**/*.test.tsx",

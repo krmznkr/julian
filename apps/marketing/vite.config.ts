@@ -39,6 +39,10 @@ export default defineConfig({
   build: {
     sourcemap: process.env.JULIAN_SOURCEMAPS === "true" ? "hidden" : false,
     assetsDir: "_marketing",
+    // `.vite/manifest.json` lists every script and stylesheet this build emits.
+    // The web build checks its copy of `_marketing/` against it and leaves the
+    // manifest itself out of the deployed assets.
+    manifest: true,
     rolldownOptions: {
       input: { home: page("home"), privacy: page("privacy"), terms: page("terms") },
     },
