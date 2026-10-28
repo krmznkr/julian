@@ -53,9 +53,12 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
       [`infrastructure.md`](infrastructure.md#one-time-owner-steps).
 
 - [ ] **(Optional) Set managed robots.txt `Content-Signal: search=no`.** Indexing
-      is already prevented by the `noindex` header; this only adds an extra
+      is already discouraged by the `noindex` header; this only adds an extra
       signal. Alchemy's bot management resource does not expose it yet, so it
       stays a dashboard change. Requires dashboard access to account `93527…`.
+      The managed file is not currently served on the Worker hostnames
+      (`/robots.txt` returns `404`, checked 2026-10-28), so this signal has no
+      effect until it is.
 - [ ] **(Optional) Clean up 1Password.** The `Cloudflare` login item holds a
       revoked `homelab-access-home-issue2` API token — delete it to avoid
       confusion.

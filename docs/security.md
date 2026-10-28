@@ -10,8 +10,11 @@ Cloudflare dashboard toggles.
 Julian is a portfolio showcase linked from a resume/GitHub. It should be:
 
 - **Reachable by a human with the link** with zero friction (no login wall).
-- **Uninteresting to bots** — scrapers, SEO crawlers, and AI trainers kept out.
-- **Invisible to search engines** — shared by direct link, not discoverable.
+- **Uninteresting to bots** — aggressive scrapers and SEO crawlers kept out.
+  Keeping AI-training crawlers out is also a goal, but it is only partly
+  enforced today (see bot filtering).
+- **Kept out of search results** — shared by direct link; `noindex` signals ask
+  search engines not to list it.
 - **Cheap and safe** — stays inside Cloudflare's Free tier (no billing risk) and
   never leaks the Google OAuth client secret.
 
@@ -67,6 +70,11 @@ request
 
 Social link-preview bots (LinkedIn, Slack, Twitter/X, Facebook, WhatsApp) are
 **intentionally not blocked** so sharing the link still renders a preview card.
+
+The list does **not** include GPTBot, ClaudeBot or CCBot, and Google-Extended is
+a `robots.txt` token rather than a User-Agent, so this filter does not stop
+them. Bytespider is the only AI crawler on the list, and nothing else in this
+repository blocks the others (see de-indexing).
 
 **To tune:** edit the `BLOCKED_USER_AGENTS` array. Removing `curl/`/`wget/`
 re-allows quick command-line checks.
@@ -144,22 +152,32 @@ upgrade-insecure-requests
 > `connect-src` in `packages/security/src/index.ts`, or the request
 > will be blocked by CSP.
 
-### 5. De-indexing (kept out of search) — `index.html` + headers + Cloudflare
+### 5. De-indexing (kept out of search) — headers + `<meta>`
 
-Three layers:
+Two signals ask search engines not to index the site:
 
-1. `X-Robots-Tag: noindex, nofollow` on every response (authoritative signal).
+1. `X-Robots-Tag: noindex, nofollow` on every Worker response
+   (`packages/security/src/index.ts`).
 2. `<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">` in
-   `index.html`.
-3. Cloudflare's **managed `robots.txt`** (zone feature, declared in
-   `infra/alchemy.run.ts`) `Disallow`s the
-   major AI crawlers (GPTBot, ClaudeBot, CCBot, Bytespider, Google-Extended, …)
-   while allowing search crawl — which is required so crawlers actually _see_ the
-   `noindex` and drop the page from the index.
+   `apps/web/index.html` and the marketing pages (`home.html`, `privacy.html`,
+   `terms.html`).
 
-There is intentionally **no** custom `apps/web/public/robots.txt`: a blanket `Disallow: /`
-would stop crawlers from ever reading the `noindex` header (leaving bare URLs
-indexable) and conflicted with the managed file.
+These are requests that well-behaved search engines honor, not access control.
+
+No `robots.txt` is served. On stable and nightly, a plain request for
+`/robots.txt` gets the Worker's `404 Not Found` (checked 2026-10-28; covered by
+`apps/edge/src/site.test.ts`). A browser-style navigation to it gets the app
+shell instead, which carries both signals above. Under RFC 9309 a `404` for
+`robots.txt` means a crawler may fetch everything, so search crawlers can read
+the `noindex`. It also means `robots.txt` asks no AI crawler to stay away; the
+only User-Agent blocking in this repository is the bot filter (section 1).
+
+`infra/alchemy.run.ts` declares Cloudflare's managed `robots.txt`
+(`isRobotsTxtManaged`), but no managed file reaches visitors on these hostnames.
+
+There is intentionally **no** custom `apps/web/public/robots.txt`: a blanket
+`Disallow: /` would stop crawlers from reading the `noindex` header and could
+leave bare URLs indexed.
 
 Link previews are separate from search. The landing page, `/demo` and the app
 shell carry Open Graph and `twitter:card` tags with an absolute
@@ -228,9 +246,10 @@ done
 - **CSP vs. Google sign-in:** the production flow was exercised end to end on
   2026-07-15 without a CSP or redirect mismatch. Any new browser-side origin
   must still be added to `packages/security/src/index.ts`.
-- **Managed robots.txt** currently signals `search=yes`. Indexing is still
-  prevented by the `noindex` header; flip the content signal to `search=no` from
-  the dashboard if you want the extra signal.
+- **No `robots.txt` is served** (see de-indexing). Search indexing is
+  discouraged by the `noindex` header and `<meta>`. In this repository, opting
+  out of AI crawlers relies only on the bot filter, which does not list GPTBot,
+  ClaudeBot, CCBot or Google-Extended, so that goal is not fully enforced.
 - **Rate limits are per-Cloudflare-location** (best-effort), suitable for abuse
   mitigation, not hard quotas.
 - **Stronger option (not enabled):** Cloudflare Access (free ≤50 users) would put
