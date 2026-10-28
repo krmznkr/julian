@@ -302,6 +302,15 @@ The Worker serves `index.html` for unknown paths on navigations, allowing
 client-side routes to load directly. A non-navigation request for a missing file
 (`/nope.js`, `/_headers`, `/.env`) gets a plain `404` instead.
 
+Content-hashed scripts and styles (`/assets/<name>-<hash>.js|css` and the same
+under `/_marketing/`) leave the Worker with `public, max-age=31536000,
+immutable` (`apps/edge/src/cache.ts`), so a returning visitor loads them from
+the browser cache without a request. Only a 200 or 304 answer to a GET or HEAD
+with no query string and a JavaScript or CSS type qualifies. HTML,
+`/bootstrap.js`, `/version.json`, other files, redirects and errors keep their
+revalidating or `no-store` headers. The web build fails if `public/` places
+files in either directory, so only the bundler writes there.
+
 ## Browser storage
 
 | Key / family                       | Contents                  | Lifetime                                          |
