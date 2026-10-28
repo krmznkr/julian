@@ -18,9 +18,14 @@ The configuration follows the public `krmznkr/me` setup, with stricter payload
 allowlists for an app that handles personal calendar data:
 
 - Sentry disables default integrations, breadcrumbs, session tracking, replay,
-  logs and client reports. Only global errors, caught React render errors, browser API errors and browser
+  logs, metrics and client reports. Only global errors, caught React render errors, browser API errors and browser
   performance tracing are enabled. Fetch/XHR tracing is disabled and trace
   headers are never propagated to Google or the OAuth endpoints.
+- Sentry 11 replaced `sendDefaultPii` with `dataCollection`, which collects
+  every category unless told otherwise. Its `userInfo` default tells Sentry to
+  infer the IP address and user agent. Julian sets every category off: user
+  info, cookies, headers, bodies, query strings, GraphQL, AI and MCP content,
+  database and queue data, stack-frame variables and source context lines.
 - Error messages and exception values become a fixed label. Only built-in error
   types, static app JS filenames, stack line/column positions, generated IDs,
   release and timing fields survive. Function names, source context, local
@@ -30,9 +35,16 @@ allowlists for an app that handles personal calendar data:
   survive. Page paths become static categories such as `/calendar`, `/demo` and
   `/auth/callback`; unknown paths become `/other`. Selected years, days, search
   text, event/calendar titles, emails and OAuth values are not telemetry.
-  Sentry marks transaction roots as segments before running the span hook. Only
-  these roots retain a static route category; child spans keep a fixed label
-  and no data. This preserves route grouping through both SDK hooks.
+  Sentry runs with span streaming (`traceLifecycle: "stream"`, the Sentry 11
+  default, pinned because the span hook only runs for the configured span
+  shape). Every span passes the span hook. Pageload and navigation roots
+  become their static route category; child spans keep a fixed label. Each
+  span keeps only its generated IDs, timings, an ok/error status, the release,
+  `environment=production`, `op=app` and the generated segment ID. Names,
+  URLs, user fields, DOM selectors, status messages and links are dropped.
+  Streamed web-vital spans use fixed names, not DOM selectors that could
+  contain an `aria-label`. The static span shape used by transaction events
+  passes an equivalent allowlist.
 - PostHog uses its slim bundle with memory-only anonymous IDs and persistence
   disabled. It writes no analytics cookies or local storage, never identifies a
   person and respects Do Not Track. Autocapture, exceptions, session recording,
@@ -78,8 +90,9 @@ is required for ordinary development.
 ## Verification
 
 Privacy regression tests feed calendar titles, emails and OAuth secrets into
-request URLs, fragments, errors, stack frames, contexts, span data and PostHog
-properties. Production-gate tests cover local, preview, nightly and unknown
+request URLs, fragments, errors, stack frames, contexts, span data, streamed
+span attributes and PostHog properties. One test runs the real SDK with the
+production options and checks every envelope it would send. Production-gate tests cover local, preview, nightly and unknown
 hosts. SDK configuration tests lock down the disabled collection features.
 
 After a stable release, the release owner should:
