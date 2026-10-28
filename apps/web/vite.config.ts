@@ -48,7 +48,8 @@ const sharePreviews = (): Plugin => ({
 
 // The marketing pages (@julian/marketing, built first by Turborepo) ship in the
 // same assets directory, so the Worker serves both from one binding. Its
-// manifest (`.vite/`) is read by `bundlerOnlyAssetDirs` but not deployed.
+// manifest (`.vite/`) is not deployed: `bundlerOnlyAssetDirs` reads it, with the
+// original files, to check every copied script and stylesheet.
 const marketingPages = (): Plugin => ({
   name: "julian:marketing-pages",
   apply: "build",
@@ -67,7 +68,8 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    bundlerOnlyAssetDirs({ copiedManifests: [path.join(marketingDist, ".vite/manifest.json")] }),
+    // Checks the output after every other plugin has written (see its docs).
+    bundlerOnlyAssetDirs({ copiedBuilds: [marketingDist] }),
     securityHeadersFile(),
     sharePreviews(),
     marketingPages(),
