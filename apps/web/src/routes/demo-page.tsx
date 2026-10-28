@@ -27,8 +27,8 @@ export function DemoPage({ year }: { year: number }) {
       banner={
         // Below md (phones) the banner is one row: a short notice that wraps
         // to two lines beside Connect. From md up it keeps the centred layout.
-        <div className="flex flex-wrap items-center gap-2 bg-muted/40 px-3 py-1 text-xs md:justify-center md:gap-x-3 md:gap-y-1 md:border-b md:border-border/40 md:px-6 md:py-2 md:text-center md:text-sm">
-          <p className="min-w-40 flex-1 text-[11px] leading-[14px] text-muted-foreground md:contents md:text-sm md:leading-5">
+        <div className="flex flex-wrap items-center gap-2 bg-muted/40 px-2 py-1 text-xs md:justify-center md:gap-x-3 md:gap-y-1 md:border-b md:border-border/40 md:px-6 md:py-2 md:text-center md:text-sm">
+          <p className="min-w-40 flex-1 text-xs leading-[14px] text-foreground/80 md:contents md:text-sm md:leading-5 md:text-muted-foreground">
             <span className="font-semibold text-foreground md:rounded md:border md:border-border md:bg-background md:px-2 md:py-0.5 md:text-xs md:uppercase md:tracking-wide">
               Demo · Sample data
             </span>
@@ -42,7 +42,7 @@ export function DemoPage({ year }: { year: number }) {
             type="button"
             onClick={connectGoogle}
             disabled={connecting}
-            className="inline-flex h-8 shrink-0 items-center rounded-full bg-foreground px-3 text-xs font-medium text-background transition-opacity hover:opacity-85 disabled:cursor-wait disabled:opacity-60 md:h-7 md:px-3.5"
+            className="inline-flex h-8 shrink-0 items-center rounded-full bg-foreground px-2 text-xs font-medium text-background transition-opacity hover:opacity-85 disabled:cursor-wait disabled:opacity-60 md:h-7 md:px-3.5"
           >
             {connecting ? "Connecting…" : "Connect my Google Calendar"}
           </button>

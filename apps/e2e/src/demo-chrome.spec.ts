@@ -14,27 +14,34 @@ const controlNames = [
   "Reset demo",
 ] as const;
 
-test.describe("on a 320px phone", () => {
-  test.use({ viewport: { width: 320, height: 700 }, hasTouch: true, isMobile: true });
+for (const colorScheme of ["light", "dark"] as const) {
+  test.describe(`on a 320px phone (${colorScheme})`, () => {
+    test.use({
+      viewport: { width: 320, height: 700 },
+      hasTouch: true,
+      isMobile: true,
+      colorScheme,
+    });
 
-  test("every demo control fits without clipping or page overflow", async ({ demo: page }) => {
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(0);
+    test("every demo control fits without clipping or page overflow", async ({ demo: page }) => {
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
 
-    for (const name of controlNames)
-      await expect(page.getByRole("button", { name })).toBeInViewport({ ratio: 1 });
-    await expect(page.getByRole("link", { name: "About Julian" })).toBeInViewport({ ratio: 1 });
+      for (const name of controlNames)
+        await expect(page.getByRole("button", { name })).toBeInViewport({ ratio: 1 });
+      await expect(page.getByRole("link", { name: "About Julian" })).toBeInViewport({ ratio: 1 });
 
-    // The notice wraps instead of being cut off.
-    const notice = page.getByText("Changes stay here.").locator("xpath=..");
-    expect(await notice.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
+      // The notice wraps instead of being cut off.
+      const notice = page.getByText("Changes stay here.").locator("xpath=..");
+      expect(await notice.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
 
-    // 349px before the compact layout.
-    expect(await monthHeaderTop(page)).toBeLessThanOrEqual(330);
+      // 349px before the compact layout.
+      expect(await monthHeaderTop(page)).toBeLessThanOrEqual(330);
+    });
   });
-});
+}
 
 test.describe("on a desktop", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
