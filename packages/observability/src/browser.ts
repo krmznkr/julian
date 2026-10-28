@@ -1,32 +1,82 @@
 import * as Sentry from "@sentry/browser";
+import type { BrowserOptions } from "@sentry/browser";
 import posthog from "posthog-js/dist/module.slim";
-import { POSTHOG_KEY, sanitizePostHogEvent, sanitizeSentryEvent, sanitizeSpan } from "./privacy";
+import {
+  POSTHOG_KEY,
+  sanitizePostHogEvent,
+  sanitizeSentryEvent,
+  sanitizeStreamedSpan,
+} from "./privacy";
 
 // Public ingestion identifiers, not API/auth tokens. See docs/observability.md.
 const SENTRY_DSN =
   "https://ac6d42a09e387ccbd1f541b47fa460fe@o4511769287000064.ingest.de.sentry.io/4511769300762704";
 
+// Sentry 11 removed `sendDefaultPii`. Its replacement, `dataCollection`,
+// collects every category by default; `userInfo: true` even tells Sentry to
+// infer the IP address and user agent. Turn every category off.
+const SENTRY_DATA_COLLECTION = {
+  userInfo: false,
+  cookies: false,
+  httpHeaders: false,
+  httpBodies: [],
+  urlQueryParams: false,
+  graphQL: { document: false, variables: false },
+  genAI: { inputs: false, outputs: false },
+  mcp: { inputs: false, outputs: false },
+  databaseQueryData: false,
+  queues: false,
+  stackFrameVariables: false,
+  frameContextLines: 0,
+} as const satisfies BrowserOptions["dataCollection"];
+
+// The envelope's `trace` header (dynamic sampling context) copies the root
+// span's name whenever its source is not "url". beforeSendSpan cannot reach
+// that header, so drop the name wherever Sentry builds one.
+type Integration = Extract<BrowserOptions["integrations"], readonly unknown[]>[number];
+
+const dropTraceTransactionName: Integration = {
+  name: "JulianDropTraceTransactionName",
+  setup: (client) => {
+    client.on("createDsc", (dsc) => {
+      // Sentry ignores the hook's return value and reads this object afterwards.
+      // eslint-disable-next-line functional/immutable-data
+      delete dsc.transaction;
+    });
+  },
+};
+
+export const sentryOptions = (release: string): BrowserOptions => ({
+  dsn: SENTRY_DSN,
+  release,
+  environment: "production",
+  dataCollection: SENTRY_DATA_COLLECTION,
+  // Streaming is the v11 default; pin it because beforeSendSpan only runs for
+  // the span shape of the configured lifecycle. Streamed web vital spans also
+  // use fixed names instead of DOM selectors, which can include aria-labels.
+  // Streaming builds no transaction events, so beforeSendTransaction is unused.
+  traceLifecycle: "stream",
+  defaultIntegrations: false,
+  integrations: [
+    Sentry.globalHandlersIntegration(),
+    Sentry.browserApiErrorsIntegration(),
+    Sentry.browserTracingIntegration({ traceFetch: false, traceXHR: false }),
+    dropTraceTransactionName,
+  ],
+  tracesSampleRate: 0.05,
+  tracePropagationTargets: [],
+  sendClientReports: false,
+  // v11 removed `enableLogs`; logs and metrics are on whenever code calls the
+  // logger or metrics APIs. Julian calls neither, and drops any that appear.
+  beforeSendLog: () => null,
+  beforeSendMetric: () => null,
+  beforeBreadcrumb: () => null,
+  beforeSend: (event) => sanitizeSentryEvent(event, release),
+  beforeSendSpan: (span) => sanitizeStreamedSpan(span, release),
+});
+
 export const initialize = (release: string): ((error: unknown) => void) => {
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    release,
-    environment: "production",
-    sendDefaultPii: false,
-    defaultIntegrations: false,
-    integrations: [
-      Sentry.globalHandlersIntegration(),
-      Sentry.browserApiErrorsIntegration(),
-      Sentry.browserTracingIntegration({ traceFetch: false, traceXHR: false }),
-    ],
-    tracesSampleRate: 0.05,
-    tracePropagationTargets: [],
-    sendClientReports: false,
-    enableLogs: false,
-    beforeBreadcrumb: () => null,
-    beforeSend: (event) => sanitizeSentryEvent(event, release),
-    beforeSendTransaction: (event) => sanitizeSentryEvent(event, release),
-    beforeSendSpan: sanitizeSpan,
-  });
+  Sentry.init(sentryOptions(release));
   posthog.init(POSTHOG_KEY, {
     api_host: "https://eu.i.posthog.com",
     ui_host: "https://eu.posthog.com",
