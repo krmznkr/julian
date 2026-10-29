@@ -53,6 +53,20 @@ test("open day details have no serious accessibility violations", async ({ demo:
   await expect(page.getByRole("complementary", { name: "Event details" })).toBeVisible();
 });
 
+// Collapsed, the sidebar is 1px wide; it must not linger as an empty landmark.
+test("collapsing the desktop sidebar removes its landmark until it expands", async ({
+  demo: page,
+}) => {
+  const calendars = page.getByRole("complementary", { name: "Calendars" });
+  await expect(calendars).toBeVisible();
+  await page.getByRole("button", { name: "Collapse sidebar" }).click();
+  await expect(page.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+  await expect(page.getByRole("complementary")).toHaveCount(0);
+  await page.getByRole("button", { name: "Expand sidebar" }).click();
+  await expect(calendars).toBeVisible();
+  await expect(page.getByRole("complementary")).toHaveCount(1);
+});
+
 test("the event dialog has no serious accessibility violations", async ({ demo: page }) => {
   await page.keyboard.press("n");
   await expect(page.getByRole("dialog", { name: "New event" })).toBeVisible();
