@@ -81,6 +81,8 @@ export default function AppShell({
             "relative hidden shrink-0 flex-col bg-card transition-all duration-200 print:hidden md:flex",
             sidebarCollapsed ? "w-0 border-r border-transparent" : "w-72 border-r border-border/60",
           )}
+          // Day details open a second complementary landmark beside this one.
+          aria-label="Calendars"
         >
           <div
             className={cn(

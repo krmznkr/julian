@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { getPanelPosition } from "@/components/year-view/day-hover-popover";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import type { CalendarEvent } from "@julian/domain";
+import { DayHoverPopover, getPanelPosition } from "@/components/year-view/day-hover-popover";
+import { YearViewSharedDataProvider } from "@/components/year-view/year-view-context";
 
 const DESKTOP = { width: 1440, height: 900 };
 // The October column at 1440x900: 279 px wide, starting at x=750.
@@ -51,5 +54,58 @@ describe("getPanelPosition", () => {
       left: 506,
       top: 200,
     });
+  });
+});
+
+const sprint: CalendarEvent = {
+  id: "sprint",
+  calendarId: "work",
+  title: "Sprint 14",
+  start: "2026-03-10",
+  end: "2026-03-11",
+  allDay: true,
+  isTimed: false,
+};
+
+function renderPanel(items: { key: string; event: CalendarEvent; allDay: boolean }[]) {
+  const anchor = document.createElement("div");
+  document.body.append(anchor);
+  return render(
+    <YearViewSharedDataProvider
+      value={{ calendars: [{ id: "work", summary: "Work" }], monthNames: [] }}
+    >
+      <DayHoverPopover
+        open
+        label="March 10"
+        items={items}
+        activeKey={undefined}
+        anchorEl={anchor}
+        anchorRect={day(300)}
+        onSelect={() => {}}
+      />
+    </YearViewSharedDataProvider>,
+  );
+}
+
+describe("DayHoverPopover landmarks", () => {
+  afterEach(() => {
+    cleanup();
+    document.body.replaceChildren();
+  });
+
+  // The desktop sidebar is also a complementary landmark, so this one needs
+  // its own name for screen-reader landmark navigation.
+  it("names the event details landmark", () => {
+    renderPanel([{ key: "sprint", event: sprint, allDay: true }]);
+    const panel = screen.getByRole("dialog", { name: "March 10 events" });
+    const details = within(panel).getByRole("complementary", { name: "Event details" });
+    expect(details).toHaveTextContent("Sprint 14");
+    expect(details).toHaveTextContent("Work");
+  });
+
+  it("names the landmark of an empty day too", () => {
+    renderPanel([]);
+    const details = screen.getByRole("complementary", { name: "Event details" });
+    expect(details).toHaveTextContent("No events on this day");
   });
 });
