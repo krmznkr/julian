@@ -9,7 +9,7 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: ["**/*.test.ts"],
       // Just under current numbers so a drop fails CI.
-      thresholds: { lines: 89, functions: 77, branches: 75, statements: 88 },
+      thresholds: { lines: 98, functions: 98, branches: 93, statements: 98 },
     },
   },
 });
