@@ -46,10 +46,12 @@ function stubVisibility(isVisible: (element: HTMLElement) => boolean) {
 function Harness({
   sidebar,
   content,
+  sidebarCollapsed,
   onFallback = () => {},
 }: {
   sidebar?: React.ReactNode;
   content?: React.ReactNode;
+  sidebarCollapsed?: boolean;
   onFallback?: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -58,6 +60,7 @@ function Harness({
       mobileSidebarOpen={open}
       onMobileSidebarOpenChange={setOpen}
       onRestoreFocusFallback={onFallback}
+      sidebarCollapsed={sidebarCollapsed}
       topbar={
         <>
           <button type="button" onClick={() => setOpen(true)}>
@@ -384,5 +387,27 @@ describe("AppShell landmarks", () => {
     expect(sidebar).not.toHaveAttribute("role");
     expect(within(sidebar!).getByRole("button", { name: "Connect" })).toBeInTheDocument();
     expect(drawer()).toHaveAttribute("role", "dialog");
+  });
+
+  // Collapsed, the sidebar is 1px wide: an empty "Calendars" landmark would
+  // still be a stop in screen-reader landmark navigation.
+  it("takes the collapsed desktop sidebar out of the landmarks and brings it back", () => {
+    stubViewport(true);
+    const { rerender } = render(<Harness />);
+    expect(screen.getAllByRole("complementary")).toHaveLength(1);
+    const sidebar = screen.getByRole("complementary", { name: "Calendars" });
+    expect(sidebar).not.toHaveAttribute("aria-hidden");
+    expect(sidebar).not.toHaveAttribute("inert");
+
+    rerender(<Harness sidebarCollapsed />);
+    expect(screen.queryAllByRole("complementary")).toEqual([]);
+    expect(sidebar).toHaveAttribute("aria-hidden", "true");
+    expect(sidebar).toHaveAttribute("inert");
+    // The top bar, where the real toggle lives, stays reachable.
+    expect(screen.getByRole("button", { name: "Open calendars" }).closest("[inert]")).toBeNull();
+
+    rerender(<Harness sidebarCollapsed={false} />);
+    expect(screen.getByRole("complementary", { name: "Calendars" })).toBe(sidebar);
+    expect(within(sidebar).getByRole("button", { name: "Connect" })).toBeInTheDocument();
   });
 });

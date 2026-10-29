@@ -83,6 +83,10 @@ export default function AppShell({
           )}
           // Day details open a second complementary landmark beside this one.
           aria-label="Calendars"
+          // Collapsed, it is 1px wide: hide the whole landmark, not just its
+          // contents, so landmark navigation does not land on an empty region.
+          aria-hidden={sidebarCollapsed || undefined}
+          inert={sidebarCollapsed}
         >
           <div
             className={cn(
@@ -91,8 +95,6 @@ export default function AppShell({
                 ? "pointer-events-none overflow-hidden px-0 py-0 opacity-0"
                 : "overflow-y-auto px-4 py-4",
             )}
-            aria-hidden={sidebarCollapsed}
-            inert={sidebarCollapsed}
             data-sidebar-root=""
           >
             {sidebar}
