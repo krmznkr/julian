@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { createPortal } from "react-dom";
 import { Dialog, DropdownMenu } from "radix-ui";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AppShell from "./app-shell";
 import { AppContentInertContext } from "./app-content-inert-context";
@@ -364,5 +364,25 @@ describe("AppShell drawer keyboard behavior", () => {
     unmount();
     expect(viewport.removed).toHaveBeenCalled();
     expect(viewport.listenerCount()).toBe(0);
+  });
+});
+
+describe("AppShell landmarks", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  // Day details add an "Event details" complementary landmark beside the
+  // sidebar, so the sidebar needs a name of its own.
+  it("names the desktop sidebar, and keeps the drawer a dialog rather than a landmark", () => {
+    stubViewport(true);
+    render(<Harness />);
+    const [sidebar, ...others] = screen.getAllByRole("complementary");
+    expect(others).toEqual([]);
+    expect(sidebar).toBe(screen.getByRole("complementary", { name: "Calendars" }));
+    expect(sidebar).not.toHaveAttribute("role");
+    expect(within(sidebar!).getByRole("button", { name: "Connect" })).toBeInTheDocument();
+    expect(drawer()).toHaveAttribute("role", "dialog");
   });
 });

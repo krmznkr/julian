@@ -17,7 +17,10 @@ const EventDetail = memo(function EventDetail({ item }: { item: DayEventItem | u
 
   if (!item) {
     return (
-      <aside className="flex min-h-40 w-72 items-center justify-center border-l border-border/80 px-3 py-2">
+      <aside
+        aria-label="Event details"
+        className="flex min-h-40 w-72 items-center justify-center border-l border-border/80 px-3 py-2"
+      >
         <p className="text-sm text-muted-foreground">No events on this day</p>
       </aside>
     );
@@ -27,7 +30,7 @@ const EventDetail = memo(function EventDetail({ item }: { item: DayEventItem | u
   const requestMove = onRequestMoveEvent?.(item.event) ?? null;
 
   return (
-    <aside className="min-h-40 w-72 border-l border-border/80 px-3 py-2">
+    <aside aria-label="Event details" className="min-h-40 w-72 border-l border-border/80 px-3 py-2">
       <div className="flex items-start gap-2">
         <span
           className="mt-1 size-2.5 shrink-0 rounded-[3px] border-2"
