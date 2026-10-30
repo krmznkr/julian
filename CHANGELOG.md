@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.5](https://github.com/krmznkr/julian/compare/v0.4.4...v0.4.5) (2026-10-30)
+
+
+### Performance
+
+* **web:** paint the loading screen before the app's JavaScript arrives ([#95](https://github.com/krmznkr/julian/issues/95)) ([ec150e3](https://github.com/krmznkr/julian/commit/ec150e33d959e405e544605252aa2fa3aec7de33))
+
 ## [0.4.4](https://github.com/krmznkr/julian/compare/v0.4.3...v0.4.4) (2026-10-29)
 
 
