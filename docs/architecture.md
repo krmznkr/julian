@@ -303,9 +303,10 @@ client-side routes to load directly. A non-navigation request for a missing file
 (`/nope.js`, `/_headers`, `/.env`) gets a plain `404` instead.
 
 `index.html` (and `demo.html`, built from it) paints the "Loading calendar..."
-screen inside `#root` before any script runs, so the first paint waits only for
-the HTML, the stylesheet and `/bootstrap.js`, not for the app's JavaScript.
-React replaces it on mount. It is the same markup as `RouteLoading`
+screen inside `#root` before the app's entry module runs, so the first paint
+waits only for the HTML, the stylesheet and `/bootstrap.js`, not for the app's
+JavaScript.
+React replaces it on mount. It uses the same classes and text as `RouteLoading`
 (`src/features/shell/route-loading.tsx`); a unit test keeps the two in step.
 Without JavaScript the page says the calendar needs it instead.
 

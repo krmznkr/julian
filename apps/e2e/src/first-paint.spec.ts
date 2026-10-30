@@ -9,16 +9,23 @@ test("/demo paints its loading screen before the app's JavaScript arrives", asyn
   // Hold the entry chunk: whatever is on screen meanwhile came from the HTML alone.
   let release!: () => void;
   const held = new Promise<void>((resolve) => (release = resolve));
+  let intercepted!: () => void;
+  const entryRequested = new Promise<void>((resolve) => (intercepted = resolve));
   await page.route("**/assets/index-*.js", async (route: Route) => {
+    intercepted();
     await held;
     await route.continue();
   });
 
-  await page.goto("/demo", { waitUntil: "commit" });
-  await expect(page.getByText(LOADING, { exact: true })).toBeVisible();
-  await expect(page.getByText(NO_SCRIPT)).toBeHidden();
-
-  release();
+  try {
+    await page.goto("/demo", { waitUntil: "commit" });
+    // Proves the hold applies: a renamed entry chunk would fail here, not pass silently.
+    await entryRequested;
+    await expect(page.getByText(LOADING, { exact: true })).toBeVisible();
+    await expect(page.getByText(NO_SCRIPT)).toBeHidden();
+  } finally {
+    release();
+  }
   await expect(yearGrid(page)).toBeVisible();
   await expect(page.getByText(LOADING, { exact: true })).toHaveCount(0);
 });

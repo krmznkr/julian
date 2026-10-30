@@ -22,8 +22,8 @@
     <noscript><style>[data-boot-loading]{display:none}</style></noscript>
   </head>
   <body class="min-h-screen antialiased">
-    <!-- Painted before any script runs, so the first paint does not wait for
-         the app's JavaScript. Same markup as RouteLoading
+    <!-- Painted before the app's entry module runs, so the first paint does
+         not wait for the app's JavaScript. Same classes and text as RouteLoading
          (src/features/shell/route-loading.tsx); React replaces it on mount. -->
     <div id="root"><main class="flex min-h-dvh items-center justify-center bg-background px-6 text-sm text-muted-foreground"><span data-boot-loading>Loading calendar...</span><noscript>Julian needs JavaScript to show your calendar.</noscript></main></div>
     <script type="module" src="/src/main.tsx"></script>
