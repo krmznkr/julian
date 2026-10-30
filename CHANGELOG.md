@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.4](https://github.com/krmznkr/julian/compare/v0.4.3...v0.4.4) (2026-10-29)
+
+
+### Bug Fixes
+
+* **a11y:** give the sidebar and day-panel landmarks unique names ([#93](https://github.com/krmznkr/julian/issues/93)) ([38e4102](https://github.com/krmznkr/julian/commit/38e41024f483601c9c6f32823ab47c1137b67812))
+* **a11y:** hide the collapsed desktop sidebar from assistive tech ([#94](https://github.com/krmznkr/julian/issues/94)) ([7924279](https://github.com/krmznkr/julian/commit/79242790edcdbb62a5007ef4c0941bfa99eb5c57))
+* **deps:** override @hono/node-server to 2.1.3+ for GHSA-rmxm-3fg6-px4f ([#90](https://github.com/krmznkr/julian/issues/90)) ([e554750](https://github.com/krmznkr/julian/commit/e554750e08a6e1f9b8d62fdbd596dbb618e775ee))
+
 ## [0.4.3](https://github.com/krmznkr/julian/compare/v0.4.2...v0.4.3) (2026-10-28)
 
 
