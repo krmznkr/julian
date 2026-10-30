@@ -21,14 +21,7 @@ import { dynamic } from "@/lib/router";
 import { hasStoredGoogleSession } from "@/lib/session";
 import { NotFoundScreen } from "@/features/shell/not-found-screen";
 import { RouteErrorScreen } from "@/features/shell/route-error-screen";
-
-function RouteLoading({ label }: { label: string }) {
-  return (
-    <main className="flex min-h-dvh items-center justify-center bg-background px-6 text-sm text-muted-foreground">
-      {label}
-    </main>
-  );
-}
+import { CALENDAR_LOADING_LABEL, RouteLoading } from "@/features/shell/route-loading";
 
 const YearPage = dynamic<{ year: number }>(
   async () => ({
@@ -36,7 +29,7 @@ const YearPage = dynamic<{ year: number }>(
   }),
   {
     loading: function YearRouteLoading() {
-      return <RouteLoading label="Loading calendar..." />;
+      return <RouteLoading label={CALENDAR_LOADING_LABEL} />;
     },
   },
 );

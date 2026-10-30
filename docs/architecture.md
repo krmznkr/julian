@@ -302,6 +302,14 @@ The Worker serves `index.html` for unknown paths on navigations, allowing
 client-side routes to load directly. A non-navigation request for a missing file
 (`/nope.js`, `/_headers`, `/.env`) gets a plain `404` instead.
 
+`index.html` (and `demo.html`, built from it) paints the "Loading calendar..."
+screen inside `#root` before the app's entry module runs, so the first paint
+waits only for the HTML, the stylesheet and `/bootstrap.js`, not for the app's
+JavaScript.
+React replaces it on mount. It uses the same classes and text as `RouteLoading`
+(`src/features/shell/route-loading.tsx`); a unit test keeps the two in step.
+Without JavaScript the page says the calendar needs it instead.
+
 Content-hashed scripts and styles (`/assets/<name>-<hash>.js|css` and the same
 under `/_marketing/`) leave the Worker with `public, max-age=31536000,
 immutable` (`apps/edge/src/cache.ts`), so a returning visitor loads them from
