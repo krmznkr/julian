@@ -96,6 +96,7 @@ export function useDemoPlayer(rootRef: React.RefObject<HTMLElement | null>): Dem
       window.removeEventListener("touchstart", stopOnInput, true);
       document.removeEventListener("visibilitychange", stopWhenHidden);
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- a new runId restarts the tour
   }, [focusGrid, rootRef, runId, status, takeControl, tour]);
 
   return useMemo(

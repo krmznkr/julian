@@ -245,7 +245,7 @@ export function useYearGridKeyboard({
         : dialogItems[0]?.key;
       return nextKey;
     });
-  }, [announceEvent, dialogCell, dialogItems]);
+  }, [dialogCell, dialogItems]);
 
   useEffect(() => {
     // Updating the live announcement is the accessibility side effect of the selected event changing.
