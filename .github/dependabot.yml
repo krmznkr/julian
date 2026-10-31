@@ -5,6 +5,22 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # CI compatibility pins, reviewed 2026-10-31. Remove after a coordinated migration.
+    ignore:
+      # eslint-plugin-functional crashes with TS7 (Intrinsic is undefined).
+      - dependency-name: typescript
+        versions: [">=7 <8"]
+      # Keep runner and coverage provider paired; separate v5 bumps break coverage.
+      - dependency-name: vitest
+        versions: [">=5 <6"]
+      - dependency-name: "@vitest/coverage-v8"
+        versions: [">=5 <6"]
+      # beta.84 removes alchemy/Cloudflare used by the current infra entry.
+      - dependency-name: alchemy
+        versions: ["2.0.0-beta.84"]
+      # New React memoization diagnostic fails the existing day-hover-popover.
+      - dependency-name: oxlint
+        versions: ["1.90.0"]
     groups:
       bun-minor-and-patch:
         update-types: [minor, patch]

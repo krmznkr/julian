@@ -21,8 +21,8 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "1.1.1",
-    "effect": "4.0.6",
-    "lucide-react": "1.61.0",
+    "effect": "4.0.7",
+    "lucide-react": "1.63.0",
     "next-themes": "0.4.6",
     "radix-ui": "1.8.1",
     "react": "19.3.1",
@@ -31,7 +31,7 @@
     "@julian/observability": "workspace:*"
   },
   "devDependencies": {
-    "@effect/vitest": "4.0.6",
+    "@effect/vitest": "4.0.7",
     "@julian/config": "workspace:*",
     "@julian/marketing": "workspace:*",
     "@julian/release": "workspace:*",
