@@ -33,7 +33,7 @@
   "devDependencies": {
     "@effect/language-service": "0.87.5",
     "@j178/prek": "0.5.9",
-    "@types/node": "26.6.5",
+    "@types/node": "26.6.6",
     "@vitest/coverage-v8": "4.1.12",
     "eslint-plugin-functional": "10.0.1",
     "fallow": "3.37.0",
