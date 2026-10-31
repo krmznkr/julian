@@ -7,8 +7,8 @@ exchange and refresh.
 
 ## Requirements
 
-- Node 24.15.0 (pinned in `package.json` `engines` and `mise.toml`)
-- Bun 1.4.4 (pinned in `package.json` `packageManager` and `mise.toml`)
+- Node 24.15.0 (pinned in `package.json` `engines.node`; CI reads it from there)
+- Bun 1.4.4 (pinned in `package.json` `packageManager`; CI reads it from there)
 
 ## Repository layout
 
