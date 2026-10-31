@@ -36,9 +36,9 @@
     "@types/node": "26.6.5",
     "@vitest/coverage-v8": "4.1.12",
     "eslint-plugin-functional": "10.0.1",
-    "fallow": "3.35.0",
-    "oxfmt": "0.74.0",
-    "oxlint": "1.89.0",
+    "fallow": "3.37.0",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.90.0",
     "turbo": "2.11.10",
     "typescript": "6.0.3",
     "vitest": "4.1.12"
