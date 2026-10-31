@@ -8,24 +8,24 @@ exchange and refresh.
 ## Requirements
 
 - Node 24.15.0 (pinned in `package.json` `engines` and `mise.toml`)
-- pnpm 10.33.0
+- Bun 1.4.4 (pinned in `package.json` `packageManager` and `mise.toml`)
 
 ## Repository layout
 
-A pnpm workspace orchestrated by Turborepo:
+A Bun workspace orchestrated by Turborepo:
 
-| Path                | Package             | Purpose                                                 |
-| ------------------- | ------------------- | ------------------------------------------------------- |
-| `apps/web`          | `@julian/web`       | The Vite/React calendar app                             |
-| `apps/marketing`    | `@julian/marketing` | Static marketing, privacy, and terms pages              |
-| `apps/edge`         | `@julian/edge`      | Cloudflare Worker: assets, OAuth proxy, protections     |
-| `apps/e2e`          | `@julian/e2e`       | Playwright, axe, and Lighthouse checks on the web build |
-| `packages/domain`   | `@julian/domain`    | Pure calendar logic: dates, events, year-grid layout    |
-| `packages/google`   | `@julian/google`    | Effect services for Google OAuth, Calendar, and Tasks   |
-| `packages/security` | `@julian/security`  | Security headers and the session-hint cookie            |
-| `packages/observability` | `@julian/observability` | Shared browser telemetry and privacy boundaries |
-| `packages/release`  | `@julian/release`   | Version and channel metadata for each build             |
-| `packages/config`   | `@julian/config`    | Shared TypeScript configuration                         |
+| Path                     | Package                 | Purpose                                                 |
+| ------------------------ | ----------------------- | ------------------------------------------------------- |
+| `apps/web`               | `@julian/web`           | The Vite/React calendar app                             |
+| `apps/marketing`         | `@julian/marketing`     | Static marketing, privacy, and terms pages              |
+| `apps/edge`              | `@julian/edge`          | Cloudflare Worker: assets, OAuth proxy, protections     |
+| `apps/e2e`               | `@julian/e2e`           | Playwright, axe, and Lighthouse checks on the web build |
+| `packages/domain`        | `@julian/domain`        | Pure calendar logic: dates, events, year-grid layout    |
+| `packages/google`        | `@julian/google`        | Effect services for Google OAuth, Calendar, and Tasks   |
+| `packages/security`      | `@julian/security`      | Security headers and the session-hint cookie            |
+| `packages/observability` | `@julian/observability` | Shared browser telemetry and privacy boundaries         |
+| `packages/release`       | `@julian/release`       | Version and channel metadata for each build             |
+| `packages/config`        | `@julian/config`        | Shared TypeScript configuration                         |
 
 Linting, formatting, and dead-code checks run once from the root across every
 package. Build, typecheck, and tests run per package through Turborepo, which
@@ -33,19 +33,19 @@ caches results that did not change.
 
 ## Commands
 
-| Command                | Purpose                                          |
-| ---------------------- | ------------------------------------------------ |
-| `pnpm dev`             | Start the local Vite dev server                  |
-| `pnpm build`           | Build every package                              |
-| `pnpm typecheck`       | TypeScript + Effect diagnostics, every package   |
-| `pnpm test:run`        | Unit tests, every package                        |
-| `pnpm test:coverage`   | Unit tests with per-package coverage thresholds  |
-| `pnpm test:tz:dates`   | Date tests across five time zones                |
-| `pnpm test:e2e`        | Playwright end-to-end and axe accessibility      |
-| `pnpm test:lighthouse` | Lighthouse CI against the production build       |
-| `pnpm quality:static`  | Lint, format, dead code, functional rules, types |
+| Command                   | Purpose                                          |
+| ------------------------- | ------------------------------------------------ |
+| `bun run dev`             | Start the local Vite dev server                  |
+| `bun run build`           | Build every package                              |
+| `bun run typecheck`       | TypeScript + Effect diagnostics, every package   |
+| `bun run test:run`        | Unit tests, every package                        |
+| `bun run test:coverage`   | Unit tests with per-package coverage thresholds  |
+| `bun run test:tz:dates`   | Date tests across five time zones                |
+| `bun run test:e2e`        | Playwright end-to-end and axe accessibility      |
+| `bun run test:lighthouse` | Lighthouse CI against the production build       |
+| `bun run quality:static`  | Lint, format, dead code, functional rules, types |
 
-Run one package's script with a filter, e.g. `pnpm --filter @julian/web preview`.
+Run one package's script with a filter, e.g. `bun run --cwd apps/web preview`.
 
 ## End-to-end and web-quality checks
 
@@ -55,9 +55,9 @@ Google credentials are needed: the app tests drive `/demo`, which runs the real
 year view on sample data.
 
 ```bash
-pnpm --filter @julian/e2e exec playwright install chromium   # once
-pnpm test:e2e
-pnpm test:lighthouse
+bun run --cwd apps/e2e playwright install chromium   # once
+bun run test:e2e
+bun run test:lighthouse
 ```
 
 - **Playwright** serves `apps/web/dist` with `vite preview` on port 4173
@@ -72,7 +72,7 @@ pnpm test:lighthouse
   phones (month headers within the top 200px on a Pixel 7, nothing clipped at 320px), and a late-month today staying fully in view
   on load, under the arrow keys and beside the tour's day details on desktop and Pixel 7. The clock is pinned so the
   sample year is deterministic. Open the last run with
-  `pnpm --filter @julian/e2e exec playwright show-report`; failed tests keep a
+  `bun run --cwd apps/e2e playwright show-report`; failed tests keep a
   trace in `apps/e2e/test-results`.
 - **axe** (`src/a11y.spec.ts`) fails on any serious or critical violation. It
   scans the demo with its banner and tour row visible and `/home`, `/privacy`,
@@ -105,7 +105,7 @@ ID:
 
 ```bash
 cp .env.example .env
-pnpm dev
+bun run dev
 ```
 
 The Vite dev server is fixed to `http://127.0.0.1:3000`. Open it at that exact
@@ -119,8 +119,8 @@ there. For a full local sign-in, run the built app under the Worker:
 
 ```bash
 printf 'GOOGLE_CLIENT_SECRET=%s\n' "<secret>" > apps/edge/.dev.vars   # git-ignored
-pnpm build
-pnpm --filter @julian/edge dev        # wrangler dev on http://127.0.0.1:8787
+bun run build
+bun run --cwd apps/edge dev        # wrangler dev on http://127.0.0.1:8787
 ```
 
 Local `wrangler dev` runs with `APP_CHANNEL=dev`, the only channel whose origin
@@ -133,12 +133,12 @@ the Cloudflare Worker secret store and the `GOOGLE_CLIENT_SECRET` GitHub secret
 (used by the nightly deploy). The OAuth client must list each origin you use as
 a JavaScript origin and its `/auth/callback` as a redirect URI:
 
-| Where                  | Origin                               | Redirect URI                                       |
-| ---------------------- | ------------------------------------ | -------------------------------------------------- |
-| Production             | `https://julian.krmznkr.com`         | `https://julian.krmznkr.com/auth/callback`         |
-| Nightly                | `https://julian-nightly.krmznkr.com` | `https://julian-nightly.krmznkr.com/auth/callback` |
-| `wrangler dev`         | `http://127.0.0.1:8787`              | `http://127.0.0.1:8787/auth/callback`              |
-| Vite dev (start only)  | `http://127.0.0.1:3000`              | `http://127.0.0.1:3000/auth/callback`              |
+| Where                 | Origin                               | Redirect URI                                       |
+| --------------------- | ------------------------------------ | -------------------------------------------------- |
+| Production            | `https://julian.krmznkr.com`         | `https://julian.krmznkr.com/auth/callback`         |
+| Nightly               | `https://julian-nightly.krmznkr.com` | `https://julian-nightly.krmznkr.com/auth/callback` |
+| `wrangler dev`        | `http://127.0.0.1:8787`              | `http://127.0.0.1:8787/auth/callback`              |
+| Vite dev (start only) | `http://127.0.0.1:3000`              | `http://127.0.0.1:3000/auth/callback`              |
 
 Verified on 2026-10-19: production, nightly and both `127.0.0.1` origins and
 callbacks above are registered in the production OAuth client. Earlier

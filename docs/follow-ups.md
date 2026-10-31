@@ -33,13 +33,13 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
       `@lhci/cli` 0.15.1 pins `lighthouse` 12.6.1, which pulls
       `puppeteer-core` 24.43.1 and with it `@puppeteer/browsers` 2.13.2 and
       the unpatched `extract-zip` 2.0.1 (CVE-2026-56876, CVE-2026-19693).
-      The root `pnpm.overrides` entry
+      The root `overrides` entry
       `puppeteer-core@24.43.1>@puppeteer/browsers` swaps in 3.2.6, the line
       that replaced `extract-zip`. It exports the same symbols puppeteer-core
       24 imports, and Lighthouse only uses puppeteer-core to connect to the
       Chrome that chrome-launcher starts. When an `@lhci/cli` release ships
       Lighthouse 13 (puppeteer-core 25 already uses `@puppeteer/browsers` 3),
-      upgrade it, delete the override, and run `pnpm test:lighthouse`.
+      upgrade it, delete the override, and run `bun run test:lighthouse`.
 - [x] **Check the nightly custom domain.** `julian-nightly.krmznkr.com`
       resolves and serves the nightly channel, verified 2026-10-19.
 - [x] **Set the nightly Worker secret.** `nightly.yml` now copies the
@@ -83,7 +83,7 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 
 ## Verify after any change
 
-- [ ] `pnpm typecheck && pnpm test:run && pnpm build` pass locally.
+- [ ] `bun run typecheck && bun run test:run && bun run build` pass locally.
 - [ ] CI and Preview workflows are green on the PR; Deploy stable is green
       after the release PR merges.
 - [ ] Production smoke tests still pass (see "Verifying protections" in
@@ -101,7 +101,7 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
   (`krmznkr@gmail.com`, Google SSO) — not the personal `c57b…` account.
 - **CSP has one source**, `packages/security/src/index.ts`; the build emits
   `dist/_headers` from it.
-- **Rotate the secret** with `pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET`
+- **Rotate the secret** with `bun run --cwd apps/edge wrangler secret put GOOGLE_CLIENT_SECRET`
   (Worker secret store only — never in `.env`, never `VITE_`-prefixed).
 
 ## Tuning knobs
@@ -109,7 +109,7 @@ for `julian.krmznkr.com`. Design details live in [`security.md`](security.md).
 - **Bot blocklist:** `BLOCKED_USER_AGENTS` in `apps/edge/src/guards.ts`.
 - **Rate limits:** `SITE_RATELIMIT` (240/60s) and `OAUTH_RATELIMIT` (12/60s),
   with separate namespaces for nightly, in `infra/src/config.ts` (`period` must be `10` or `60`); regenerate
-  `apps/edge/wrangler.jsonc` with `pnpm --filter @julian/infra wrangler:generate`.
+  `apps/edge/wrangler.jsonc` with `bun run --cwd infra wrangler:generate`.
 - **OAuth body cap:** `MAX_OAUTH_BODY_BYTES` in `apps/edge/src/oauth.ts`.
 
 ## Deferred / not doing (by decision)

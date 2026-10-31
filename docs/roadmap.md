@@ -7,7 +7,7 @@ repository, with Effect as the backbone everywhere.
 
 All phases have shipped as a stack of PRs (#35 to #46).
 
-- pnpm workspace: `apps/web`, `apps/marketing`, `apps/edge`, `apps/e2e`, and
+- Bun workspace: `apps/web`, `apps/marketing`, `apps/edge`, `apps/e2e`, and
   `packages/{domain,google,security,release,config}`.
 - Effect `4.0.4` (LTS to Sep 2029) runs the Google services, the React data
   flows (as interruptible fibers), the landing tour, and the edge Worker.
@@ -80,7 +80,7 @@ Each phase is one or more PRs, merged green, deployable on its own.
 
 - [x] Upgrade `effect` + `@effect/vitest` from `4.0.0-beta.102` to `4.0.4`
       using the [migration guide](https://github.com/Effect-TS/effect/blob/main/MIGRATION.md).
-- [x] Add Effect LSP diagnostics to `pnpm typecheck`.
+- [x] Add Effect LSP diagnostics to `bun run typecheck`.
 - [x] Coverage enforced in CI; thresholds at current levels so they can only rise.
 - [x] README hero: screenshot, live demo link, badges, "why it's interesting".
 - [x] Single-source CSP with a test (later moves to `packages/security`).

@@ -18,7 +18,6 @@ export function visibleYearEventLaneMap(segments: ReadonlyArray<EventSegment>) {
     const laneIndex = reusableLane >= 0 ? reusableLane : laneEnds.length;
     // eslint-disable-next-line functional/immutable-data
     laneEnds[laneIndex] = segment.endDay;
-    // eslint-disable-next-line functional/immutable-data
     lanes.set(segment.id, laneIndex + 1);
   }
 

@@ -4,10 +4,10 @@ Open an issue before a large change. Keep pull requests focused and run the
 checks before pushing.
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm typecheck
-pnpm test:run
-pnpm build
+bun install --frozen-lockfile
+bun run typecheck
+bun run test:run
+bun run build
 ```
 
 Never commit `.env` files, OAuth secrets, or Cloudflare tokens.

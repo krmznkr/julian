@@ -16,11 +16,15 @@
     "apps/marketing/vitest.config.ts",
     "packages/*/vitest.config.ts",
     "packages/release/src/cli.ts",
+    "scripts/oxlint-functional.mjs",
     "infra/alchemy.run.ts",
     "infra/scripts/generate-wrangler.ts",
     "infra/vitest.config.ts"
   ],
-  "ignorePatterns": ["apps/web/index.html", ".github/**"],
+  "ignorePatterns": [
+    "apps/web/index.html",
+    ".github/**"
+  ],
   "ignoreDependencies": [
     "pino-pretty",
     "@julian/marketing",

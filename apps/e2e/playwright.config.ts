@@ -32,7 +32,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm --dir ../web exec vite preview --host 127.0.0.1 --port ${PORT} --strictPort`,
+    command: `bun run --cwd ../web vite preview --host 127.0.0.1 --port ${PORT} --strictPort`,
     url: baseURL,
     reuseExistingServer: !isCI,
   },

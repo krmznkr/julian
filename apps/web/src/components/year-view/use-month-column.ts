@@ -89,7 +89,6 @@ export function useRenderedSegments(
       // eslint-disable-next-line functional/no-let, functional/no-loop-statements
       for (let day = segment.startDay; day <= segment.endDay; day += 1) {
         const list = acc.get(day) ?? [];
-        // eslint-disable-next-line functional/immutable-data
         acc.set(day, [...list, { key: segment.id, event, allDay: event.allDay }]);
       }
       return acc;

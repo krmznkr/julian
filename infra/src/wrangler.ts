@@ -9,7 +9,7 @@ import {
 
 export const WRANGLER_CONFIG_PATH = "apps/edge/wrangler.jsonc";
 
-const HEADER = `// Generated from infra/src/config.ts by \`pnpm --filter @julian/infra wrangler:generate\`.
+const HEADER = `// Generated from infra/src/config.ts by \`bun run --cwd infra wrangler:generate\`.
 // Do not edit by hand: change infra/src/config.ts and regenerate.
 `;
 

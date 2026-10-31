@@ -64,42 +64,42 @@ Details: [`docs/architecture.md`](docs/architecture.md).
 
 ## Repository layout
 
-| Path                | Purpose                                                   |
-| ------------------- | --------------------------------------------------------- |
-| `apps/web`          | The calendar app: Vite, React 19, TanStack Router, Effect |
-| `apps/marketing`    | Static home, privacy, and terms pages                     |
-| `apps/edge`         | Cloudflare Worker: routing, OAuth proxy, protections      |
-| `apps/e2e`          | Playwright, axe accessibility scans, Lighthouse CI        |
-| `packages/domain`   | Pure calendar logic: dates, events, year-grid layout      |
-| `packages/google`   | Effect services for Google OAuth, Calendar, and Tasks     |
-| `packages/security` | Security headers shared by the Worker and the build       |
-| `packages/observability` | Production browser telemetry with privacy allowlists |
-| `packages/release`  | Version strings for each release channel                  |
-| `packages/config`   | Shared TypeScript configuration                           |
-| `infra`             | Cloudflare resources as code (Alchemy, Effect)            |
+| Path                     | Purpose                                                   |
+| ------------------------ | --------------------------------------------------------- |
+| `apps/web`               | The calendar app: Vite, React 19, TanStack Router, Effect |
+| `apps/marketing`         | Static home, privacy, and terms pages                     |
+| `apps/edge`              | Cloudflare Worker: routing, OAuth proxy, protections      |
+| `apps/e2e`               | Playwright, axe accessibility scans, Lighthouse CI        |
+| `packages/domain`        | Pure calendar logic: dates, events, year-grid layout      |
+| `packages/google`        | Effect services for Google OAuth, Calendar, and Tasks     |
+| `packages/security`      | Security headers shared by the Worker and the build       |
+| `packages/observability` | Production browser telemetry with privacy allowlists      |
+| `packages/release`       | Version strings for each release channel                  |
+| `packages/config`        | Shared TypeScript configuration                           |
+| `infra`                  | Cloudflare resources as code (Alchemy, Effect)            |
 
 ## Quality gates
 
 Every PR runs these in CI; coverage thresholds are per package and only go up.
 
-| Check                                            | Command                |
-| ------------------------------------------------ | ---------------------- |
-| oxlint, oxfmt, dead code, functional rules       | `pnpm quality:static`  |
-| TypeScript + Effect language-service diagnostics | `pnpm typecheck`       |
-| Unit tests with coverage thresholds              | `pnpm test:coverage`   |
-| Date tests in five time zones                    | `pnpm test:tz:dates`   |
-| End-to-end and accessibility (Playwright, axe)   | `pnpm test:e2e`        |
-| Lighthouse (performance, a11y, best practices)   | `pnpm test:lighthouse` |
+| Check                                            | Command                   |
+| ------------------------------------------------ | ------------------------- |
+| oxlint, oxfmt, dead code, functional rules       | `bun run quality:static`  |
+| TypeScript + Effect language-service diagnostics | `bun run typecheck`       |
+| Unit tests with coverage thresholds              | `bun run test:coverage`   |
+| Date tests in five time zones                    | `bun run test:tz:dates`   |
+| End-to-end and accessibility (Playwright, axe)   | `bun run test:e2e`        |
+| Lighthouse (performance, a11y, best practices)   | `bun run test:lighthouse` |
 
 ## Run locally
 
-Prerequisites: Node 24.15.0 and [pnpm](https://pnpm.io) 10.33.0.
+Prerequisites: Node 24.15.0 and [Bun](https://bun.com) 1.4.4 (both pinned in `mise.toml`).
 
 ```bash
 git clone https://github.com/krmznkr/julian.git
 cd julian
-pnpm install
-pnpm dev
+bun install
+bun run dev
 ```
 
 Open `http://127.0.0.1:3000/demo`. Signing in with Google locally needs the
