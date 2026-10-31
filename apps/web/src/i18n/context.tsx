@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, use, useCallback } from "react";
+import { createContext, type ReactNode, use, useCallback, useMemo } from "react";
 
 const DEFAULT_LOCALE = "en" as const;
 type Locale = typeof DEFAULT_LOCALE;
@@ -12,8 +12,6 @@ interface I18nContextValue {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const locale = DEFAULT_LOCALE;
-
   const formatDate = useCallback((date: Date, options?: Intl.DateTimeFormatOptions): string => {
     return new Intl.DateTimeFormat(DEFAULT_LOCALE, options).format(date);
   }, []);
@@ -69,11 +67,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return `${startStr} – ${endStr}`;
   }, []);
 
-  const value: I18nContextValue = {
-    locale,
-    formatDate,
-    formatDateRange,
-  };
+  const value = useMemo<I18nContextValue>(
+    () => ({ locale: DEFAULT_LOCALE, formatDate, formatDateRange }),
+    [formatDate, formatDateRange],
+  );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
