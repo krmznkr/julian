@@ -50,7 +50,7 @@ jobs:
           VERSION: ${{ steps.build.outputs.version }}
           COMMIT: ${{ steps.build.outputs.commit }}
         run: |
-          pnpm exec wrangler versions upload \
+          bun run wrangler versions upload \
             --preview-alias "pr-$PR_NUMBER" \
             --message "Preview of #$PR_NUMBER" \
             --var "APP_VERSION:$VERSION" \

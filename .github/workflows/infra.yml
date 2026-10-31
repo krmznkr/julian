@@ -10,7 +10,7 @@ on:
     paths:
       - "infra/**"
       - "apps/edge/**"
-      - "pnpm-lock.yaml"
+      - "bun.lock"
       - ".github/workflows/infra.yml"
   workflow_dispatch:
     inputs:
@@ -56,20 +56,19 @@ jobs:
       - if: steps.token.outputs.present == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: steps.token.outputs.present == 'true'
-        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          version: 10.33.0
+          bun-version-file: package.json
       - if: steps.token.outputs.present == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
-          cache: pnpm
       - if: steps.token.outputs.present == 'true'
         working-directory: .
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
       - if: steps.token.outputs.present == 'true'
         name: Plan
-        run: pnpm exec alchemy plan --stage prod --detailed --no-input
+        run: bun run alchemy plan --stage prod --detailed --no-input
 
   apply:
     needs: plan
@@ -101,17 +100,16 @@ jobs:
       - if: steps.token.outputs.present == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: steps.token.outputs.present == 'true'
-        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          version: 10.33.0
+          bun-version-file: package.json
       - if: steps.token.outputs.present == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.15.0
-          cache: pnpm
       - if: steps.token.outputs.present == 'true'
         working-directory: .
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
       - if: steps.token.outputs.present == 'true'
         name: Apply
-        run: pnpm exec alchemy deploy --stage prod --yes --no-input
+        run: bun run alchemy deploy --stage prod --yes --no-input

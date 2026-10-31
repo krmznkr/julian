@@ -26,12 +26,9 @@ function assignLanes(segments: EventSegment[], month: number): MonthSegments {
     if (laneIndex >= 0) {
       // eslint-disable-next-line functional/immutable-data
       laneEnds[laneIndex] = segment.endDay;
-      // eslint-disable-next-line functional/immutable-data
       assignedSegments.push({ ...segment, lane: laneIndex + 1 });
     } else {
-      // eslint-disable-next-line functional/immutable-data
       laneEnds.push(segment.endDay);
-      // eslint-disable-next-line functional/immutable-data
       assignedSegments.push({ ...segment, lane: laneEnds.length });
     }
   }
@@ -87,7 +84,6 @@ export function buildMonthSegments(
       const startDay = segmentStart.getDate();
       const endDay = new Date(segmentEnd.getTime() - 1).getDate();
 
-      // eslint-disable-next-line functional/immutable-data
       rawByMonth[month]!.push({
         id: buildEventKey(event.id, event.calendarId),
         title: event.title,

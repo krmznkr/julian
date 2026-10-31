@@ -90,3 +90,6 @@ next-env.d.ts
 # wrangler local state and secrets
 .wrangler/
 .dev.vars*
+
+# husky leftovers in clones that predate prek
+.husky/

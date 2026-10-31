@@ -79,7 +79,7 @@ Turborepo includes that flag in its build cache key. Normal local, CI and
 preview builds generate no maps.
 
 After the build, the workflows run the pinned `@sentry/cli` through
-`pnpm --filter @julian/web sentry:sourcemaps`. It injects debug IDs and uploads
+`bun run --cwd apps/web sentry:sourcemaps`. It injects debug IDs and uploads
 all JS/maps in the combined `apps/web/dist` to organization `krmznkr`, project
 `julian`, with the build commit as `SENTRY_RELEASE`. Runtime release values use
 the same seven-character build commit. Source-map debug metadata is preserved

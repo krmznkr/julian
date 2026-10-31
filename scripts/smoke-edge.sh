@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Boot the edge Worker locally with `wrangler dev` against the built web dist
-# (run `pnpm build` first) and check that it serves with security headers,
+# (run `bun run build` first) and check that it serves with security headers,
 # that deep demo links get the demo's share tags, and that missing files 404.
 set -euo pipefail
 cd "$(dirname "$0")/../apps/edge"
@@ -11,7 +11,7 @@ base="http://127.0.0.1:$port"
 ua="Mozilla/5.0 (compatible; julian-release-smoke)"
 log=$(mktemp)
 
-pnpm exec wrangler dev --ip 127.0.0.1 --port "$port" >"$log" 2>&1 &
+bun run wrangler dev --ip 127.0.0.1 --port "$port" >"$log" 2>&1 &
 pid=$!
 trap 'kill "$pid" 2>/dev/null || true' EXIT
 

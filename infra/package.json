@@ -8,8 +8,8 @@
     "typecheck": "tsc --noEmit && effect-language-service diagnostics --project tsconfig.json --strict --severity error,warning --format text",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "wrangler:generate": "node scripts/generate-wrangler.ts",
-    "wrangler:check": "node scripts/generate-wrangler.ts --check",
+    "wrangler:generate": "bun scripts/generate-wrangler.ts",
+    "wrangler:check": "bun scripts/generate-wrangler.ts --check",
     "plan": "alchemy plan --stage prod",
     "deploy": "alchemy deploy --stage prod"
   },

@@ -51,7 +51,7 @@ channel from the root version (`next-minor` = minor + 1, patch 0):
 
 Inputs are the env vars `APP_CHANNEL`, `APP_PR_NUMBER` and optionally
 `APP_COMMIT`; anything missing means a local `dev` build. Print the values with
-`node packages/release/src/cli.ts`.
+`bun packages/release/src/cli.ts`.
 
 - **Web:** Vite `define` injects `__APP_VERSION__`, `__APP_CHANNEL__` and
   `__APP_COMMIT__` (`apps/web/build-defines.ts`). The sidebar footer shows the
@@ -179,12 +179,12 @@ check for the new commit.
 One command, from `apps/edge` with a Workers-scoped token:
 
 ```bash
-pnpm exec wrangler rollback                  # production: previous version
-pnpm exec wrangler rollback --env nightly    # nightly
+bun run wrangler rollback                  # production: previous version
+bun run wrangler rollback --env nightly    # nightly
 ```
 
 `wrangler rollback <version-id>` targets a specific version; list them with
-`pnpm exec wrangler versions list`. Rollback restores code and vars only, which
+`bun run wrangler versions list`. Rollback restores code and vars only, which
 is what every release changes.
 
 ## Break-glass manual deploy

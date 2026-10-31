@@ -96,7 +96,7 @@ Over-limit returns `429`. `period` must be `10` or `60`. Limits are best-effort
 and enforced per Cloudflare location, which is fine for abuse mitigation.
 
 **To tune:** change `RATE_LIMITS` in `infra/src/config.ts` and run
-`pnpm --filter @julian/infra wrangler:generate`. The Worker reads the bindings by
+`bun run --cwd infra wrangler:generate`. The Worker reads the bindings by
 name, so no code change is needed.
 
 ### 3. OAuth proxy lock-down — `apps/edge/src/oauth.ts`
@@ -197,7 +197,7 @@ description and an image. Those bots are not on the blocked list, and the
 Set/rotate it with:
 
 ```bash
-pnpm --filter @julian/edge exec wrangler secret put GOOGLE_CLIENT_SECRET
+bun run --cwd apps/edge wrangler secret put GOOGLE_CLIENT_SECRET
 ```
 
 ## Deploying

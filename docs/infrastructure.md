@@ -43,12 +43,12 @@ in `config.ts` and is rendered into `apps/edge/wrangler.jsonc`.
 `wrangler.jsonc` is generated. Edit `infra/src/config.ts`, then:
 
 ```sh
-pnpm --filter @julian/infra wrangler:generate   # rewrite the file
-pnpm --filter @julian/infra wrangler:check      # fail if it is stale
+bun run --cwd infra wrangler:generate   # rewrite the file
+bun run --cwd infra wrangler:check      # fail if it is stale
 ```
 
 A unit test (`infra/src/wrangler.test.ts`) also fails when the checked-in file
-drifts from the config, so `pnpm test:coverage` catches a forgotten regenerate.
+drifts from the config, so `bun run test:coverage` catches a forgotten regenerate.
 
 ## State and adoption
 
@@ -80,8 +80,8 @@ PRs and runs without it skip the plan instead of failing.
 
 ## Validating offline
 
-Without credentials, `pnpm typecheck` checks the stack against Alchemy's types
-and `pnpm --filter @julian/infra test:run` checks the config and the generated
+Without credentials, `bun run typecheck` checks the stack against Alchemy's types
+and `bun run --cwd infra test:run` checks the config and the generated
 wrangler file. `alchemy plan` needs a token.
 
 ## One-time owner steps
@@ -90,7 +90,7 @@ wrangler file. `alchemy plan` needs a token.
    `93527…`) to cover Workers Scripts Edit, Workers Routes Edit and DNS Edit on
    zone `krmznkr.com` (custom domains), Zone Read, Zone Settings Edit, Bot
    Management Edit and Secrets Store Edit (the state store).
-   `pnpm --filter @julian/infra exec alchemy cloudflare token` can create one
+   `bun run --cwd infra alchemy cloudflare token` can create one
    interactively. Store it as an **environment secret** on the `production` and
    `nightly` GitHub environments and remove the repository-level secret, so only
    deploy jobs can read it.
@@ -99,10 +99,9 @@ wrangler file. `alchemy plan` needs a token.
    Read, Bot Management Read and Secrets Store Read. No DNS, route or zone-settings
    edit.
 3. **Bootstrap the state store** once from a laptop with that token:
-   `CLOUDFLARE_ACCOUNT_ID=93527c9983d1c08638cb9c1de99f0450 pnpm --filter
-@julian/infra exec alchemy cloudflare bootstrap`.
-4. **Check the adoption plan:** `pnpm --filter @julian/infra run plan`. It should
+   `CLOUDFLARE_ACCOUNT_ID=93527c9983d1c08638cb9c1de99f0450 bun run --cwd infra alchemy cloudflare bootstrap`.
+4. **Check the adoption plan:** `bun run --cwd infra plan`. It should
    show the zone adopted and bot management updated in place, nothing created
    or deleted.
-5. **Apply once:** `pnpm --filter @julian/infra run deploy`.
+5. **Apply once:** `bun run --cwd infra deploy`.
 6. **Turn CI on:** set the repository variable `ALCHEMY_ENABLED` to `true`.

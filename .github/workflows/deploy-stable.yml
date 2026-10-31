@@ -77,7 +77,7 @@ jobs:
           trap 'find dist -type f -name "*.map" -delete' EXIT
           test -n "$SENTRY_AUTH_TOKEN"
           test -n "$(find dist -type f -name '*.map' -print -quit)"
-          pnpm sentry:sourcemaps
+          bun run sentry:sourcemaps
           find dist -type f -name '*.map' -delete
           test -z "$(find dist -type f -name '*.map' -print -quit)"
       # Zone settings from infra/ (Alchemy). Off until the state store is
@@ -85,12 +85,12 @@ jobs:
       - name: Apply the Alchemy stack
         if: vars.ALCHEMY_ENABLED == 'true'
         working-directory: infra
-        run: pnpm exec alchemy deploy --stage prod --yes --no-input
+        run: bun run alchemy deploy --stage prod --yes --no-input
       # The version with the largest traffic share; none on a first deploy.
       - name: Find the version currently serving production
         id: current
         run: |
-          status=$(pnpm exec wrangler deployments status --json 2>/dev/null || true)
+          status=$(bun run wrangler deployments status --json 2>/dev/null || true)
           id=$(jq -r '(.versions // []) | max_by(.percentage) | .version_id // empty' <<<"${status:-null}" 2>/dev/null || true)
           if [ -z "$id" ]; then
             echo "::notice::No previous version found; the release will go straight to 100% with no rollback target."
@@ -102,7 +102,7 @@ jobs:
           VERSION: ${{ steps.build.outputs.version }}
           COMMIT: ${{ steps.build.outputs.commit }}
         run: |
-          pnpm exec wrangler versions upload \
+          bun run wrangler versions upload \
             --tag "$REF" \
             --message "Release $REF" \
             --var "APP_VERSION:$VERSION" \
@@ -117,7 +117,7 @@ jobs:
           NEW_VERSION_ID: ${{ steps.upload.outputs.version_id }}
           OLD_VERSION_ID: ${{ steps.current.outputs.version_id }}
         run: |
-          pnpm exec wrangler versions deploy -y \
+          bun run wrangler versions deploy -y \
             --message "Canary $REF" \
             "$NEW_VERSION_ID@10%" \
             "$OLD_VERSION_ID@90%"
@@ -126,7 +126,7 @@ jobs:
         env:
           NEW_VERSION_ID: ${{ steps.upload.outputs.version_id }}
         run: |
-          pnpm exec wrangler versions deploy -y \
+          bun run wrangler versions deploy -y \
             --message "Release $REF" \
             "$NEW_VERSION_ID@100%"
       - name: Smoke test the new version
@@ -153,7 +153,7 @@ jobs:
         env:
           NEW_VERSION_ID: ${{ steps.upload.outputs.version_id }}
         run: |
-          pnpm exec wrangler versions deploy -y \
+          bun run wrangler versions deploy -y \
             --message "Release $REF" \
             "$NEW_VERSION_ID@100%"
       - name: Roll back on failure
@@ -161,6 +161,6 @@ jobs:
         env:
           OLD_VERSION_ID: ${{ steps.current.outputs.version_id }}
         run: |
-          pnpm exec wrangler versions deploy -y \
+          bun run wrangler versions deploy -y \
             --message "Automatic rollback of $REF" \
             "$OLD_VERSION_ID@100%"

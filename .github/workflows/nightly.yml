@@ -70,7 +70,7 @@ jobs:
           trap 'find dist -type f -name "*.map" -delete' EXIT
           test -n "$SENTRY_AUTH_TOKEN"
           test -n "$(find dist -type f -name '*.map' -print -quit)"
-          pnpm sentry:sourcemaps
+          bun run sentry:sourcemaps
           find dist -type f -name '*.map' -delete
           test -z "$(find dist -type f -name '*.map' -print -quit)"
       # Production infrastructure (infra/, Alchemy) is applied only from
@@ -84,14 +84,14 @@ jobs:
             echo "::warning::GOOGLE_CLIENT_SECRET is not set; nightly sign-in will report server_misconfigured."
             exit 0
           fi
-          printf '%s' "$GOOGLE_CLIENT_SECRET" | pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET --env nightly
+          printf '%s' "$GOOGLE_CLIENT_SECRET" | bun run wrangler secret put GOOGLE_CLIENT_SECRET --env nightly
       - name: Deploy the nightly Worker
         working-directory: apps/edge
         env:
           VERSION: ${{ steps.build.outputs.version }}
           COMMIT: ${{ steps.build.outputs.commit }}
         run: |
-          pnpm exec wrangler deploy --env nightly \
+          bun run wrangler deploy --env nightly \
             --var "APP_VERSION:$VERSION" \
             --var "APP_CHANNEL:nightly" \
             --var "APP_COMMIT:$COMMIT"

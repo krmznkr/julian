@@ -9,11 +9,11 @@ for (const TZ of [
 ]) {
   console.log(`Date checks in ${TZ}`);
   const result = spawnSync(
-    "pnpm",
+    "bun",
     [
-      "--filter",
-      "@julian/domain",
-      "exec",
+      "run",
+      "--cwd",
+      "packages/domain",
       "vitest",
       "run",
       "src/date.test.ts",
