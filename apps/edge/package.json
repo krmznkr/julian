@@ -17,6 +17,6 @@
   },
   "devDependencies": {
     "@julian/config": "workspace:*",
-    "wrangler": "4.154.0"
+    "wrangler": "4.155.0"
   }
 }
