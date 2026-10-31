@@ -1,6 +1,14 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "unicorn", "typescript", "oxc", "vitest", "jsx-a11y", "react-perf"],
+  "plugins": ["eslint", "react", "unicorn", "typescript", "oxc", "vitest", "jsx-a11y"],
+  "categories": {
+    "correctness": "warn",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "options": {
+    "reportUnusedDisableDirectives": "error"
+  },
   "jsPlugins": ["./scripts/oxlint-functional.mjs"],
   "ignorePatterns": [
     "**/node_modules/**",
@@ -12,6 +20,31 @@
   ],
   "rules": {
     "react/react-in-jsx-scope": "off",
+
+    // React Compiler's checks, run as lint rules. The app does not use the
+    // compiler; the rules still catch impure renders and effect misuse.
+    "react/purity": "error",
+    "react/refs": "error",
+    "react/set-state-in-effect": "error",
+    "react/set-state-in-render": "error",
+    "react/immutability": "error",
+    "react/globals": "error",
+    "react/static-components": "error",
+    "react/unsupported-syntax": "error",
+    "react/exhaustive-effect-dependencies": "error",
+    "react/no-unstable-nested-components": "error",
+    "react/no-array-index-key": "error",
+
+    // Sequential awaits are deliberate in the e2e specs and the Effect code.
+    "eslint/no-await-in-loop": "off",
+    "eslint/no-underscore-dangle": "off",
+    "unicorn/consistent-function-scoping": "off",
+    // toSorted/toReversed are ES2023; the packages target ES2022.
+    "unicorn/no-array-sort": "off",
+    "unicorn/no-array-reverse": "off",
+    "oxc/no-map-spread": "off",
+    // A default prop in a test fixture, not a component that re-renders.
+    "react/no-object-type-as-default-prop": "off",
     "jsx-a11y/click-events-have-key-events": "off",
     "jsx-a11y/label-has-associated-control": "off",
     "jsx-a11y/no-autofocus": "off",

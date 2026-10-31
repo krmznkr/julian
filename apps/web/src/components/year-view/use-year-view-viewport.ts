@@ -71,6 +71,7 @@ export function useYearViewViewport({
   useEffect(() => {
     if (month == null || month < 1 || month > 12) return;
     scrollToMonth(month - 1);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- a new year re-scrolls to the deep-linked month
   }, [month, scrollToMonth, year]);
 
   useEffect(() => {

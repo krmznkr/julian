@@ -52,8 +52,8 @@ export function HighlightedText({ text }: { text: string }) {
   if (parts.length === 1 && !parts[0]?.match) return text;
   return parts.map((part, index) =>
     part.match ? (
-      // oxlint-disable-next-line react/no-array-index-key -- parts have no identity beyond position
       <mark
+        // oxlint-disable-next-line react/no-array-index-key -- parts have no identity beyond position
         key={index}
         className="rounded-sm bg-yellow-300/80 px-px text-inherit dark:bg-yellow-500/60"
       >

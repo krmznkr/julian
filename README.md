@@ -93,7 +93,7 @@ Every PR runs these in CI; coverage thresholds are per package and only go up.
 
 ## Run locally
 
-Prerequisites: Node 24.15.0 and [Bun](https://bun.com) 1.4.4 (both pinned in `mise.toml`).
+Prerequisites: Node 24.15.0 and [Bun](https://bun.com) 1.4.4 (both pinned in `package.json`).
 
 ```bash
 git clone https://github.com/krmznkr/julian.git
