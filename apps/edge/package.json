@@ -13,10 +13,10 @@
   },
   "dependencies": {
     "@julian/security": "workspace:*",
-    "effect": "4.0.7"
+    "effect": "4.1.0"
   },
   "devDependencies": {
     "@julian/config": "workspace:*",
-    "wrangler": "4.155.0"
+    "wrangler": "4.156.0"
   }
 }
