@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@julian/domain": "workspace:*",
-    "effect": "4.0.7"
+    "effect": "4.1.0"
   },
   "devDependencies": {
     "@julian/config": "workspace:*",
-    "@effect/vitest": "4.0.7"
+    "@effect/vitest": "4.1.0"
   }
 }
