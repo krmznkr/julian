@@ -204,3 +204,13 @@ kbd {
   color: var(--muted);
   font-size: 0.875rem;
 }
+
+/* Give each footer link a 44px touch target. The negative block margin hands the
+   extra height back, so the footer keeps its size and the text stays in place. */
+.site-footer nav a {
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin-block: calc((1lh - 44px) / 2);
+}
