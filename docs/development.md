@@ -62,7 +62,8 @@ bun run test:lighthouse
 
 - **Playwright** serves `apps/web/dist` with `vite preview` on port 4173
   (override with `E2E_PORT`) and
-  covers the marketing pages (including the privacy page's permission URLs wrapping only at a
+  covers the marketing pages (including footer links with at least 44×44 CSS pixel touch targets
+  in both themes from 320px to 1440px, and the privacy page's permission URLs wrapping only at a
   slash, from a 320px phone to a 1440px desktop), the link-preview tags and share image, the URL scheme, the demo, grid keyboard navigation,
   search, moving events by drag and keyboard, the one-page print, creating/renaming/deleting an
   event, the theme toggle, shortcut-help labels for Linux, Windows and macOS (Ctrl or ⌘),

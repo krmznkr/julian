@@ -37,3 +37,37 @@ test("the privacy page lists the requested Google scopes", async ({ page }) => {
     "https://github.com/krmznkr/julian/issues",
   );
 });
+
+for (const width of [320, 412, 1440]) {
+  for (const colorScheme of ["light", "dark"] as const) {
+    test(`footer links have 44px touch targets at ${width}px in ${colorScheme}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 915 });
+      await page.emulateMedia({ colorScheme });
+      for (const path of ["/home", "/privacy", "/terms"]) {
+        await page.goto(path);
+        const links = page.getByRole("navigation", { name: "Legal" }).getByRole("link");
+        await expect(links).toHaveCount(3);
+        const boxes = await Promise.all(
+          (await links.all()).map(async (link) => {
+            await expect(link).toBeVisible();
+            return link.boundingBox();
+          }),
+        );
+        for (const box of boxes) {
+          expect(box?.width).toBeGreaterThanOrEqual(44);
+          expect(box?.height).toBeGreaterThanOrEqual(44);
+        }
+        // Neighbouring targets must not overlap, or a tap could land on the wrong link.
+        for (const [index, box] of boxes.slice(1).entries()) {
+          const previous = boxes[index];
+          expect((previous?.x ?? 0) + (previous?.width ?? 0)).toBeLessThanOrEqual(box?.x ?? 0);
+        }
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+          width,
+        );
+      }
+    });
+  }
+}
