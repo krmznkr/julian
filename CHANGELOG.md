@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.6](https://github.com/krmznkr/julian/compare/v0.4.5...v0.4.6) (2026-11-03)
+
+
+### Bug Fixes
+
+* **marketing:** give footer links 44px touch targets ([#107](https://github.com/krmznkr/julian/issues/107)) ([a97a65c](https://github.com/krmznkr/julian/commit/a97a65c2e1f27593d089134c3b8b3cbb0f292f2b))
+
 ## [0.4.5](https://github.com/krmznkr/julian/compare/v0.4.4...v0.4.5) (2026-10-30)
 
 
