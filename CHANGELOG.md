@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/krmznkr/julian/compare/v0.4.6...v0.5.0) (2026-11-06)
+
+
+### Features
+
+* **edge:** sign in to Google on PR previews through the production callback ([#110](https://github.com/krmznkr/julian/issues/110)) ([7cd0367](https://github.com/krmznkr/julian/commit/7cd0367875c67f12663d2329559c0958f041dce9))
+* **web:** add a zoomable timeline view with one row per calendar ([#109](https://github.com/krmznkr/julian/issues/109)) ([124f0ae](https://github.com/krmznkr/julian/commit/124f0aefc007f8b8eca67dd6a4c079d182d95b51))
+
 ## [0.4.6](https://github.com/krmznkr/julian/compare/v0.4.5...v0.4.6) (2026-11-03)
 
 
