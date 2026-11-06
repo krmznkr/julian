@@ -22,7 +22,9 @@ data, changes stay in your browser.
   column per month, with Google Tasks on their due dates.
 - **Timeline:** press `V` (or use the layout switch) for one row per calendar
   and the days running left to right, like a Gantt chart. Zoom between a week,
-  a month, a quarter and the whole year; `[` and `]` step through it.
+  a month, a quarter and the whole year; `[` and `]` step through it. It
+  draws spans only: all-day and multi-day events; meetings within a day stay
+  in the year grid.
   `?view=timeline` links straight to it.
 - **Keyboard first:** arrows, Home/End, type a day or month number, `/` to
   search, `?` for every shortcut.

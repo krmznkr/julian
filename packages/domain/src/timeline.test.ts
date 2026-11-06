@@ -4,6 +4,7 @@ import {
   dateFromDayIndex,
   dayIndexInYear,
   daysInYear,
+  isTimelineEvent,
   shiftTimelineWindow,
   timelineWindowStart,
   timelineZoomDays,
@@ -121,22 +122,23 @@ describe("buildTimelineRows", () => {
     expect(row?.bars[1]).toMatchObject({ startIndex: 363, endIndex: 364, continuesAfter: true });
   });
 
-  it("keeps a short overnight timed event on its start day", () => {
-    const start = new Date(2026, 4, 10, 23, 30);
-    const end = new Date(2026, 4, 11, 0, 15);
-    const [row] = buildTimelineRows(
-      [
-        event({
-          allDay: false,
-          isTimed: true,
-          start: start.toISOString(),
-          end: end.toISOString(),
-        }),
-      ],
-      ["cal-1"],
-      2026,
-    );
-    expect(row?.bars[0]).toMatchObject({ startIndex: 129, endIndex: 129 });
+  it("draws spans only: all-day events and timed events across days", () => {
+    const at = (y: number, m: number, d: number, h: number, min = 0) =>
+      new Date(y, m, d, h, min).toISOString();
+    const timed = (id: string, start: string, end: string) =>
+      event({ id, allDay: false, isTimed: true, start, end });
+    const events = [
+      event({ id: "holiday", start: "2026-05-01", end: "2026-05-02" }),
+      timed("meeting", at(2026, 4, 10, 9), at(2026, 4, 10, 10)),
+      timed("late", at(2026, 4, 10, 23, 30), at(2026, 4, 11, 0, 15)),
+      timed("hotel", at(2026, 4, 12, 15), at(2026, 4, 14, 11)),
+    ];
+    expect(events.filter(isTimelineEvent).map((item) => item.id)).toEqual(["holiday", "hotel"]);
+    const [row] = buildTimelineRows(events, ["cal-1"], 2026);
+    expect(row?.bars.map((bar) => [bar.event.id, bar.startIndex, bar.endIndex])).toEqual([
+      ["holiday", 120, 120],
+      ["hotel", 131, 133],
+    ]);
   });
 
   it("skips events with invalid dates", () => {
