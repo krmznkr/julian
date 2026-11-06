@@ -42,7 +42,7 @@ test("zoom and step through the year", async ({ demo: page }) => {
   await expect(range).toHaveText(`Mar 30 – Apr 5, ${YEAR}`);
   await zoom.getByRole("button", { name: "Year" }).click();
   await expect(range).toHaveText(String(YEAR));
-  await page.getByRole("button", { name: "Today", exact: true }).first().click();
+  await page.getByRole("button", { name: /^Go to today/ }).click();
   await zoom.getByRole("button", { name: "Quarter" }).click();
   await expect(range).toHaveText(`Jan – Mar ${YEAR}`);
 });

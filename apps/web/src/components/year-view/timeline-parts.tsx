@@ -194,7 +194,7 @@ export const TimelineHeader = memo(function TimelineHeader({
 });
 
 /** Black or white, whichever reads better on a `#rrggbb` fill. */
-export function readableTextOn(hex: string): string {
+function readableTextOn(hex: string): string {
   const match = /^#([0-9a-f]{6})$/i.exec(hex);
   if (!match) return "#ffffff";
   const value = Number.parseInt(match[1] ?? "000000", 16);
