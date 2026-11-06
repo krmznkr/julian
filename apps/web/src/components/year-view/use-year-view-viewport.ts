@@ -18,6 +18,7 @@ export function useYearViewViewport({
   search,
   year,
   setJumpDayHighlight,
+  enabled = true,
 }: {
   scrollRef: RefObject<HTMLDivElement | null>;
   monthHeaderRefs: RefObject<Array<HTMLDivElement | null>>;
@@ -26,6 +27,8 @@ export function useYearViewViewport({
   /** Re-scrolls when the year changes so a deep link keeps its month centred. */
   year: number;
   setJumpDayHighlight: (value: number | null) => void;
+  /** False while the grid is unmounted (timeline view); re-attaches listeners when it returns. */
+  enabled?: boolean;
 }) {
   const scrollToMonth = useCallback(
     (targetMonth: number) => {
@@ -47,13 +50,13 @@ export function useYearViewViewport({
     });
   }, [onScrollEdgesChange, scrollRef]);
 
-  useRafViewportListener(scrollRef, updateEdges);
+  useRafViewportListener(scrollRef, updateEdges, enabled);
 
   // A trackpad swipe left at scrollLeft 0 would trigger the browser's
   // back-navigation gesture, silently leaving the app mid-scroll.
   useEffect(() => {
     const container = scrollRef.current;
-    if (!container) return;
+    if (!container || !enabled) return;
 
     const handleWheel = (event: WheelEvent) => {
       const isLeftIntent = event.deltaX < 0 || (event.shiftKey && event.deltaY < 0);
@@ -63,16 +66,16 @@ export function useYearViewViewport({
 
     container.addEventListener("wheel", handleWheel, { passive: false });
     return () => container.removeEventListener("wheel", handleWheel);
-  }, [scrollRef]);
+  }, [enabled, scrollRef]);
 
   // Deep links: `?month=` scrolls, `?day=` briefly highlights the row.
   const { month, day } = search;
 
   useEffect(() => {
-    if (month == null || month < 1 || month > 12) return;
+    if (!enabled || month == null || month < 1 || month > 12) return;
     scrollToMonth(month - 1);
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- a new year re-scrolls to the deep-linked month
-  }, [month, scrollToMonth, year]);
+  }, [enabled, month, scrollToMonth, year]);
 
   useEffect(() => {
     if (day == null || day < 1 || day > 31) return;

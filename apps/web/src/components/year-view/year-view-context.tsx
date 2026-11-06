@@ -7,6 +7,7 @@ import {
   useContext,
 } from "react";
 import type { CalendarEvent, CalendarSummary } from "@julian/domain";
+import type { YearViewMode } from "@/lib/year-view-url";
 
 type YearViewSharedDataContextValue = {
   calendars: ReadonlyArray<CalendarSummary>;
@@ -75,6 +76,8 @@ type YearViewContextValue = {
   onRefresh: () => void;
   onToggleSidebar: () => void;
   onOpenMobileSidebar: () => void;
+  viewMode: YearViewMode;
+  onViewModeChange: (mode: YearViewMode) => void;
   onMonthSelect: (event: React.ChangeEvent<HTMLSelectElement>) => void;
 };
 

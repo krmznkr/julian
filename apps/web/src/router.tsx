@@ -13,6 +13,8 @@ import {
   parseYearParam,
   parseYearViewSearch,
   todayFocus,
+  viewModeFromSearch,
+  viewSearch,
   type YearViewSearch,
 } from "@/lib/year-view-url";
 import { RootErrorBoundary, RootLayout } from "@/routes/root-layout";
@@ -44,6 +46,11 @@ function DemoRouteComponent() {
   return <DemoPage year={Number(year)} />;
 }
 
+/** Redirects that fill in today's focus keep the requested layout. */
+function keepView(search: unknown) {
+  return viewSearch(viewModeFromSearch(parseYearViewSearch(search as Record<string, unknown>)));
+}
+
 function requireYear(raw: string): number {
   const year = parseYearParam(raw);
   if (year === null) throw notFound();
@@ -61,16 +68,17 @@ const indexRoute = createRoute({
   // In production the edge Worker answers `/` (marketing page, or a redirect
   // for a returning visitor), so this only runs under the Vite servers. Gate
   // on the synchronous credential check so nothing flashes before it.
-  beforeLoad: () => {
+  beforeLoad: ({ location }) => {
     const today = todayFocus();
+    const search = { ...today.search, ...keepView(location.search) };
     throw hasStoredGoogleSession()
       ? redirect({
           to: "/$year",
           params: { year: String(today.year) },
-          search: today.search,
+          search,
           replace: true,
         })
-      : redirect({ to: "/demo", replace: true });
+      : redirect({ to: "/demo", search: keepView(location.search), replace: true });
   },
 });
 
@@ -83,7 +91,11 @@ const yearRoute = createRoute({
     const today = todayFocus();
     const search = location.search as Record<string, unknown>;
     if (year === today.year && !search.month && !search.day) {
-      throw redirect({ to: "/$year", params: { year: params.year }, search: today.search });
+      throw redirect({
+        to: "/$year",
+        params: { year: params.year },
+        search: { ...today.search, ...keepView(search) },
+      });
     }
   },
   component: YearRouteComponent,
@@ -147,12 +159,12 @@ const legacyYearRoute = createRoute({
 const demoIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/demo",
-  beforeLoad: () => {
+  beforeLoad: ({ location }) => {
     const today = todayFocus();
     throw redirect({
       to: "/demo/$year",
       params: { year: String(today.year) },
-      search: today.search,
+      search: { ...today.search, ...keepView(location.search) },
       replace: true,
     });
   },
@@ -167,7 +179,11 @@ const demoRoute = createRoute({
     const today = todayFocus();
     const search = location.search as Record<string, unknown>;
     if (year === today.year && !search.month && !search.day) {
-      throw redirect({ to: "/demo/$year", params: { year: params.year }, search: today.search });
+      throw redirect({
+        to: "/demo/$year",
+        params: { year: params.year },
+        search: { ...today.search, ...keepView(search) },
+      });
     }
   },
   component: DemoRouteComponent,

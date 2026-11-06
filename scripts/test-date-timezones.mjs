@@ -20,6 +20,7 @@ for (const TZ of [
       "src/events.test.ts",
       "src/year-grid.test.ts",
       "src/event-boundaries.test.ts",
+      "src/timeline.test.ts",
     ],
     {
       stdio: "inherit",
