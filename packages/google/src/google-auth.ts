@@ -75,6 +75,9 @@ export const googleAuthLayer: Layer.Layer<
         ["code_challenge_method", "S256"],
         ["prompt", "consent"],
         ["access_type", "offline"],
+        ...(new URL(config.redirectUri).origin === config.appOrigin
+          ? []
+          : [["state", config.appOrigin] as [string, string]]),
       ]);
       return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
     };

@@ -42,6 +42,7 @@ describe("appConfigLayer", () => {
       const config = yield* loadConfig({});
 
       expect(config.redirectUri).toBe("https://preview.julian.example/auth/callback");
+      expect(config.appOrigin).toBe("https://preview.julian.example");
     }),
   );
 
@@ -58,6 +59,7 @@ describe("appConfigLayer", () => {
   it.effect("reads every value from the environment when set", () =>
     Effect.gen(function* () {
       vi.stubGlobal("location", { origin: "https://ignored.example" });
+      // The redirect URI is overridden; the app origin still comes from location.
 
       const config = yield* loadConfig({
         VITE_GOOGLE_CLIENT_ID: "client-123.apps.googleusercontent.com",
@@ -71,6 +73,7 @@ describe("appConfigLayer", () => {
         clientId: "client-123.apps.googleusercontent.com",
         proxyBaseUrl: "https://proxy.example/api/oauth",
         redirectUri: "https://julian.example/auth/callback",
+        appOrigin: "https://ignored.example",
         scopes: GOOGLE_SCOPES,
         retryTimes: 0,
         apiConcurrency: 2,

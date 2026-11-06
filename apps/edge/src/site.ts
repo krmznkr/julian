@@ -8,9 +8,11 @@
 //   /            marketing landing, or 302 to /{yyyy} when the session hint is set
 //   /year/...    301 to the same path without `/year`, keeping the query
 //   /demo/...    the `/demo` page for any route below it, without a redirect
+//   /auth/callback  302 on to a PR preview when its OAuth state names one
 //   file paths   a real 404 when no such asset exists and it is not a navigation
 //   anything     the assets binding; content-hashed scripts and styles leave
 //                with a one-year immutable Cache-Control (cache.ts)
+import { previewCallbackTarget } from "@julian/security/preview-origin";
 import { hasSessionHint } from "@julian/security/session-hint";
 import { Clock, Effect } from "effect";
 import { withHashedAssetCaching } from "./cache";
@@ -21,6 +23,11 @@ const MARKETING_HOME = "/home";
 const LEGACY_YEAR_PATH = /^\/year\/(\d{4})(\/.*)?$/;
 
 const DEMO = "/demo";
+
+const AUTH_CALLBACK = "/auth/callback";
+
+// The relay's Location carries a one-time authorization code.
+const NO_STORE = { "Cache-Control": "no-store" };
 
 const redirect = (location: string, status: 301 | 302, headers: Record<string, string> = {}) =>
   new Response(null, { status, headers: { Location: location, ...headers } });
@@ -89,6 +96,16 @@ const NOT_FOUND = () =>
 export const serveSite = Effect.fn("edge.site")(function* (request: Request) {
   const url = new URL(request.url);
   if (url.pathname === "/") return yield* serveRoot(request);
+
+  // A PR preview borrowed this registered callback; hand its code back to it.
+  if (url.pathname === AUTH_CALLBACK) {
+    const target = previewCallbackTarget({
+      origin: url.origin,
+      state: url.searchParams.get("state"),
+      search: url.search,
+    });
+    if (target !== null) return redirect(target, 302, NO_STORE);
+  }
 
   const legacy = LEGACY_YEAR_PATH.exec(url.pathname);
   if (legacy) return redirect(`/${legacy[1]}${legacy[2] ?? ""}${url.search}`, 301);

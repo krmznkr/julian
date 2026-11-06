@@ -6,7 +6,8 @@
   "description": "Response hardening headers and the session-hint cookie shared by the edge Worker and the web app.",
   "exports": {
     ".": "./src/index.ts",
-    "./session-hint": "./src/session-hint.ts"
+    "./session-hint": "./src/session-hint.ts",
+    "./preview-origin": "./src/preview-origin.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -3,6 +3,7 @@
 // The browser posts a PKCE code (or a refresh token) here, and this module adds
 // the server-held client credentials and forwards the request to Google. The
 // secret therefore never ships in the browser bundle.
+import { isPreviewOrigin } from "@julian/security/preview-origin";
 import { Effect, Redacted, Schema } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 import { WorkerEnv } from "./env";
@@ -13,20 +14,25 @@ const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
 // Only the app's own origins may call the proxy, so cross-site pages are
 // rejected before we ever talk to Google. Local dev servers are allowed only
-// on the dev channel. This is browser hygiene, not authentication: a non-browser
+// on the dev channel, and PR preview origins only on preview versions. This is browser hygiene, not authentication: a non-browser
 // client can send any Origin it likes.
-const DEPLOYED_ORIGINS = ["https://julian.krmznkr.com", "https://julian-nightly.krmznkr.com"];
-const LOCAL_ORIGINS = [
+const DEPLOYED_ORIGINS: ReadonlySet<string> = new Set([
+  "https://julian.krmznkr.com",
+  "https://julian-nightly.krmznkr.com",
+]);
+const LOCAL_ORIGINS: ReadonlySet<string> = new Set([
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:8787",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
   "http://127.0.0.1:8787",
-];
+]);
 
-const allowedOrigins = (channel: string): ReadonlySet<string> =>
-  new Set(channel === "dev" ? [...DEPLOYED_ORIGINS, ...LOCAL_ORIGINS] : DEPLOYED_ORIGINS);
+const isAllowedOrigin = (origin: string, channel: string): boolean =>
+  DEPLOYED_ORIGINS.has(origin) ||
+  (channel === "dev" && LOCAL_ORIGINS.has(origin)) ||
+  (channel === "preview" && isPreviewOrigin(origin));
 
 // OAuth JSON bodies are tiny; anything larger is abuse or a bug.
 const MAX_OAUTH_BODY_BYTES = 4096;
@@ -47,7 +53,7 @@ const RefreshRequest = Schema.Struct({
 const checkRequest = (request: Request, channel: string) => {
   if (request.method !== "POST") return Effect.fail(rejectOAuth(405, "method_not_allowed"));
   const origin = request.headers.get("Origin");
-  if (!origin || !allowedOrigins(channel).has(origin)) {
+  if (!origin || !isAllowedOrigin(origin, channel)) {
     return Effect.fail(rejectOAuth(403, "forbidden", "Origin not allowed"));
   }
   const contentLength = Number(request.headers.get("Content-Length") ?? "0");
