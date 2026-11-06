@@ -135,8 +135,8 @@ export const TimelineHeader = memo(function TimelineHeader({
           Calendars
         </div>
       )}
-      <div className="timeline-track relative h-12 shrink-0">
-        {months.map(({ name, month, start, length }) => (
+      <div className={cn("timeline-track relative shrink-0", showDays ? "h-14" : "h-12")}>
+        {months.map(({ name, start, length }) => (
           <div
             key={name}
             className="absolute top-0 h-full border-l border-foreground/25"
@@ -144,7 +144,7 @@ export const TimelineHeader = memo(function TimelineHeader({
           >
             <span className="timeline-sticky-label sticky inline-block truncate px-1.5 pt-1 text-xs font-semibold text-foreground">
               {dayWidth * length >= 96 ? name : name.slice(0, 3)}
-              {month === 0 || dayWidth * length >= 120 ? ` ${year}` : ""}
+              {dayWidth * length >= 120 ? ` ${year}` : ""}
             </span>
           </div>
         ))}
@@ -153,13 +153,19 @@ export const TimelineHeader = memo(function TimelineHeader({
             <span
               key={toDateInputValue(date)}
               className={cn(
-                "timeline-day-label absolute bottom-0 flex h-6 items-center justify-center text-[11px] tabular-nums text-muted-foreground",
+                "timeline-day-label absolute bottom-0 flex h-8 flex-col items-center justify-center text-[11px] leading-none tabular-nums text-muted-foreground",
                 (date.getDay() === 0 || date.getDay() === 6) && "text-muted-foreground/70",
-                index === todayIndex && "font-semibold text-[var(--accent-brand-text)]",
+                // The dated today chip sits on top of this label.
+                index === todayIndex && "invisible",
               )}
               style={{ left: dayCalc(index), width: dayCalc(1) }}
             >
-              {dayWidth >= 60 ? `${date.getDate()} ${WEEKDAY_FORMAT.format(date)}` : date.getDate()}
+              <span className="text-[9px] font-medium uppercase tracking-wide">
+                {dayWidth >= 40
+                  ? WEEKDAY_FORMAT.format(date)
+                  : WEEKDAY_FORMAT.format(date).slice(0, 2)}
+              </span>
+              <span className="mt-0.5">{date.getDate()}</span>
             </span>
           ))}
         {showWeeks &&
@@ -212,6 +218,7 @@ function TimelineBarButton({
   bar,
   calendar,
   labelMode,
+  offscreen,
   tabbable,
   onActivate,
   onFocus,
@@ -219,6 +226,8 @@ function TimelineBarButton({
   bar: TimelineBar;
   calendar: CalendarSummary | undefined;
   labelMode: TimelineLabelMode;
+  /** The bar ended left of the screen; a label beside it would be a clipped stub. */
+  offscreen: boolean;
   tabbable: boolean;
   onActivate: (bar: TimelineBar) => void;
   onFocus: (key: string) => void;
@@ -269,7 +278,7 @@ function TimelineBarButton({
           ) : null}
         </button>
       </TooltipTrigger>
-      {labelMode === "outside" ? (
+      {labelMode === "outside" && !offscreen ? (
         <span
           aria-hidden="true"
           className="timeline-outside-label pointer-events-none absolute flex items-center truncate pl-1.5 text-xs text-foreground/80"

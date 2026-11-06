@@ -59,7 +59,7 @@ export function timelineLabelPx(title: string): number {
 }
 
 /** A bar this wide keeps its title inside even when it has to truncate. */
-const LONG_BAR_PX = 120;
+const LONG_BAR_PX = 64;
 
 export type TimelineLabelMode = "inside" | "outside";
 

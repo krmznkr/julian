@@ -535,6 +535,7 @@ export default function TimelineView({
                             (bar.endIndex - bar.startIndex + 1) * dayWidth,
                             bar.event.title,
                           )}
+                          offscreen={bar.endIndex < visibleStart}
                           tabbable={bar.key === tabStopKey}
                           onActivate={activateBar}
                           onFocus={setActiveKey}
