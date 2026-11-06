@@ -388,16 +388,18 @@ export default function TimelineView({
   // Sitting on a window boundary (after Today, a step or a deep link), name
   // that window: "November 2026" even though 31 day-widths are on screen.
   const firstVisible = clampDayIndex(visibleStart, year);
-  const firstDate = dateFromDayIndex(year, firstVisible);
-  // On a phone the window can be wider than the screen; name what is shown.
-  const lastVisible =
-    windowStartIndex(zoom, firstDate, year) === firstVisible
-      ? Math.min(
-          dayIndexInYear(shiftTimelineWindow(zoom, firstDate, 1), year) - 1,
-          firstVisible + visibleDays,
-        )
-      : firstVisible + visibleDays - 1;
-  const rangeLabel = formatTimelineRange(year, firstVisible, lastVisible);
+  // Within a day of a window start (scroll positions round), name the window.
+  const nearWindow = windowStartIndex(
+    zoom,
+    dateFromDayIndex(year, clampDayIndex(firstVisible + 1, year)),
+    year,
+  );
+  const onWindow = Math.abs(nearWindow - firstVisible) <= 1;
+  const labelStart = onWindow ? nearWindow : firstVisible;
+  const lastVisible = onWindow
+    ? dayIndexInYear(shiftTimelineWindow(zoom, dateFromDayIndex(year, labelStart), 1), year) - 1
+    : firstVisible + visibleDays - 1;
+  const rangeLabel = formatTimelineRange(year, labelStart, lastVisible);
   const saturdayIndex = (6 - new Date(year, 0, 1).getDay() + 7) % 7;
   const showDayLines = dayWidth >= 8;
 
