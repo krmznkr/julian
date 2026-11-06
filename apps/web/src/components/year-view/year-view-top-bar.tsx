@@ -182,6 +182,7 @@ export default function YearViewTopBar() {
             monthNames={monthNames}
             onMonthSelect={onMonthSelect}
             onOpenMobileSidebar={onOpenMobileSidebar}
+            showMonthJump={viewMode === "grid"}
           />
         </div>
 

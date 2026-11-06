@@ -26,6 +26,7 @@ import {
   type TimelineZoom,
 } from "@julian/domain";
 import { openEventInGoogle } from "@/lib/open-event";
+import { cn } from "@/lib/utils";
 import { canMoveEvent } from "@/components/year-view/use-event-move";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";
 import {
@@ -109,6 +110,8 @@ export default function TimelineView({
   const viewportWidth = measuredWidth || TIMELINE_FALLBACK_WIDTH;
   const totalDays = daysInYear(year);
   const labelWidth = timelineLabelWidth(viewportWidth);
+  // Phones have no room for a name column; each row names its calendar above its bars.
+  const compact = labelWidth === 0;
   const dayWidth = timelineDayWidth(viewportWidth, zoom, year);
   const trackViewport = Math.max(1, viewportWidth - labelWidth);
   const visibleDays = Math.max(1, Math.floor(trackViewport / dayWidth));
@@ -442,6 +445,7 @@ export default function TimelineView({
             dayWidth={dayWidth}
             todayIndex={todayIndex}
             monthNames={monthNames}
+            compact={compact}
           />
           <div className="relative">
             <div
@@ -494,15 +498,22 @@ export default function TimelineView({
                     key={row.calendarId}
                     role="group"
                     aria-labelledby={labelId}
-                    className="flex border-b border-border/50"
+                    className={cn("flex border-b border-border/50", compact && "flex-col")}
                   >
-                    <div className="timeline-label-col sticky left-0 z-10 flex shrink-0 items-start gap-2 border-r border-border/60 bg-background px-3 py-2">
+                    <div
+                      className={cn(
+                        "sticky left-0 z-10 flex items-start gap-2 bg-background",
+                        compact
+                          ? "w-fit px-3 pt-1.5"
+                          : "timeline-label-col shrink-0 border-r border-border/60 px-3 py-2",
+                      )}
+                    >
                       <span
                         aria-hidden="true"
                         className="mt-1 size-2.5 shrink-0 rounded-full"
                         style={{ background: color }}
                       />
-                      <span className="min-w-0">
+                      <span className={cn("min-w-0", compact && "flex items-baseline gap-2")}>
                         <span id={labelId} className="block truncate text-xs font-medium">
                           {calendar?.summary ?? row.calendarId}
                         </span>

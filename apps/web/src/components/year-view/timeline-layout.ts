@@ -32,9 +32,9 @@ export const TIMELINE_ZOOM_LABELS: Readonly<Record<TimelineZoom, string>> = {
   year: "Year",
 };
 
-/** Width of the sticky calendar-name column. */
+/** Width of the sticky calendar-name column; phones have none. */
 export function timelineLabelWidth(viewportWidth: number): number {
-  return viewportWidth < 640 ? 96 : 176;
+  return viewportWidth < 640 ? 0 : 176;
 }
 
 /** Pixels per day so that the zoom's window fills the track. */
@@ -58,17 +58,18 @@ export function timelineLabelPx(title: string): number {
   return Math.min(180, Math.ceil(title.length * 7) + 14);
 }
 
-/** Below this a bar is too narrow for its title to be worth truncating inside it. */
-const MIN_INSIDE_TITLE_PX = 56;
+/** A bar this wide keeps its title inside even when it has to truncate. */
+const LONG_BAR_PX = 120;
 
 export type TimelineLabelMode = "inside" | "outside";
 
 /**
- * Where a bar's title goes: inside when the bar is wide enough, else beside it
- * (lanes reserve the room). Every zoom names every event.
+ * Where a bar's title goes: inside when it fits (or the bar is long enough to
+ * truncate it gracefully), else beside the bar, where lanes reserve the room.
+ * Every zoom names every event.
  */
 export function timelineLabelMode(barPx: number, title: string): TimelineLabelMode {
-  return barPx >= Math.min(timelineLabelPx(title), MIN_INSIDE_TITLE_PX) ? "inside" : "outside";
+  return barPx >= Math.min(timelineLabelPx(title), LONG_BAR_PX) ? "inside" : "outside";
 }
 
 /** Days a bar blocks in its lane, counting a beside-bar title. */

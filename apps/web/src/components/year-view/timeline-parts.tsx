@@ -65,7 +65,7 @@ export function TimelineToolbar({
         >
           <ChevronRight className="size-4" aria-hidden="true" />
         </Button>
-        <Button variant="outline" size="sm" className="ml-1 px-3" onClick={onToday}>
+        <Button variant="outline" size="sm" className="ml-1 px-3 md:hidden" onClick={onToday}>
           Today
         </Button>
       </div>
@@ -107,12 +107,14 @@ export const TimelineHeader = memo(function TimelineHeader({
   dayWidth,
   todayIndex,
   monthNames,
+  compact,
 }: {
   year: number;
   totalDays: number;
   dayWidth: number;
   todayIndex: number | null;
   monthNames: ReadonlyArray<string>;
+  compact: boolean;
 }) {
   const days = Array.from({ length: totalDays }, (_, index) => dateFromDayIndex(year, index));
   const months = monthNames.map((name, month) => {
@@ -128,9 +130,11 @@ export const TimelineHeader = memo(function TimelineHeader({
       className="timeline-header sticky top-0 z-20 flex border-b border-border/60 bg-background"
       aria-hidden="true"
     >
-      <div className="timeline-label-col sticky left-0 z-10 flex shrink-0 items-end border-r border-border/60 bg-background px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        Calendars
-      </div>
+      {compact ? null : (
+        <div className="timeline-label-col sticky left-0 z-10 flex shrink-0 items-end border-r border-border/60 bg-background px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          Calendars
+        </div>
+      )}
       <div className="timeline-track relative h-12 shrink-0">
         {months.map(({ name, month, start, length }) => (
           <div

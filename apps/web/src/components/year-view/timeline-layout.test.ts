@@ -29,7 +29,7 @@ const rows = buildTimelineRows(
 
 describe("timeline sizing", () => {
   it("narrows the calendar column on phones", () => {
-    expect(timelineLabelWidth(390)).toBe(96);
+    expect(timelineLabelWidth(390)).toBe(0);
     expect(timelineLabelWidth(1440)).toBe(176);
   });
 
