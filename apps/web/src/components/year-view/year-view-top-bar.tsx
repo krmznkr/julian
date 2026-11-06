@@ -6,6 +6,7 @@ import {
   YearNavigator,
   TopBarActions,
   TopBarTrailing,
+  ViewModeToggle,
 } from "@/components/year-view/top-bar-parts";
 import { TopBarSearch } from "@/components/year-view/top-bar-search";
 import { useYearViewContext } from "@/components/year-view/year-view-context";
@@ -36,6 +37,8 @@ export default function YearViewTopBar() {
     commandPaletteOpen,
     setCommandPaletteOpen,
     focusYearGrid,
+    viewMode,
+    onViewModeChange,
   } = useYearViewContext();
   const { setTheme, theme } = useTheme();
 
@@ -73,6 +76,12 @@ export default function YearViewTopBar() {
         label: "Jump to today",
         hint: "T",
         onSelect: onJumpToToday,
+      },
+      {
+        id: "view",
+        label: viewMode === "grid" ? "Switch to timeline" : "Switch to year grid",
+        hint: "V",
+        onSelect: () => onViewModeChange(viewMode === "grid" ? "timeline" : "grid"),
       },
       {
         id: "refresh",
@@ -133,9 +142,11 @@ export default function YearViewTopBar() {
       onPreviousYear,
       onRefresh,
       onToggleSidebar,
+      onViewModeChange,
       setKeyboardHelpOpen,
       setTheme,
       theme,
+      viewMode,
     ],
   );
 
@@ -163,6 +174,7 @@ export default function YearViewTopBar() {
             onPreviousYear={onPreviousYear}
             onNextYear={onNextYear}
           />
+          <ViewModeToggle viewMode={viewMode} onViewModeChange={onViewModeChange} />
           <TopBarActions
             onJumpToToday={onJumpToToday}
             todayLongLabel={todayLongLabel}

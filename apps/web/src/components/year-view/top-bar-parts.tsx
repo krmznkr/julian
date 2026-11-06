@@ -1,4 +1,10 @@
-import { CalendarDays, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import {
+  CalendarDays,
+  ChartNoAxesGantt,
+  LayoutGrid,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import AppLogo from "@/components/app-logo";
 import ThemeToggle from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -6,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { MAX_YEAR, MIN_YEAR } from "@/components/year-view/constants";
 import { CommandPaletteTrigger } from "@/components/year-view/year-view-top-bar-panels";
 import { SyncBadge } from "@/components/year-view/shared-components";
+import type { YearViewMode } from "@/lib/year-view-url";
+import { cn } from "@/lib/utils";
 
 type SyncBadgeInfo = {
   kind: "issues" | "syncing" | "synced";
@@ -105,6 +113,61 @@ export function YearNavigator({
   );
 }
 
+const VIEW_MODES = [
+  { mode: "grid", label: "Year grid", Icon: LayoutGrid },
+  { mode: "timeline", label: "Timeline", Icon: ChartNoAxesGantt },
+] as const satisfies ReadonlyArray<{ mode: YearViewMode; label: string; Icon: unknown }>;
+
+/** Switches between the month-column grid and the timeline (V). */
+export function ViewModeToggle({
+  viewMode,
+  onViewModeChange,
+}: {
+  viewMode: YearViewMode;
+  onViewModeChange: (mode: YearViewMode) => void;
+}) {
+  const other = VIEW_MODES.find((item) => item.mode !== viewMode) ?? VIEW_MODES[1];
+  return (
+    <>
+      {/* Phones have no room for both; one button switches to the other layout. */}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="md:hidden"
+        aria-label={`Switch to ${other.label.toLowerCase()}`}
+        aria-keyshortcuts="V"
+        onClick={() => onViewModeChange(other.mode)}
+      >
+        <other.Icon className="size-4" aria-hidden="true" />
+      </Button>
+      <div
+        role="group"
+        aria-label="Layout"
+        className="hidden items-center rounded-lg border border-border/60 bg-muted/30 p-0.5 md:flex"
+      >
+        {VIEW_MODES.map(({ mode, label, Icon }) => (
+          <button
+            key={mode}
+            type="button"
+            aria-pressed={viewMode === mode}
+            aria-label={label}
+            aria-keyshortcuts="V"
+            title={`${label} (V)`}
+            onClick={() => onViewModeChange(mode)}
+            className={cn(
+              "inline-flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+              viewMode === mode && "bg-background text-foreground shadow-sm",
+            )}
+          >
+            <Icon className="size-4" aria-hidden="true" />
+            <span className="hidden lg:inline">{label}</span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function TopBarActions({
   onJumpToToday,
   todayLongLabel,
@@ -176,9 +239,9 @@ export function TopBarActions({
         aria-label="Open calendars"
         onClick={onOpenMobileSidebar}
       >
-        {/* Below ~380px the word is the difference between fitting and not. */}
-        <CalendarDays className="size-4 min-[380px]:hidden" aria-hidden="true" />
-        <span className="hidden min-[380px]:inline">Calendars</span>
+        {/* Below ~440px the word is the difference between fitting and not. */}
+        <CalendarDays className="size-4 min-[440px]:hidden" aria-hidden="true" />
+        <span className="hidden min-[440px]:inline">Calendars</span>
       </Button>
     </>
   );

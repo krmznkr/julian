@@ -91,11 +91,17 @@ It also checks that `/demo` and deep demo links such as
 
 `.github/workflows/preview.yml` runs `wrangler versions upload --preview-alias
 pr-<N>`: a new version of the production Worker that receives no traffic, reachable
-at its preview URL. The workflow comments that URL on the PR and updates the
-comment on later pushes. If Preview URLs are disabled for the Worker
-(Cloudflare dashboard: Worker > Settings > Domains & Routes), wrangler prints no
-URL and the comment gives only the version ID; deploys do not turn them on. Fork
-PRs and runs without `CLOUDFLARE_PREVIEW_TOKEN` skip.
+at its preview URL. The workflow comments that URL, and a link to its `/demo`, on
+the PR and updates the comment on later pushes.
+
+`preview_urls: true` in `wrangler.jsonc` is applied only by `wrangler deploy`,
+which the stable Worker never runs (it ships with `versions upload` and
+`versions deploy`). So before uploading, the workflow reads the Worker's
+`workers.dev` settings through the API and turns Version URLs on if they are
+off, leaving the `workers.dev` route itself as it is. If that call fails (for
+example the token lacks Workers Scripts Edit), wrangler prints no URL and the
+comment gives only the version ID. Fork PRs and runs without
+`CLOUDFLARE_PREVIEW_TOKEN` skip.
 
 Google sign-in works on previews through production's callback; see
 "Sign-in on PR previews" in [`security.md`](security.md). It needs the relay
