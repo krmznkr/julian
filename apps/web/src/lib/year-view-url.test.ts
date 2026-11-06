@@ -6,6 +6,8 @@ import {
   parseYearParam,
   parseYearViewSearch,
   todayFocus,
+  viewModeFromSearch,
+  viewSearch,
 } from "@/lib/year-view-url";
 
 describe("year-view-url", () => {
@@ -24,6 +26,17 @@ describe("year-view-url", () => {
         detailsOpen: true,
       }),
     ).toEqual({ month: 6, day: 12, details: true });
+  });
+
+  it("reads and writes the timeline layout, and nothing else, as `view`", () => {
+    expect(parseYearViewSearch({ view: "timeline" }).view).toBe("timeline");
+    expect(parseYearViewSearch({ view: "list" }).view).toBeUndefined();
+    expect(viewModeFromSearch({ view: "timeline" })).toBe("timeline");
+    expect(viewModeFromSearch({})).toBe("grid");
+    expect(viewSearch("grid")).toEqual({});
+    expect(
+      buildYearViewSearch({ cell: { month: 0, day: 3 }, detailsOpen: false, mode: "timeline" }),
+    ).toEqual({ month: 1, day: 3, view: "timeline" });
   });
 
   it("maps search params to a keyboard cell", () => {

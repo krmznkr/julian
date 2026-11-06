@@ -67,6 +67,17 @@ test("collapsing the desktop sidebar removes its landmark until it expands", asy
   await expect(page.getByRole("complementary")).toHaveCount(1);
 });
 
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`the timeline (${colorScheme}) has no serious accessibility violations`, async ({
+    demo: page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.keyboard.press("v");
+    await expect(page.getByRole("region", { name: /^Timeline for/ })).toBeVisible();
+    await expectNoSeriousViolations(page);
+  });
+}
+
 test("the event dialog has no serious accessibility violations", async ({ demo: page }) => {
   await page.keyboard.press("n");
   await expect(page.getByRole("dialog", { name: "New event" })).toBeVisible();

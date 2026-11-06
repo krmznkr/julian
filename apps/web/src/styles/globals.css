@@ -298,6 +298,21 @@
   }
 }
 
+/* Timeline view. Every horizontal length is a multiple of --day-w, which the
+   component sets from the zoom and print resets to fit the page. */
+.timeline-label-col {
+  width: var(--label-w);
+}
+
+.timeline-track {
+  width: calc(var(--day-w) * var(--timeline-days));
+}
+
+.timeline-sticky-label {
+  left: var(--label-w);
+  max-width: 100%;
+}
+
 /* One landscape page: every month is rendered (see useYearGridVirtualization)
    and the columns shrink to share the sheet's width. */
 @media print {
@@ -362,5 +377,37 @@
     height: auto !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  /* The whole year across the sheet (A4 landscape minus margins), whatever
+     the zoom on screen. */
+  .timeline-canvas {
+    --label-w: 28mm !important;
+    --day-w: calc((281mm - 28mm) / var(--timeline-days)) !important;
+    width: 281mm !important;
+    min-width: 0 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .timeline-scroll {
+    overflow: visible !important;
+  }
+
+  .timeline-header {
+    position: static !important;
+  }
+
+  .timeline-grid {
+    background-image: none !important;
+  }
+
+  .timeline-day-label,
+  .timeline-outside-label {
+    display: none !important;
+  }
+
+  .timeline-bar {
+    box-shadow: none !important;
   }
 }

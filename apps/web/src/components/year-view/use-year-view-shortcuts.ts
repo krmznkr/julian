@@ -15,12 +15,14 @@ export function useYearViewShortcuts({
   onRefresh,
   onJumpToToday,
   onFocusSearch,
+  onToggleViewMode,
 }: {
   onToggleCommandPalette: () => void;
   onToggleSidebar: () => void;
   onRefresh: () => void;
   onJumpToToday: () => void;
   onFocusSearch: () => void;
+  onToggleViewMode: () => void;
 }) {
   const { setTheme, theme } = useTheme();
 
@@ -54,6 +56,10 @@ export function useYearViewShortcuts({
           event.preventDefault();
           onRefresh();
           return;
+        case "v":
+          event.preventDefault();
+          onToggleViewMode();
+          return;
         case "t":
           event.preventDefault();
           if (event.shiftKey) setTheme(nextThemeMode(theme));
@@ -72,6 +78,7 @@ export function useYearViewShortcuts({
     onRefresh,
     onToggleCommandPalette,
     onToggleSidebar,
+    onToggleViewMode,
     setTheme,
     theme,
   ]);

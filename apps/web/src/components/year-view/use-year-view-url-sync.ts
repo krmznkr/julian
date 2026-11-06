@@ -3,7 +3,13 @@ import { clampCell } from "@/components/year-view/year-grid-keyboard";
 import { MAX_YEAR, MIN_YEAR } from "@/components/year-view/constants";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";
 import type { YearViewRouterPort } from "@/components/year-view/year-view-ports";
-import { buildYearViewSearch, cellFromYearViewSearch, focusSignature } from "@/lib/year-view-url";
+import {
+  buildYearViewSearch,
+  cellFromYearViewSearch,
+  focusSignature,
+  viewModeFromSearch,
+  type YearViewMode,
+} from "@/lib/year-view-url";
 
 export type YearViewUrlFocus = {
   cell: KeyboardCell;
@@ -13,6 +19,7 @@ export type YearViewUrlFocus = {
 export function useYearViewUrlSync(year: number, router: YearViewRouterPort) {
   const { search, navigate } = router;
   const lastWrittenSignatureRef = useRef<string | null>(null);
+  const viewMode = viewModeFromSearch(search);
 
   const urlFocus = useMemo((): YearViewUrlFocus | null => {
     const cell = cellFromYearViewSearch(year, search);
@@ -34,6 +41,7 @@ export function useYearViewUrlSync(year: number, router: YearViewRouterPort) {
       const searchParams = buildYearViewSearch({
         cell,
         detailsOpen: next.detailsOpen,
+        mode: viewMode,
       });
       const signature = focusSignature({ cell, detailsOpen: next.detailsOpen });
       lastWrittenSignatureRef.current = signature;
@@ -42,6 +50,18 @@ export function useYearViewUrlSync(year: number, router: YearViewRouterPort) {
         year: targetYear,
         search: searchParams,
         replace: options?.replace ?? true,
+      });
+    },
+    [navigate, viewMode, year],
+  );
+
+  // A new history entry, so Back returns to the previous layout.
+  const setViewMode = useCallback(
+    (mode: YearViewMode, cell: KeyboardCell) => {
+      navigate({
+        year,
+        search: buildYearViewSearch({ cell: clampCell(cell, year), detailsOpen: false, mode }),
+        replace: false,
       });
     },
     [navigate, year],
@@ -59,6 +79,8 @@ export function useYearViewUrlSync(year: number, router: YearViewRouterPort) {
 
   return {
     urlFocus,
+    viewMode,
+    setViewMode,
     navigateYearView,
     shouldApplyUrlFocus,
     markUrlFocusApplied,

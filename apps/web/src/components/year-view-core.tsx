@@ -23,6 +23,7 @@ import { useYearViewViewport } from "@/components/year-view/use-year-view-viewpo
 import { useYearViewUrlSync } from "@/components/year-view/use-year-view-url-sync";
 import { EventSearchQueryProvider } from "@/components/year-view/event-search";
 import YearGrid from "@/components/year-view/year-grid";
+import TimelineView from "@/components/year-view/timeline-view";
 import { useYearViewData } from "@/components/year-view/use-year-view-data";
 import EventFormDialog from "@/components/year-view/event-form-dialog";
 import DeleteEventDialog from "@/components/year-view/delete-event-dialog";
@@ -37,6 +38,8 @@ import type {
   YearViewRouterPort,
 } from "@/components/year-view/year-view-ports";
 import { getDefaultWritableCalendar, isWritableCalendar, type CalendarEvent } from "@julian/domain";
+import { clampCell, type KeyboardCell } from "@/components/year-view/year-grid-keyboard";
+import type { YearViewMode } from "@/lib/year-view-url";
 import { useI18n } from "@/i18n/context";
 
 /**
@@ -98,8 +101,14 @@ export default function YearViewCore({
     focusYearGridRef.current?.();
   }, []);
 
-  const { urlFocus, navigateYearView, shouldApplyUrlFocus, markUrlFocusApplied } =
-    useYearViewUrlSync(year, router);
+  const {
+    urlFocus,
+    viewMode,
+    setViewMode,
+    navigateYearView,
+    shouldApplyUrlFocus,
+    markUrlFocusApplied,
+  } = useYearViewUrlSync(year, router);
 
   // The route is authoritative: a back/forward navigation changes `initialYear`
   // and the view follows.
@@ -125,6 +134,7 @@ export default function YearViewCore({
     search: router.search,
     year,
     setJumpDayHighlight,
+    enabled: viewMode === "grid",
   });
 
   const {
@@ -207,6 +217,39 @@ export default function YearViewCore({
     onJumpedToToday: useCallback(() => setFocusTodaySignal((value) => value + 1), []),
   });
 
+  const onViewModeChange = useCallback(
+    (mode: YearViewMode) => {
+      if (mode === viewMode) return;
+      closeMobileSidebarNow();
+      const now = new Date();
+      const cell =
+        urlFocus?.cell ??
+        clampCell(
+          now.getFullYear() === year
+            ? { month: now.getMonth(), day: now.getDate() }
+            : { month: 0, day: 1 },
+          year,
+        );
+      setViewMode(mode, cell);
+    },
+    [closeMobileSidebarNow, setViewMode, urlFocus?.cell, viewMode, year],
+  );
+
+  const onToggleViewMode = useCallback(
+    () => onViewModeChange(viewMode === "grid" ? "timeline" : "grid"),
+    [onViewModeChange, viewMode],
+  );
+
+  const onTimelineFocusDateChange = useCallback(
+    (target: { year: number; cell: KeyboardCell }) => {
+      navigateYearView(
+        { year: target.year, cell: target.cell, detailsOpen: false },
+        { replace: target.year === year },
+      );
+    },
+    [navigateYearView, year],
+  );
+
   const onToggleCommandPalette = useCallback(() => {
     closeMobileSidebarNow();
     setCommandPaletteOpen((open) => !open);
@@ -218,6 +261,7 @@ export default function YearViewCore({
     onRefresh: reconcile,
     onJumpToToday: navigation.onJumpToToday,
     onFocusSearch: focusSearch,
+    onToggleViewMode,
   });
 
   const onUrlFocusChange = useCallback(
@@ -266,6 +310,8 @@ export default function YearViewCore({
       onRefresh: reconcile,
       onToggleSidebar,
       onOpenMobileSidebar,
+      viewMode,
+      onViewModeChange,
       ...navigation,
     }),
     [
@@ -278,6 +324,7 @@ export default function YearViewCore({
       navigation,
       onOpenMobileSidebar,
       onToggleSidebar,
+      onViewModeChange,
       reconcile,
       registerFocusYearGrid,
       searchQuery,
@@ -285,6 +332,7 @@ export default function YearViewCore({
       state.sidebarCollapsed,
       syncBadge,
       todayLongLabel,
+      viewMode,
       visibleEvents.length,
       year,
     ],
@@ -336,38 +384,58 @@ export default function YearViewCore({
                     <YearRefreshNotice label="Loading events..." />
                   </div>
                 )}
-                <YearGrid
-                  months={months}
-                  events={displayEventMap}
-                  calendars={calendars}
-                  year={year}
-                  scrollRef={scrollRef}
-                  monthHeaderRefs={monthHeaderRefs}
-                  scrollEdges={state.scrollEdges}
-                  rowsRef={rowsRef}
-                  rowHeight={ROW_HEIGHT}
-                  monthNames={monthNames}
-                  yearCalendarAriaLabel={`Calendar for ${year}`}
-                  todayLongLabel={todayLongLabel}
-                  jumpDayHighlight={jumpDayHighlight}
-                  focusTodaySignal={focusTodaySignal}
-                  keyboardHelpOpen={keyboardHelpOpen}
-                  commandPaletteOpen={commandPaletteOpen}
-                  mutationDialogOpen={mutations.anyDialogOpen || eventMove.target !== null}
-                  canModifyEvent={canModifyEvent}
-                  onRequestCreateEvent={mutations.create.open}
-                  onRequestEditEvent={mutations.edit.open}
-                  onRequestMoveEvent={eventMove.open}
-                  onMoveEvent={eventMove.move}
-                  onRequestDeleteEvent={mutations.remove.open}
-                  onKeyboardHelpOpenChange={setKeyboardHelpOpen}
-                  onRegisterFocusYearGrid={registerFocusYearGrid}
-                  urlFocus={urlFocus}
-                  shouldApplyUrlFocus={shouldApplyUrlFocus}
-                  markUrlFocusApplied={markUrlFocusApplied}
-                  onUrlFocusChange={onUrlFocusChange}
-                  onYearNavigate={onYearNavigate}
-                />
+                {viewMode === "timeline" ? (
+                  <TimelineView
+                    year={year}
+                    events={visibleEvents}
+                    calendars={calendars}
+                    selectedCalendarIds={selectedCalendarIds}
+                    monthNames={monthNames}
+                    focusCell={urlFocus?.cell}
+                    focusTodaySignal={focusTodaySignal}
+                    canModifyEvent={canModifyEvent}
+                    onRequestCreateEvent={mutations.create.open}
+                    onRequestEditEvent={mutations.edit.open}
+                    onRequestMoveEvent={eventMove.open}
+                    onRequestDeleteEvent={mutations.remove.open}
+                    onKeyboardHelpOpenChange={setKeyboardHelpOpen}
+                    onRegisterFocus={registerFocusYearGrid}
+                    onFocusDateChange={onTimelineFocusDateChange}
+                  />
+                ) : (
+                  <YearGrid
+                    months={months}
+                    events={displayEventMap}
+                    calendars={calendars}
+                    year={year}
+                    scrollRef={scrollRef}
+                    monthHeaderRefs={monthHeaderRefs}
+                    scrollEdges={state.scrollEdges}
+                    rowsRef={rowsRef}
+                    rowHeight={ROW_HEIGHT}
+                    monthNames={monthNames}
+                    yearCalendarAriaLabel={`Calendar for ${year}`}
+                    todayLongLabel={todayLongLabel}
+                    jumpDayHighlight={jumpDayHighlight}
+                    focusTodaySignal={focusTodaySignal}
+                    keyboardHelpOpen={keyboardHelpOpen}
+                    commandPaletteOpen={commandPaletteOpen}
+                    mutationDialogOpen={mutations.anyDialogOpen || eventMove.target !== null}
+                    canModifyEvent={canModifyEvent}
+                    onRequestCreateEvent={mutations.create.open}
+                    onRequestEditEvent={mutations.edit.open}
+                    onRequestMoveEvent={eventMove.open}
+                    onMoveEvent={eventMove.move}
+                    onRequestDeleteEvent={mutations.remove.open}
+                    onKeyboardHelpOpenChange={setKeyboardHelpOpen}
+                    onRegisterFocusYearGrid={registerFocusYearGrid}
+                    urlFocus={urlFocus}
+                    shouldApplyUrlFocus={shouldApplyUrlFocus}
+                    markUrlFocusApplied={markUrlFocusApplied}
+                    onUrlFocusChange={onUrlFocusChange}
+                    onYearNavigate={onYearNavigate}
+                  />
+                )}
               </div>
             </div>
           </AppShell>
