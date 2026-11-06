@@ -285,7 +285,7 @@ One domain serves two builds. The marketing pages are static HTML from
 | `/year/*`                     | Worker    | `301` to the same path without `/year`, query kept (legacy bookmarks)     |
 | `/demo`, `/demo/{yyyy}`       | app       | The real year view on sample data; `/demo` opens the current year. The Worker serves route-like `/demo/…` paths the `/demo` page, keeping the external URL and query while supplying the demo's title and canonical `og:url` `/demo`. File-like paths keep their existing handling |
 | `/demo/{yyyy}/{mm}`           | app       | Redirects to `/demo/{yyyy}?month=mm&day=1`                                |
-| `/auth/callback`              | app       | Validates OAuth state and exchanges the single-use code                   |
+| `/auth/callback`              | app       | Exchanges the single-use code. The Worker first `302`s it on to a PR preview when the OAuth `state` names one |
 | `/api/oauth/*`                | Worker    | Token exchange and refresh                                                |
 | `/lab`                        | app       | Component/design experimentation; dev server only, absent from builds     |
 

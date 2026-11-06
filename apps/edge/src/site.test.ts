@@ -35,6 +35,29 @@ describe("site routing", () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it("sends a callback whose state names a PR preview on to that preview", async () => {
+    const assets = echoAssets();
+    const preview = "https://pr-109-julian.julian-93527c9983d1.workers.dev";
+    const search = `?state=${encodeURIComponent(preview)}&code=4%2Fabc&scope=x`;
+    const response = await serve(get(`/auth/callback${search}`), makeEnv(assets));
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe(`${preview}/auth/callback${search}`);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(assets).not.toHaveBeenCalled();
+  });
+
+  it("serves the app for an ordinary or foreign-state callback", async () => {
+    const assets = echoAssets();
+    const plain = await serve(get("/auth/callback?code=abc"), makeEnv(assets));
+    const foreign = await serve(
+      get("/auth/callback?code=abc&state=https%3A%2F%2Fevil.example"),
+      makeEnv(assets),
+    );
+    expect(plain.status).toBe(200);
+    expect(foreign.status).toBe(200);
+    expect(assets).toHaveBeenCalledTimes(2);
+  });
+
   it("serves the marketing landing at / to a first-time visitor", async () => {
     const assets = echoAssets();
     const response = await serve(get("/"), makeEnv(assets));

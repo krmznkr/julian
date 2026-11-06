@@ -247,10 +247,31 @@ describe("GoogleAuth", () => {
       expect(url.origin + url.pathname).toBe("https://accounts.google.com/o/oauth2/v2/auth");
       expect(url.searchParams.get("code_challenge_method")).toBe("S256");
       expect(url.searchParams.get("response_type")).toBe("code");
+      // Served from the callback's own origin: nothing to relay back to.
+      expect(url.searchParams.has("state")).toBe(false);
       // The verifier must be persisted, otherwise the callback cannot complete.
       expect(Option.isSome(stored)).toBe(true);
       // The challenge must be the hash, never the verifier itself.
       expect(url.searchParams.get("code_challenge")).not.toBe(Option.getOrElse(stored, () => ""));
+    }),
+  );
+
+  it.effect("names the app's origin in the state when it borrows another callback", () =>
+    Effect.gen(function* () {
+      const fetch = yield* TestEnv.makeFetchStub([() => TestEnv.jsonResponse({}, 200)]);
+      const navigations = yield* Ref.make<ReadonlyArray<NavigationCall>>([]);
+      const preview = "https://pr-7-julian.julian-93527c9983d1.workers.dev";
+      const layer = TestEnv.layer({
+        fetch,
+        navigations,
+        config: { appOrigin: preview, redirectUri: "https://julian.krmznkr.com/auth/callback" },
+      });
+
+      yield* Effect.flatMap(GoogleAuth, (auth) => auth.start).pipe(Effect.provide(layer));
+
+      const url = new URL((yield* Ref.get(navigations))[0]!.url);
+      expect(url.searchParams.get("redirect_uri")).toBe("https://julian.krmznkr.com/auth/callback");
+      expect(url.searchParams.get("state")).toBe(preview);
     }),
   );
 

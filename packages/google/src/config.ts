@@ -19,14 +19,18 @@ export const GOOGLE_SCOPES: ReadonlyArray<string> = [
 
 // The redirect URI is derived from where the app is actually served rather than
 // configured, so a preview deployment authenticates against its own origin.
-const defaultRedirectUri = (): string =>
-  typeof location === "undefined"
-    ? "http://localhost:3000/auth/callback"
-    : `${location.origin}/auth/callback`;
+const currentOrigin = (): string =>
+  typeof location === "undefined" ? "http://localhost:3000" : location.origin;
+
+const defaultRedirectUri = (): string => `${currentOrigin()}/auth/callback`;
 
 export interface AppConfigShape {
   readonly clientId: string;
   readonly redirectUri: string;
+  // Where the app is running. When it differs from the redirect URI's origin
+  // (a PR preview borrowing production's callback), sign-in names it in the
+  // OAuth state so the callback can send the browser back here.
+  readonly appOrigin: string;
   readonly proxyBaseUrl: string;
   readonly scopes: ReadonlyArray<string>;
   // How many times a transient HTTP failure is retried. Configurable so tests
@@ -61,6 +65,7 @@ export const appConfigLayer: Layer.Layer<AppConfig> = Layer.effect(
     return AppConfig.of({
       clientId,
       redirectUri,
+      appOrigin: currentOrigin(),
       proxyBaseUrl,
       scopes: GOOGLE_SCOPES,
       retryTimes,
@@ -74,6 +79,7 @@ export const appConfigLayerWith = (overrides?: Partial<AppConfigShape>): Layer.L
   Layer.succeed(AppConfig, {
     clientId: "test-client-id",
     redirectUri: "http://localhost:3000/auth/callback",
+    appOrigin: "http://localhost:3000",
     proxyBaseUrl: "/api/oauth",
     scopes: GOOGLE_SCOPES,
     retryTimes: 0,

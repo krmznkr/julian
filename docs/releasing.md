@@ -103,9 +103,11 @@ example the token lacks Workers Scripts Edit), wrangler prints no URL and the
 comment gives only the version ID. Fork PRs and runs without
 `CLOUDFLARE_PREVIEW_TOKEN` skip.
 
-Previews run on a `workers.dev` origin that the OAuth origin lock does not
-allow (`apps/edge/src/oauth.ts`), so Google sign-in fails there by design; the
-demo works.
+Google sign-in works on previews through production's callback; see
+"Sign-in on PR previews" in [`security.md`](security.md). It needs the relay
+in the production Worker, so it starts working once a stable release with
+`packages/security/src/preview-origin.ts` is fully rolled out (during a canary,
+most callbacks still reach the old version).
 
 ### Nightly (03:00 UTC)
 

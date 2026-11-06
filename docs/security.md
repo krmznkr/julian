@@ -105,11 +105,11 @@ name, so no code change is needed.
 the client secret stays server-side. `checkRequest()` enforces:
 
 - `POST` only (else `405`).
-- `Origin` header must be one of `allowedOrigins(channel)`, else `403`:
+- `Origin` header must pass `isAllowedOrigin(origin, channel)`, else `403`:
   `https://julian.krmznkr.com` and `https://julian-nightly.krmznkr.com`, plus the
   `localhost`/`127.0.0.1` dev servers (Vite on 3000 or 5173, `wrangler dev` on 8787) only when
-  `APP_CHANNEL` is `dev` (local `wrangler dev`). Stable, nightly and preview
-  deploys never accept a local origin.
+  `APP_CHANNEL` is `dev` (local `wrangler dev`), and PR preview origins only when
+  it is `preview`. Stable, nightly and preview deploys never accept a local origin.
 - The origin lock is **not authentication**: it stops cross-site pages in a
   browser, but any non-browser client can forge `Origin`. The rate limit and
   Google's own checks (PKCE, refresh-token validity) are what bound abuse.
@@ -117,6 +117,30 @@ the client secret stays server-side. `checkRequest()` enforces:
 
 **If you add a new deployed or dev origin,** add it to `DEPLOYED_ORIGINS` or
 `LOCAL_ORIGINS` in `apps/edge/src/oauth.ts`.
+
+### Sign-in on PR previews
+
+PR previews are Version URLs of the production Worker at
+`https://pr-<N>-julian.julian-93527c9983d1.workers.dev`. Google needs every
+redirect URI registered in advance and has no wildcards, so previews borrow
+production's (`packages/security/src/preview-origin.ts`):
+
+1. On a preview origin, the app sends `redirect_uri=https://julian.krmznkr.com/auth/callback`
+   and puts its own origin in the OAuth `state`. The PKCE verifier stays in the
+   preview's storage.
+2. Google returns to production's `/auth/callback`. The Worker `302`s it, query
+   intact and `no-store`, to `<state>/auth/callback`, but only when `state`
+   matches the preview pattern exactly (`https`, `pr-<1–6 digits>-julian`, this
+   account's workers.dev subdomain) and is not the current origin.
+3. The preview exchanges the code through its own `/api/oauth/token` with the
+   same production `redirect_uri`. Its origin lock accepts preview origins only
+   when `APP_CHANNEL` is `preview`.
+
+A relayed code is useless without the verifier, which only the preview that
+started sign-in holds, and only this Cloudflare account can publish to that
+workers.dev subdomain. Previews run the PR's code against your real Google
+account once you sign in, including Dependabot PRs; sign in only on previews
+you trust.
 
 ### 4. Security headers — `packages/security/src/index.ts`
 

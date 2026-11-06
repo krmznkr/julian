@@ -11,7 +11,7 @@
 // are hidden with `Layer.provide`; nothing is wired with a blanket `mergeAll`.
 import { Cause, Effect, Exit, Layer, ManagedRuntime } from "effect";
 import { FetchHttpClient } from "effect/http";
-import { appConfigLayer } from "@julian/google/config";
+import { AppConfig, appConfigLayer as baseConfigLayer } from "@julian/google/config";
 import { keyValueStoreLayer } from "@julian/google/key-value-store";
 import { navigationLayer } from "@julian/google/navigation";
 import { tokenStoreLayer } from "@julian/google/token-store";
@@ -19,6 +19,12 @@ import { googleHttpLayer } from "@julian/google/google-http";
 import { googleAuthLayer } from "@julian/google/google-auth";
 import { googleCalendarApiLayer } from "@julian/google/google-calendar-api";
 import { googleTasksLayer } from "@julian/google/google-tasks";
+import { withPreviewSignIn } from "@/lib/preview-sign-in";
+
+const appConfigLayer = Layer.effect(
+  AppConfig,
+  Effect.map(AppConfig, (config) => AppConfig.of(withPreviewSignIn(config))),
+).pipe(Layer.provide(baseConfigLayer));
 
 // Browser platform services.
 const InfrastructureLayer = Layer.mergeAll(
