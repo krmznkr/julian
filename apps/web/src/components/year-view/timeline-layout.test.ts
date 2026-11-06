@@ -36,6 +36,8 @@ describe("timeline sizing", () => {
   it("fits the zoom's window into the track, with a floor", () => {
     expect(timelineDayWidth(176 + 700, "week", 2026)).toBe(100);
     expect(timelineDayWidth(390, "year", 2026)).toBe(2);
+    // A phone keeps days wide enough to read and scrolls the quarter instead.
+    expect(timelineDayWidth(412, "quarter", 2026)).toBe(6);
   });
 
   it("steps zoom within the list", () => {
@@ -52,16 +54,14 @@ describe("timeline sizing", () => {
 });
 
 describe("bar titles", () => {
-  it("puts a title inside wide bars, beside narrow ones, and drops it at year zoom", () => {
-    expect(timelineLabelMode(200, "Sprint", "quarter")).toBe("inside");
-    expect(timelineLabelMode(10, "Sprint", "quarter")).toBe("outside");
-    expect(timelineLabelMode(10, "Sprint", "year")).toBe("none");
+  it("puts a title inside wide bars and beside narrow ones", () => {
+    expect(timelineLabelMode(200, "Sprint")).toBe("inside");
+    expect(timelineLabelMode(10, "Sprint")).toBe("outside");
   });
 
   it("reserves lane room only for titles drawn beside the bar", () => {
-    expect(timelineReserveDays("Sprint", 10, 20, "month")).toBe(0);
-    expect(timelineReserveDays("Sprint", 1, 10, "quarter")).toBe(1 + Math.ceil((51 + 6) / 10));
-    expect(timelineReserveDays("Sprint", 1, 3, "year")).toBe(0);
+    expect(timelineReserveDays("Sprint", 10, 20)).toBe(0);
+    expect(timelineReserveDays("Sprint", 1, 10)).toBe(1 + Math.ceil((56 + 6) / 10));
   });
 });
 

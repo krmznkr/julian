@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 const BAR_HEIGHT = TIMELINE_LANE_HEIGHT - 6;
 // Built once: constructing an Intl formatter per day label is slow.
 const WEEKDAY_FORMAT = new Intl.DateTimeFormat("en-US", { weekday: "short" });
+const DAY_FORMAT_SHORT = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
 
 export function TimelineToolbar({
   rangeLabel,
@@ -134,7 +135,7 @@ export const TimelineHeader = memo(function TimelineHeader({
         {months.map(({ name, month, start, length }) => (
           <div
             key={name}
-            className="absolute top-0 h-6 border-l border-border/60"
+            className="absolute top-0 h-full border-l border-foreground/25"
             style={{ left: dayCalc(start), width: dayCalc(length) }}
           >
             <span className="timeline-sticky-label sticky inline-block truncate px-1.5 pt-1 text-xs font-semibold text-foreground">
@@ -169,10 +170,32 @@ export const TimelineHeader = memo(function TimelineHeader({
               </span>
             ) : null,
           )}
+        {todayIndex !== null && (
+          <span
+            className="timeline-today-chip absolute bottom-0.5 z-10 -translate-x-1/2 rounded-full bg-[var(--accent-brand-text)] px-1.5 py-px text-[11px] font-semibold tabular-nums leading-4 text-background"
+            style={{ left: dayCalc(todayIndex + 0.5) }}
+          >
+            {DAY_FORMAT_SHORT.format(dateFromDayIndex(year, todayIndex))}
+          </span>
+        )}
       </div>
     </div>
   );
 });
+
+/** Black or white, whichever reads better on a `#rrggbb` fill. */
+export function readableTextOn(hex: string): string {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return "#ffffff";
+  const value = Number.parseInt(match[1] ?? "000000", 16);
+  const channel = (shift: number) => {
+    const c = ((value >> shift) & 0xff) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0);
+  // Contrast against white vs black: (1.05)/(L+0.05) vs (L+0.05)/0.05.
+  return 1.05 / (luminance + 0.05) >= (luminance + 0.05) / 0.05 ? "#ffffff" : "#111111";
+}
 
 /** `n` days as a CSS length, so print can rescale the whole timeline through `--day-w`. */
 export function dayCalc(days: number, extraPx = 0): string {
@@ -217,7 +240,7 @@ function TimelineBarButton({
           onClick={() => onActivate(bar)}
           onFocus={() => onFocus(bar.key)}
           className={cn(
-            "timeline-bar absolute flex items-center overflow-hidden rounded-md border-l-[3px] px-1.5 text-left text-xs font-medium text-foreground shadow-[0_0_0_1px_var(--background)] transition-[filter] hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "timeline-bar absolute flex items-center overflow-clip rounded px-1.5 text-left text-xs font-medium shadow-[0_0_0_1px_var(--background)] transition-[filter] hover:brightness-110 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
             bar.continuesBefore && "rounded-l-none",
             bar.continuesAfter && "rounded-r-none",
           )}
@@ -226,15 +249,16 @@ function TimelineBarButton({
               "--event-accent-color": color,
               top,
               height: BAR_HEIGHT,
-              left: dayCalc(bar.startIndex, 1),
-              width: `max(${dayCalc(span, -2)}, 6px)`,
-              borderLeftColor: color,
-              background: `color-mix(in oklab, ${color} 24%, var(--background))`,
+              left: dayCalc(bar.startIndex, 2),
+              width: `max(${dayCalc(span, -4)}, 6px)`,
+              background: color,
+              color: readableTextOn(color),
             } as CSSProperties
           }
         >
           {labelMode === "inside" ? (
-            <span className="truncate">
+            // Sticks to the visible edge while a long bar runs off the left.
+            <span className="timeline-bar-title sticky truncate">
               {bar.continuesBefore ? "← " : ""}
               {event.title}
             </span>

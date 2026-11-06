@@ -308,6 +308,10 @@
   width: calc(var(--day-w) * var(--timeline-days));
 }
 
+.timeline-bar-title {
+  left: calc(var(--label-w) + 6px);
+}
+
 .timeline-sticky-label {
   left: var(--label-w);
   max-width: 100%;
