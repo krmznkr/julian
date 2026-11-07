@@ -175,6 +175,7 @@ export function TopBarActions({
   monthNames,
   onMonthSelect,
   onOpenMobileSidebar,
+  showMonthJump = true,
 }: {
   onJumpToToday: () => void;
   todayLongLabel: string;
@@ -182,6 +183,8 @@ export function TopBarActions({
   monthNames: string[];
   onMonthSelect: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   onOpenMobileSidebar: () => void;
+  /** The timeline has its own zoom and arrows; a month picker there reads as a zoom. */
+  showMonthJump?: boolean;
 }) {
   return (
     <>
@@ -216,21 +219,23 @@ export function TopBarActions({
         <SyncBadge label={syncBadge.label} kind={syncBadge.kind} />
       </div>
 
-      <select
-        className="h-9 rounded-lg border border-border/60 bg-background px-2 text-xs md:hidden"
-        aria-label="Jump to month"
-        onChange={onMonthSelect}
-        defaultValue=""
-      >
-        <option value="" disabled>
-          Month
-        </option>
-        {monthNames.map((label, index) => (
-          <option key={label} value={index}>
-            {label}
+      {showMonthJump ? (
+        <select
+          className="h-9 rounded-lg border border-border/60 bg-background px-2 text-xs md:hidden"
+          aria-label="Jump to month"
+          onChange={onMonthSelect}
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Month
           </option>
-        ))}
-      </select>
+          {monthNames.map((label, index) => (
+            <option key={label} value={index}>
+              {label}
+            </option>
+          ))}
+        </select>
+      ) : null}
 
       <Button
         variant="ghost"

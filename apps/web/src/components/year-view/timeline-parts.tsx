@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 const BAR_HEIGHT = TIMELINE_LANE_HEIGHT - 6;
 // Built once: constructing an Intl formatter per day label is slow.
 const WEEKDAY_FORMAT = new Intl.DateTimeFormat("en-US", { weekday: "short" });
+const DAY_FORMAT_SHORT = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
 
 export function TimelineToolbar({
   rangeLabel,
@@ -64,7 +65,7 @@ export function TimelineToolbar({
         >
           <ChevronRight className="size-4" aria-hidden="true" />
         </Button>
-        <Button variant="outline" size="sm" className="ml-1 px-3" onClick={onToday}>
+        <Button variant="outline" size="sm" className="ml-1 px-3 md:hidden" onClick={onToday}>
           Today
         </Button>
       </div>
@@ -106,12 +107,14 @@ export const TimelineHeader = memo(function TimelineHeader({
   dayWidth,
   todayIndex,
   monthNames,
+  compact,
 }: {
   year: number;
   totalDays: number;
   dayWidth: number;
   todayIndex: number | null;
   monthNames: ReadonlyArray<string>;
+  compact: boolean;
 }) {
   const days = Array.from({ length: totalDays }, (_, index) => dateFromDayIndex(year, index));
   const months = monthNames.map((name, month) => {
@@ -127,19 +130,21 @@ export const TimelineHeader = memo(function TimelineHeader({
       className="timeline-header sticky top-0 z-20 flex border-b border-border/60 bg-background"
       aria-hidden="true"
     >
-      <div className="timeline-label-col sticky left-0 z-10 flex shrink-0 items-end border-r border-border/60 bg-background px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        Calendars
-      </div>
-      <div className="timeline-track relative h-12 shrink-0">
-        {months.map(({ name, month, start, length }) => (
+      {compact ? null : (
+        <div className="timeline-label-col sticky left-0 z-10 flex shrink-0 items-end border-r border-border/60 bg-background px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          Calendars
+        </div>
+      )}
+      <div className={cn("timeline-track relative shrink-0", showDays ? "h-14" : "h-12")}>
+        {months.map(({ name, start, length }) => (
           <div
             key={name}
-            className="absolute top-0 h-6 border-l border-border/60"
+            className="absolute top-0 h-full border-l border-foreground/25"
             style={{ left: dayCalc(start), width: dayCalc(length) }}
           >
             <span className="timeline-sticky-label sticky inline-block truncate px-1.5 pt-1 text-xs font-semibold text-foreground">
               {dayWidth * length >= 96 ? name : name.slice(0, 3)}
-              {month === 0 || dayWidth * length >= 120 ? ` ${year}` : ""}
+              {dayWidth * length >= 120 ? ` ${year}` : ""}
             </span>
           </div>
         ))}
@@ -148,13 +153,19 @@ export const TimelineHeader = memo(function TimelineHeader({
             <span
               key={toDateInputValue(date)}
               className={cn(
-                "timeline-day-label absolute bottom-0 flex h-6 items-center justify-center text-[11px] tabular-nums text-muted-foreground",
+                "timeline-day-label absolute bottom-0 flex h-8 flex-col items-center justify-center text-[11px] leading-none tabular-nums text-muted-foreground",
                 (date.getDay() === 0 || date.getDay() === 6) && "text-muted-foreground/70",
-                index === todayIndex && "font-semibold text-[var(--accent-brand-text)]",
+                // The dated today chip sits on top of this label.
+                index === todayIndex && "invisible",
               )}
               style={{ left: dayCalc(index), width: dayCalc(1) }}
             >
-              {dayWidth >= 60 ? `${date.getDate()} ${WEEKDAY_FORMAT.format(date)}` : date.getDate()}
+              <span className="text-[9px] font-medium uppercase tracking-wide">
+                {dayWidth >= 40
+                  ? WEEKDAY_FORMAT.format(date)
+                  : WEEKDAY_FORMAT.format(date).slice(0, 2)}
+              </span>
+              <span className="mt-0.5">{date.getDate()}</span>
             </span>
           ))}
         {showWeeks &&
@@ -169,10 +180,32 @@ export const TimelineHeader = memo(function TimelineHeader({
               </span>
             ) : null,
           )}
+        {todayIndex !== null && (
+          <span
+            className="timeline-today-chip absolute bottom-0.5 z-10 -translate-x-1/2 rounded-full bg-[var(--accent-brand-text)] px-1.5 py-px text-[11px] font-semibold tabular-nums leading-4 text-background"
+            style={{ left: dayCalc(todayIndex + 0.5) }}
+          >
+            {DAY_FORMAT_SHORT.format(dateFromDayIndex(year, todayIndex))}
+          </span>
+        )}
       </div>
     </div>
   );
 });
+
+/** Black or white, whichever reads better on a `#rrggbb` fill. */
+function readableTextOn(hex: string): string {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return "#ffffff";
+  const value = Number.parseInt(match[1] ?? "000000", 16);
+  const channel = (shift: number) => {
+    const c = ((value >> shift) & 0xff) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0);
+  // Contrast against white vs black: (1.05)/(L+0.05) vs (L+0.05)/0.05.
+  return 1.05 / (luminance + 0.05) >= (luminance + 0.05) / 0.05 ? "#ffffff" : "#111111";
+}
 
 /** `n` days as a CSS length, so print can rescale the whole timeline through `--day-w`. */
 export function dayCalc(days: number, extraPx = 0): string {
@@ -185,6 +218,7 @@ function TimelineBarButton({
   bar,
   calendar,
   labelMode,
+  offscreen,
   tabbable,
   onActivate,
   onFocus,
@@ -192,6 +226,8 @@ function TimelineBarButton({
   bar: TimelineBar;
   calendar: CalendarSummary | undefined;
   labelMode: TimelineLabelMode;
+  /** The bar ended left of the screen; a label beside it would be a clipped stub. */
+  offscreen: boolean;
   tabbable: boolean;
   onActivate: (bar: TimelineBar) => void;
   onFocus: (key: string) => void;
@@ -217,7 +253,7 @@ function TimelineBarButton({
           onClick={() => onActivate(bar)}
           onFocus={() => onFocus(bar.key)}
           className={cn(
-            "timeline-bar absolute flex items-center overflow-hidden rounded-md border-l-[3px] px-1.5 text-left text-xs font-medium text-foreground shadow-[0_0_0_1px_var(--background)] transition-[filter] hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "timeline-bar absolute flex items-center overflow-clip rounded px-1.5 text-left text-xs font-medium shadow-[0_0_0_1px_var(--background)] transition-[filter] hover:brightness-110 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
             bar.continuesBefore && "rounded-l-none",
             bar.continuesAfter && "rounded-r-none",
           )}
@@ -226,22 +262,23 @@ function TimelineBarButton({
               "--event-accent-color": color,
               top,
               height: BAR_HEIGHT,
-              left: dayCalc(bar.startIndex, 1),
-              width: `max(${dayCalc(span, -2)}, 6px)`,
-              borderLeftColor: color,
-              background: `color-mix(in oklab, ${color} 24%, var(--background))`,
+              left: dayCalc(bar.startIndex, 2),
+              width: `max(${dayCalc(span, -4)}, 6px)`,
+              background: color,
+              color: readableTextOn(color),
             } as CSSProperties
           }
         >
           {labelMode === "inside" ? (
-            <span className="truncate">
+            // Sticks to the visible edge while a long bar runs off the left.
+            <span className="timeline-bar-title sticky truncate">
               {bar.continuesBefore ? "← " : ""}
               {event.title}
             </span>
           ) : null}
         </button>
       </TooltipTrigger>
-      {labelMode === "outside" ? (
+      {labelMode === "outside" && !offscreen ? (
         <span
           aria-hidden="true"
           className="timeline-outside-label pointer-events-none absolute flex items-center truncate pl-1.5 text-xs text-foreground/80"

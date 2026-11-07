@@ -26,6 +26,7 @@ import {
   type TimelineZoom,
 } from "@julian/domain";
 import { openEventInGoogle } from "@/lib/open-event";
+import { cn } from "@/lib/utils";
 import { canMoveEvent } from "@/components/year-view/use-event-move";
 import type { KeyboardCell } from "@/components/year-view/year-grid-keyboard";
 import {
@@ -109,6 +110,8 @@ export default function TimelineView({
   const viewportWidth = measuredWidth || TIMELINE_FALLBACK_WIDTH;
   const totalDays = daysInYear(year);
   const labelWidth = timelineLabelWidth(viewportWidth);
+  // Phones have no room for a name column; each row names its calendar above its bars.
+  const compact = labelWidth === 0;
   const dayWidth = timelineDayWidth(viewportWidth, zoom, year);
   const trackViewport = Math.max(1, viewportWidth - labelWidth);
   const visibleDays = Math.max(1, Math.floor(trackViewport / dayWidth));
@@ -122,9 +125,9 @@ export default function TimelineView({
     const selected = new Set(selectedCalendarIds);
     const ids = calendars.map((calendar) => calendar.id).filter((id) => selected.has(id));
     return buildTimelineRows(events, ids, year, (event) =>
-      timelineReserveDays(event.title, eventCalendarSpanDays(event), dayWidth, zoom),
+      timelineReserveDays(event.title, eventCalendarSpanDays(event), dayWidth),
     );
-  }, [calendars, dayWidth, events, selectedCalendarIds, year, zoom]);
+  }, [calendars, dayWidth, events, selectedCalendarIds, year]);
   const barsByKey = useMemo(
     () => new Map(rows.flatMap((row) => row.bars.map((bar) => [bar.key, bar] as const))),
     [rows],
@@ -140,13 +143,22 @@ export default function TimelineView({
   const layoutRef = useRef({ dayWidth, trackViewport, zoom });
   const pendingRef = useRef<number | null>(null);
   const startRef = useRef(0);
+  // Until the reader scrolls by hand, `startRef` is the truth and the scroll
+  // position follows it, even when late layout (data arriving, a scrollbar
+  // appearing) clamps or shifts a programmatic scroll.
+  const userScrolledRef = useRef(false);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
   const applyPending = useCallback(() => {
     const container = scrollRef.current;
     const target = pendingRef.current;
     if (!container || target === null) return;
     pendingRef.current = null;
     startRef.current = target;
+    userScrolledRef.current = false;
     container.scrollTo({ left: target * layoutRef.current.dayWidth });
+  }, []);
+  const markUserScroll = useCallback(() => {
+    userScrolledRef.current = true;
   }, []);
 
   const anchorMonth = focusCell?.month;
@@ -200,9 +212,16 @@ export default function TimelineView({
 
   useEffect(() => {
     const container = scrollRef.current;
-    if (!container) return;
-    const observer = new ResizeObserver(() => setMeasuredWidth(container.clientWidth));
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+    const observer = new ResizeObserver(() => {
+      setMeasuredWidth(container.clientWidth);
+      if (!userScrolledRef.current) {
+        container.scrollTo({ left: startRef.current * layoutRef.current.dayWidth });
+      }
+    });
     observer.observe(container);
+    observer.observe(canvas);
     return () => observer.disconnect();
   }, []);
 
@@ -214,7 +233,7 @@ export default function TimelineView({
       const container = scrollRef.current;
       if (!container) return;
       const start = Math.round(container.scrollLeft / layoutRef.current.dayWidth);
-      startRef.current = start;
+      if (userScrolledRef.current) startRef.current = start;
       setVisibleStart(start);
     });
   }, []);
@@ -369,12 +388,18 @@ export default function TimelineView({
   // Sitting on a window boundary (after Today, a step or a deep link), name
   // that window: "November 2026" even though 31 day-widths are on screen.
   const firstVisible = clampDayIndex(visibleStart, year);
-  const firstDate = dateFromDayIndex(year, firstVisible);
-  const lastVisible =
-    windowStartIndex(zoom, firstDate, year) === firstVisible
-      ? dayIndexInYear(shiftTimelineWindow(zoom, firstDate, 1), year) - 1
-      : firstVisible + visibleDays - 1;
-  const rangeLabel = formatTimelineRange(year, firstVisible, lastVisible);
+  // Within a day of a window start (scroll positions round), name the window.
+  const nearWindow = windowStartIndex(
+    zoom,
+    dateFromDayIndex(year, clampDayIndex(firstVisible + 1, year)),
+    year,
+  );
+  const onWindow = Math.abs(nearWindow - firstVisible) <= 1;
+  const labelStart = onWindow ? nearWindow : firstVisible;
+  const lastVisible = onWindow
+    ? dayIndexInYear(shiftTimelineWindow(zoom, dateFromDayIndex(year, labelStart), 1), year) - 1
+    : firstVisible + visibleDays - 1;
+  const rangeLabel = formatTimelineRange(year, labelStart, lastVisible);
   const saturdayIndex = (6 - new Date(year, 0, 1).getDay() + 7) % 7;
   const showDayLines = dayWidth >= 8;
 
@@ -403,15 +428,26 @@ export default function TimelineView({
         aria-label={`Timeline, ${rangeLabel}`}
         aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End BracketLeft BracketRight Plus Minus N E M QuestionMark"
         onScroll={onScroll}
-        onKeyDown={onKeyDown}
+        onKeyDown={(event) => {
+          markUserScroll();
+          onKeyDown(event);
+        }}
+        onWheel={markUserScroll}
+        onPointerDown={markUserScroll}
+        onTouchStart={markUserScroll}
       >
-        <div className="timeline-canvas relative w-max min-w-full" style={canvasStyle}>
+        <div
+          ref={canvasRef}
+          className="timeline-canvas relative w-max min-w-full"
+          style={canvasStyle}
+        >
           <TimelineHeader
             year={year}
             totalDays={totalDays}
             dayWidth={dayWidth}
             todayIndex={todayIndex}
             monthNames={monthNames}
+            compact={compact}
           />
           <div className="relative">
             <div
@@ -437,7 +473,7 @@ export default function TimelineView({
               {monthNames.map((name, month) => (
                 <span
                   key={name}
-                  className="absolute inset-y-0 w-px bg-border"
+                  className="absolute inset-y-0 w-px bg-foreground/25"
                   style={{ left: dayCalc(dayIndexInYear(new Date(year, month, 1), year)) }}
                 />
               ))}
@@ -464,15 +500,22 @@ export default function TimelineView({
                     key={row.calendarId}
                     role="group"
                     aria-labelledby={labelId}
-                    className="flex border-b border-border/50"
+                    className={cn("flex border-b border-border/50", compact && "flex-col")}
                   >
-                    <div className="timeline-label-col sticky left-0 z-10 flex shrink-0 items-start gap-2 border-r border-border/60 bg-background px-3 py-2">
+                    <div
+                      className={cn(
+                        "sticky left-0 z-10 flex items-start gap-2 bg-background",
+                        compact
+                          ? "w-fit px-3 pt-1.5"
+                          : "timeline-label-col shrink-0 border-r border-border/60 px-3 py-2",
+                      )}
+                    >
                       <span
                         aria-hidden="true"
                         className="mt-1 size-2.5 shrink-0 rounded-full"
                         style={{ background: color }}
                       />
-                      <span className="min-w-0">
+                      <span className={cn("min-w-0", compact && "flex items-baseline gap-2")}>
                         <span id={labelId} className="block truncate text-xs font-medium">
                           {calendar?.summary ?? row.calendarId}
                         </span>
@@ -493,8 +536,8 @@ export default function TimelineView({
                           labelMode={timelineLabelMode(
                             (bar.endIndex - bar.startIndex + 1) * dayWidth,
                             bar.event.title,
-                            zoom,
                           )}
+                          offscreen={bar.endIndex < visibleStart}
                           tabbable={bar.key === tabStopKey}
                           onActivate={activateBar}
                           onFocus={setActiveKey}

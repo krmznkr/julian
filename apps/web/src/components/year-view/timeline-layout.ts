@@ -14,8 +14,16 @@ export const TIMELINE_LANE_HEIGHT = 28;
 export const TIMELINE_ROW_PADDING = 8;
 /** Before the first measurement (and in jsdom), assume a laptop-width viewport. */
 export const TIMELINE_FALLBACK_WIDTH = 1024;
-/** Narrower than this and the year zoom scrolls rather than squashing days to slivers. */
-const MIN_DAY_WIDTH = 2;
+/**
+ * Narrowest a day may get at each zoom. On a phone the window no longer fits
+ * and the track scrolls instead of squashing days into slivers.
+ */
+const MIN_DAY_WIDTH: Readonly<Record<TimelineZoom, number>> = {
+  week: 40,
+  month: 12,
+  quarter: 6,
+  year: 2,
+};
 
 export const TIMELINE_ZOOM_LABELS: Readonly<Record<TimelineZoom, string>> = {
   week: "Week",
@@ -24,15 +32,15 @@ export const TIMELINE_ZOOM_LABELS: Readonly<Record<TimelineZoom, string>> = {
   year: "Year",
 };
 
-/** Width of the sticky calendar-name column. */
+/** Width of the sticky calendar-name column; phones have none. */
 export function timelineLabelWidth(viewportWidth: number): number {
-  return viewportWidth < 640 ? 96 : 176;
+  return viewportWidth < 640 ? 0 : 176;
 }
 
 /** Pixels per day so that the zoom's window fills the track. */
 export function timelineDayWidth(viewportWidth: number, zoom: TimelineZoom, year: number): number {
   const track = Math.max(0, viewportWidth - timelineLabelWidth(viewportWidth));
-  return Math.max(MIN_DAY_WIDTH, track / timelineZoomDays(zoom, year));
+  return Math.max(MIN_DAY_WIDTH[zoom], track / timelineZoomDays(zoom, year));
 }
 
 /** The zoom one step in (`-1`) or out (`1`), clamped to the ends of the list. */
@@ -47,36 +55,26 @@ export function stepZoom(
 
 /** Rough rendered width of a bar title at 12px, capped like the CSS cap on outside labels. */
 export function timelineLabelPx(title: string): number {
-  return Math.min(180, Math.ceil(title.length * 6.5) + 12);
+  return Math.min(180, Math.ceil(title.length * 7) + 14);
 }
 
-/** Below this a bar is too narrow for its title to be worth truncating inside it. */
-const MIN_INSIDE_TITLE_PX = 56;
+/** A bar this wide keeps its title inside even when it has to truncate. */
+const LONG_BAR_PX = 64;
 
-export type TimelineLabelMode = "inside" | "outside" | "none";
+export type TimelineLabelMode = "inside" | "outside";
 
 /**
- * Where a bar's title goes: inside when the bar is wide enough, beside it when
- * not (lanes reserve the room), and nowhere at the year zoom, where beside-bar
- * labels would multiply the lanes.
+ * Where a bar's title goes: inside when it fits (or the bar is long enough to
+ * truncate it gracefully), else beside the bar, where lanes reserve the room.
+ * Every zoom names every event.
  */
-export function timelineLabelMode(
-  barPx: number,
-  title: string,
-  zoom: TimelineZoom,
-): TimelineLabelMode {
-  if (barPx >= Math.min(timelineLabelPx(title), MIN_INSIDE_TITLE_PX)) return "inside";
-  return zoom === "year" ? "none" : "outside";
+export function timelineLabelMode(barPx: number, title: string): TimelineLabelMode {
+  return barPx >= Math.min(timelineLabelPx(title), LONG_BAR_PX) ? "inside" : "outside";
 }
 
 /** Days a bar blocks in its lane, counting a beside-bar title. */
-export function timelineReserveDays(
-  title: string,
-  spanDays: number,
-  dayWidth: number,
-  zoom: TimelineZoom,
-): number {
-  if (timelineLabelMode(spanDays * dayWidth, title, zoom) !== "outside") return 0;
+export function timelineReserveDays(title: string, spanDays: number, dayWidth: number): number {
+  if (timelineLabelMode(spanDays * dayWidth, title) !== "outside") return 0;
   return spanDays + Math.ceil((timelineLabelPx(title) + 6) / dayWidth);
 }
 
