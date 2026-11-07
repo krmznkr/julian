@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/krmznkr/julian/compare/v0.5.0...v0.6.0) (2026-11-07)
+
+
+### Features
+
+* **web:** make the timeline read like Google Calendar's all-day strip ([#113](https://github.com/krmznkr/julian/issues/113)) ([cf588de](https://github.com/krmznkr/julian/commit/cf588defda784e3f3394ea15d3db3dc493d3d504))
+
+
+### Bug Fixes
+
+* **web:** keep timed events within a day off the timeline ([#112](https://github.com/krmznkr/julian/issues/112)) ([d254ac5](https://github.com/krmznkr/julian/commit/d254ac5f5ffdabf1470f4ed25d68242056ef48e0))
+
 ## [0.5.0](https://github.com/krmznkr/julian/compare/v0.4.6...v0.5.0) (2026-11-06)
 
 
