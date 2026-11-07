@@ -51,15 +51,25 @@ export function dateFromDayIndex(year: number, index: number): Date {
 
 type UnplacedBar = Omit<TimelineBar, "lane">;
 
+/**
+ * Whether an event belongs on the timeline, which draws spans: all-day events
+ * and timed events that run across days. A meeting within one day (or a short
+ * one past midnight) does not.
+ */
+export function isTimelineEvent(event: CalendarEvent): boolean {
+  if (event.allDay) return true;
+  const bounds = getEventBounds(event);
+  return (
+    bounds !== null &&
+    bounds.spanDays > 1 &&
+    bounds.end.getTime() - bounds.start.getTime() >= DAY_MS
+  );
+}
+
 function toBar(event: CalendarEvent, year: number): UnplacedBar | null {
   const bounds = getEventBounds(event);
   if (!bounds) return null;
-  const { start } = bounds;
-  // Same rule as the year grid: a short timed event that crosses midnight
-  // (23:30–00:15) sits on its start day rather than drawing a two-day bar.
-  const isShortOvernight =
-    !event.allDay && bounds.spanDays > 1 && bounds.end.getTime() - start.getTime() < DAY_MS;
-  const lastDay = isShortOvernight ? start : bounds.lastOccupiedDate;
+  const { start, lastOccupiedDate: lastDay } = bounds;
 
   const yearStart = startOfYear(year);
   const yearEnd = startOfNextYear(year);
@@ -112,7 +122,8 @@ function packLanes(
 
 /**
  * One row per calendar, in the order given. Events whose calendar is not in
- * `calendarIds` are dropped; calendars without events still get an empty row.
+ * `calendarIds`, and timed events within a day (`isTimelineEvent`), are
+ * dropped; calendars without events still get an empty row.
  * `reserveDays` is how many days an event should block in its lane, when that
  * is more than it lasts (room for a title drawn past a short bar).
  */
@@ -126,7 +137,7 @@ export function buildTimelineRows(
     calendarId,
     ...packLanes(
       events
-        .filter((event) => event.calendarId === calendarId)
+        .filter((event) => event.calendarId === calendarId && isTimelineEvent(event))
         .map((event) => toBar(event, year))
         .filter((bar): bar is UnplacedBar => bar !== null),
       (bar) => reserveDays(bar.event),
