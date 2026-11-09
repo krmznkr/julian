@@ -4,6 +4,7 @@
 // token exchange so the client secret never reaches the browser.
 //
 // The request pipeline is one Effect program:
+//   0. a closed PR preview answers 410 to everything
 //   1. drop known scrapers and scripting clients        (guards.ts)
 //   2. whole-site rate limit per client IP              (guards.ts)
 //   3. /api/oauth/*: origin lock, tight rate limit,
@@ -17,7 +18,7 @@ import { SECURITY_HEADERS } from "@julian/security";
 import { Effect, Layer } from "effect";
 import { FetchHttpClient } from "effect/http";
 import { WorkerEnv, workerEnvLayer, type Env } from "./env";
-import type { EdgeError } from "./errors";
+import { PreviewClosed, type EdgeError } from "./errors";
 import { enforceSiteRateLimit, rejectBots } from "./guards";
 import { OAUTH_PREFIX, handleOAuth } from "./oauth";
 import { serveSite } from "./site";
@@ -46,6 +47,11 @@ const toResponse = (error: EdgeError): Response => {
       return new Response("Forbidden", { status: 403 });
     case "SiteRateLimited":
       return new Response("Too Many Requests", { status: 429 });
+    case "PreviewClosed":
+      return new Response("This preview has closed. Julian lives at https://julian.krmznkr.com\n", {
+        status: 410,
+        headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+      });
     case "OAuthRejected":
       return json(
         error.description === undefined
@@ -63,7 +69,12 @@ const serveVersion = Effect.fn("edge.version")(function* () {
   return json(build, 200);
 });
 
+// Set with `--var APP_CHANNEL:closed` when a PR closes (preview.yml).
+const CLOSED_CHANNEL = "closed";
+
 const handle = Effect.fn("edge.request")(function* (request: Request) {
+  const { build } = yield* WorkerEnv;
+  if (build.channel === CLOSED_CHANNEL) return yield* new PreviewClosed();
   yield* rejectBots(request);
   yield* enforceSiteRateLimit(request);
   const { pathname } = new URL(request.url);

@@ -10,6 +10,10 @@ export class BlockedClient extends Schema.TaggedError<BlockedClient>()("BlockedC
 
 export class SiteRateLimited extends Schema.TaggedError<SiteRateLimited>()("SiteRateLimited", {}) {}
 
+// A PR preview whose PR has closed. CI points its alias at a build of main
+// with the `closed` channel, so the branch's code stops running.
+export class PreviewClosed extends Schema.TaggedError<PreviewClosed>()("PreviewClosed", {}) {}
+
 // JSON rejections for the OAuth proxy, in Google's `error` / `error_description` shape.
 class OAuthRejected extends Schema.TaggedError<OAuthRejected>()("OAuthRejected", {
   status: Schema.Number,
@@ -17,7 +21,7 @@ class OAuthRejected extends Schema.TaggedError<OAuthRejected>()("OAuthRejected",
   description: Schema.optional(Schema.String),
 }) {}
 
-export type EdgeError = BlockedClient | SiteRateLimited | OAuthRejected;
+export type EdgeError = BlockedClient | SiteRateLimited | PreviewClosed | OAuthRejected;
 
 export const rejectOAuth = (status: number, error: string, description?: string) =>
   new OAuthRejected({ status, error, description });

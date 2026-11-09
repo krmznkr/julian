@@ -74,6 +74,40 @@ describe("version endpoint", () => {
   });
 });
 
+describe("closed PR preview", () => {
+  it.each([
+    "/",
+    "/2026",
+    "/auth/callback?code=abc&state=https://pr-7-julian.julian-93527c9983d1.workers.dev",
+    "/version.json",
+  ])("answers %s with 410 and touches nothing", async (path) => {
+    const assets = vi.fn<Env["ASSETS"]["fetch"]>();
+    const response = await serve(
+      new Request(`https://pr-7-julian.julian-93527c9983d1.workers.dev${path}`, {
+        headers: { "User-Agent": BROWSER },
+      }),
+      makeEnv({ ASSETS: { fetch: assets }, APP_CHANNEL: "closed" }),
+    );
+    expect(response.status).toBe(410);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("Content-Security-Policy")).not.toBeNull();
+    expect(assets).not.toHaveBeenCalled();
+  });
+
+  it("never reaches Google from the OAuth proxy", async () => {
+    const fetch = neverFetch();
+    const response = await serve(
+      refresh(JSON.stringify({ refresh_token: "token" }), {
+        Origin: "https://pr-7-julian.julian-93527c9983d1.workers.dev",
+      }),
+      makeEnv({ APP_CHANNEL: "closed" }),
+      fetch,
+    );
+    expect(response.status).toBe(410);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
 describe("site guards", () => {
   it("serves assets to browsers with the security headers", async () => {
     const response = await serve(pageRequest(BROWSER), makeEnv());

@@ -103,6 +103,13 @@ example the token lacks Workers Scripts Edit), wrangler prints no URL and the
 comment gives only the version ID. Fork PRs and runs without
 `CLOUDFLARE_PREVIEW_TOKEN` skip.
 
+When the PR closes, the `retire` job uploads a build of `main` under the same
+`pr-<N>` alias with `APP_CHANNEL=closed`. That Worker answers `410 Gone` to
+everything, so the PR's code no longer runs with production's secrets, and the
+PR comment says the preview closed. To retire the preview of a PR that closed
+earlier, run **Preview** from the Actions tab with its number; it refuses an
+open PR.
+
 Google sign-in works on previews through production's callback; see
 "Sign-in on PR previews" in [`security.md`](security.md). It needs the relay
 in the production Worker, so it starts working once a stable release with
