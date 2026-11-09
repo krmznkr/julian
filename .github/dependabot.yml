@@ -15,12 +15,10 @@ updates:
         versions: [">=5 <6"]
       - dependency-name: "@vitest/coverage-v8"
         versions: [">=5 <6"]
-      # beta.84 removes alchemy/Cloudflare used by the current infra entry.
+      # beta.84 and beta.85 remove alchemy/Cloudflare used by the current infra
+      # entry (TS2307 in infra typecheck). Moving infra needs its own migration.
       - dependency-name: alchemy
-        versions: ["2.0.0-beta.84"]
-      # New React memoization diagnostic fails the existing day-hover-popover.
-      - dependency-name: oxlint
-        versions: ["1.90.0"]
+        versions: [">=2.0.0-beta.84"]
     groups:
       bun-minor-and-patch:
         update-types: [minor, patch]
