@@ -18,9 +18,6 @@ updates:
       # beta.84 removes alchemy/Cloudflare used by the current infra entry.
       - dependency-name: alchemy
         versions: ["2.0.0-beta.84"]
-      # New React memoization diagnostic fails the existing day-hover-popover.
-      - dependency-name: oxlint
-        versions: ["1.90.0"]
     groups:
       bun-minor-and-patch:
         update-types: [minor, patch]
