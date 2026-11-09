@@ -66,6 +66,34 @@ describe("GoogleCalendar.listEvents", () => {
       });
     }),
   );
+  it.effect("keeps https event links and drops any other scheme", () =>
+    Effect.gen(function* () {
+      const day = { start: { date: "2026-06-15" }, end: { date: "2026-06-16" } };
+      const env = yield* withEnv({
+        storage: validToken,
+        responses: [
+          TestEnv.jsonResponse({
+            items: [
+              { id: "https", htmlLink: "https://www.google.com/calendar/event?eid=abc", ...day },
+              { id: "script", htmlLink: "javascript:alert(1)", ...day },
+              { id: "http", htmlLink: "http://example.com/", ...day },
+              { id: "garbage", htmlLink: "not a url", ...day },
+            ],
+          }),
+        ],
+      });
+      const events = yield* Effect.flatMap(GoogleCalendarApi, (api) =>
+        api.listEvents("cal", new Date(2026, 0, 1), new Date(2027, 0, 1)),
+      ).pipe(Effect.provide(env.layer));
+      expect(events.map((event) => [event.id, event.htmlLink])).toEqual([
+        ["https", "https://www.google.com/calendar/event?eid=abc"],
+        ["script", undefined],
+        ["http", undefined],
+        ["garbage", undefined],
+      ]);
+    }),
+  );
+
   it.effect("loads every page of expanded recurring event instances", () =>
     Effect.gen(function* () {
       const env = yield* withEnv({
