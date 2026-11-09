@@ -63,6 +63,11 @@ export class GoogleCalendarApi extends Context.Service<GoogleCalendarApi, Google
   "@julian/GoogleCalendar",
 ) {}
 
+// The app puts htmlLink in an href and opens it in a new tab, so keep only
+// https links; anything else (a `javascript:` URL, say) is dropped.
+const httpsLink = (value: string | undefined): string | undefined =>
+  value !== undefined && URL.parse(value)?.protocol === "https:" ? value : undefined;
+
 const normalize = (event: S.GoogleCalendarEvent): NormalizedEvent | null => {
   if (event.status === "cancelled") return null;
   const allDay = event.start?.date !== undefined;
@@ -73,7 +78,7 @@ const normalize = (event: S.GoogleCalendarEvent): NormalizedEvent | null => {
     id: event.id,
     title: event.summary === undefined || event.summary === "" ? "(No title)" : event.summary,
     description: event.description,
-    htmlLink: event.htmlLink,
+    htmlLink: httpsLink(event.htmlLink),
     recurringEventId: event.recurringEventId,
     start,
     end,
@@ -204,7 +209,7 @@ export const googleCalendarApiLayer: Layer.Layer<GoogleCalendarApi, never, Googl
           calendarId: calendar.id,
           calendarColor: calendar.backgroundColor ?? null,
           calendarSummary: calendar.summary,
-          htmlLink: event.htmlLink ?? null,
+          htmlLink: httpsLink(event.htmlLink) ?? null,
         } satisfies CalendarEvent;
       });
 
