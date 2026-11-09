@@ -18,6 +18,6 @@
   },
   "devDependencies": {
     "@julian/config": "workspace:*",
-    "jsdom": "30.1.3"
+    "jsdom": "31.0.0"
   }
 }
