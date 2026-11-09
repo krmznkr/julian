@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/krmznkr/julian/compare/v0.6.0...v0.6.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* drop non-https event links and gate Dependabot auto-merge on the PR author ([#120](https://github.com/krmznkr/julian/issues/120)) ([2ab5d93](https://github.com/krmznkr/julian/commit/2ab5d934a4540af4948f6556300d3a5bc402ef7e))
+* **edge:** retire a PR's preview when the PR closes ([#121](https://github.com/krmznkr/julian/issues/121)) ([83652d6](https://github.com/krmznkr/julian/commit/83652d67e6c80c7fe17ef08a2a1dea245f7b4498))
+
 ## [0.6.0](https://github.com/krmznkr/julian/compare/v0.5.0...v0.6.0) (2026-11-07)
 
 
