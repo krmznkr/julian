@@ -32,13 +32,13 @@
   },
   "devDependencies": {
     "@effect/language-service": "0.87.5",
-    "@j178/prek": "0.5.9",
+    "@j178/prek": "0.5.10",
     "@types/node": "26.6.6",
     "@vitest/coverage-v8": "4.1.12",
     "eslint-plugin-functional": "10.0.1",
-    "fallow": "3.37.0",
-    "oxfmt": "0.75.0",
-    "oxlint": "1.89.0",
+    "fallow": "3.40.0",
+    "oxfmt": "0.76.0",
+    "oxlint": "1.91.0",
     "turbo": "2.11.10",
     "typescript": "6.0.3",
     "vitest": "4.1.12"
