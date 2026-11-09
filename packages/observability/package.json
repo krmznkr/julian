@@ -13,8 +13,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@sentry/browser": "11.10.0",
-    "posthog-js": "1.442.1"
+    "@sentry/browser": "11.11.0",
+    "posthog-js": "1.447.2"
   },
   "devDependencies": {
     "@julian/config": "workspace:*",
