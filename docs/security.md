@@ -142,6 +142,12 @@ workers.dev subdomain. Previews run the PR's code against your real Google
 account once you sign in, including Dependabot PRs; sign in only on previews
 you trust.
 
+A preview is a version of the production Worker, so its code runs with the
+production client secret. When a PR closes, `preview.yml` points its alias at a
+build of `main` on the `closed` channel, which answers `410` to every request,
+so a closed branch's code stops running. Previews of PRs that closed before
+this existed are retired by running the workflow by hand with the PR number.
+
 ### 4. Security headers — `packages/security/src/index.ts`
 
 Applied to every response by the Worker (`withSecurityHeaders`). The build also
