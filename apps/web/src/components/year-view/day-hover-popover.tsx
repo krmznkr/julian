@@ -10,9 +10,10 @@ import { AppContentInertContext } from "@/components/app-content-inert-context";
 
 const EventDetail = memo(function EventDetail({ item }: { item: DayEventItem | undefined }) {
   const { calendars, onRequestMoveEvent } = useYearViewSharedData();
+  const calendarId = item?.event.calendarId;
   const calendar = useMemo(
-    () => calendars.find((entry) => entry.id === item?.event.calendarId),
-    [calendars, item?.event],
+    () => calendars.find((entry) => entry.id === calendarId),
+    [calendars, calendarId],
   );
 
   if (!item) {
