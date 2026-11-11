@@ -32,7 +32,7 @@ const keys = new Set([
   "v",
   "k",
 ]);
-const keyMessage = (event: KeyboardEvent): Option.Option<Message> => {
+export const keyMessage = (event: KeyboardEvent): Option.Option<Message> => {
   if (event.isComposing || event.defaultPrevented) return Option.none();
   const target = event.target instanceof HTMLElement ? event.target : null;
   const typing = target?.matches(
@@ -85,7 +85,7 @@ const keyMessage = (event: KeyboardEvent): Option.Option<Message> => {
   );
 };
 
-const gridScroll = (event: Event): Option.Option<Message> => {
+export const gridScroll = (event: Event): Option.Option<Message> => {
   const root = event.target;
   if (!(root instanceof HTMLElement) || !root.matches("[data-year-grid-root]"))
     return Option.none();
@@ -98,6 +98,42 @@ const gridScroll = (event: Event): Option.Option<Message> => {
       last: Math.min(11, first + Math.ceil(root.clientWidth / (width + 4)) + 2),
     }),
   );
+};
+
+const EVENT_DRAG_TYPE = "application/x-julian-event";
+
+export const dragStartMessage = (event: DragEvent): Option.Option<Message> => {
+  const target =
+    event.target instanceof Element
+      ? event.target.closest<HTMLElement>("[data-event-key][draggable='true']")
+      : null;
+  const key = target?.getAttribute("data-event-key");
+  if (!key) return Option.none();
+  event.dataTransfer?.setData(EVENT_DRAG_TYPE, key);
+  return Option.some(Message.StartedDrag({ key }));
+};
+
+// Accepting the drop over the grid requires preventDefault on dragover.
+export const dragOverMessage = (event: DragEvent): Option.Option<Message> =>
+  event.target instanceof Element &&
+  event.target.closest("[data-year-grid-root]") &&
+  event.dataTransfer?.types.includes(EVENT_DRAG_TYPE)
+    ? Option.some(Message.Completed())
+    : Option.none();
+
+export const dropMessage = (event: DragEvent): Option.Option<Message> => {
+  const column =
+    event.target instanceof Element
+      ? event.target.closest<HTMLElement>("[data-month-column]")
+      : null;
+  const root = column?.closest<HTMLElement>("[data-year-grid-root]");
+  if (!column || !root || !event.dataTransfer?.types.includes(EVENT_DRAG_TYPE))
+    return Option.none();
+  const year = Number(root.dataset.year);
+  const month = Number(column.dataset.monthColumn);
+  const day = Math.floor((event.clientY - column.getBoundingClientRect().top) / 30) + 1;
+  if (day < 1 || day > new Date(year, month + 1, 0).getDate()) return Option.none();
+  return Option.some(Message.DroppedEvent({ date: toDateInputValue(new Date(year, month, day)) }));
 };
 
 export const subscriptions = Subscription.make<Model, Message>()(() => ({
@@ -148,50 +184,21 @@ export const subscriptions = Subscription.make<Model, Message>()(() => ({
     Dom.streamFromEventFilterMap({
       target: () => document,
       type: "dragstart",
-      filterMapEvent: (event) => {
-        const target =
-          event.target instanceof Element
-            ? event.target.closest<HTMLElement>("[data-event-key][draggable='true']")
-            : null;
-        const key = target?.getAttribute("data-event-key");
-        if (!key) return Option.none();
-        event.dataTransfer?.setData("application/x-julian-event", key);
-        return Option.some(Message.StartedDrag({ key }));
-      },
+      filterMapEvent: dragStartMessage,
     }),
   ),
   dragOver: Subscription.persistentEntry(
     Dom.streamFromEventFilterMapPreventDefault({
       target: () => document,
       type: "dragover",
-      filterMapEvent: (event) =>
-        event.target instanceof Element &&
-        event.target.closest("[data-year-grid-root]") &&
-        event.dataTransfer?.types.includes("application/x-julian-event")
-          ? Option.some(Message.Completed())
-          : Option.none(),
+      filterMapEvent: dragOverMessage,
     }),
   ),
   drop: Subscription.persistentEntry(
     Dom.streamFromEventFilterMapPreventDefault({
       target: () => document,
       type: "drop",
-      filterMapEvent: (event) => {
-        const column =
-          event.target instanceof Element
-            ? event.target.closest<HTMLElement>("[data-month-column]")
-            : null;
-        const root = column?.closest<HTMLElement>("[data-year-grid-root]");
-        if (!column || !root || !event.dataTransfer?.types.includes("application/x-julian-event"))
-          return Option.none();
-        const year = Number(root.dataset.year);
-        const month = Number(column.dataset.monthColumn);
-        const day = Math.floor((event.clientY - column.getBoundingClientRect().top) / 30) + 1;
-        if (day < 1 || day > new Date(year, month + 1, 0).getDate()) return Option.none();
-        return Option.some(
-          Message.DroppedEvent({ date: toDateInputValue(new Date(year, month, day)) }),
-        );
-      },
+      filterMapEvent: dropMessage,
     }),
   ),
 }));
