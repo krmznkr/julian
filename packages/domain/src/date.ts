@@ -79,6 +79,37 @@ export function startOfNextYear(year: number) {
   return new Date(year + 1, 0, 1, 0, 0, 0, 0);
 }
 
+/** Move an all-day span without turning DST transitions into shorter days. */
+export function moveAllDayDates(
+  event: Pick<CalendarEvent, "start" | "end">,
+  date: string,
+): { start: string; end: string } {
+  const toUtc = (value: string) => Date.parse(`${value.slice(0, 10)}T00:00:00Z`);
+  const days = Math.max(1, Math.round((toUtc(event.end) - toUtc(event.start)) / 86_400_000));
+  return { start: date, end: new Date(toUtc(date) + days * 86_400_000).toISOString().slice(0, 10) };
+}
+
+/** Keyboard movement within one displayed year; month changes clamp the day. */
+export function navigateYearDate(value: string, key: string): string {
+  const date = parseDateInput(value);
+  if (!Number.isFinite(date.getTime())) return value;
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+  const targetMonth = month + (key === "ArrowRight" ? 1 : -1);
+  const target =
+    key === "ArrowLeft" || key === "ArrowRight"
+      ? new Date(year, targetMonth, Math.min(day, new Date(year, targetMonth + 1, 0).getDate()))
+      : key === "ArrowUp" || key === "ArrowDown"
+        ? addDays(date, key === "ArrowUp" ? -1 : 1)
+        : key === "Home"
+          ? new Date(year, month, 1)
+          : key === "End"
+            ? new Date(year, month + 1, 0)
+            : date;
+  return toDateInputValue(clampDate(target, startOfYear(year), new Date(year, 11, 31)));
+}
+
 // UTC date serialization for API payloads and Google Tasks due dates.
 // Displayed all-day dates use parseEventBoundary instead.
 export function toUtcDateOnly(date: Date): string {

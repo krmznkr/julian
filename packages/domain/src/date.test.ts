@@ -9,7 +9,47 @@ import {
   clampDate,
   startOfYear,
   startOfNextYear,
+  moveAllDayDates,
+  navigateYearDate,
 } from "./index";
+
+describe("year navigation", () => {
+  it("clamps month jumps and handles leap years", () => {
+    expect(navigateYearDate("2026-01-31", "ArrowRight")).toBe("2026-02-28");
+    expect(navigateYearDate("2028-01-31", "ArrowRight")).toBe("2028-02-29");
+    expect(navigateYearDate("2026-03-31", "ArrowLeft")).toBe("2026-02-28");
+  });
+  it("moves over DST and stays within the year", () => {
+    expect(navigateYearDate("2026-03-29", "ArrowDown")).toBe("2026-03-30");
+    expect(navigateYearDate("2026-03-30", "ArrowUp")).toBe("2026-03-29");
+    expect(navigateYearDate("2026-01-01", "ArrowUp")).toBe("2026-01-01");
+    expect(navigateYearDate("2026-12-31", "ArrowRight")).toBe("2026-12-31");
+  });
+  it("supports month edges and ignores unsupported input", () => {
+    expect(navigateYearDate("2026-02-15", "Home")).toBe("2026-02-01");
+    expect(navigateYearDate("2026-02-15", "End")).toBe("2026-02-28");
+    expect(navigateYearDate("2026-02-15", "Enter")).toBe("2026-02-15");
+    expect(navigateYearDate("invalid", "ArrowUp")).toBe("invalid");
+  });
+});
+
+describe("moveAllDayDates", () => {
+  it("preserves exclusive-end duration over month, year and DST boundaries", () => {
+    const event = { start: "2026-03-30", end: "2026-04-02" };
+    expect(moveAllDayDates(event, "2026-02-27")).toEqual({
+      start: "2026-02-27",
+      end: "2026-03-02",
+    });
+    expect(moveAllDayDates(event, "2026-12-30")).toEqual({
+      start: "2026-12-30",
+      end: "2027-01-02",
+    });
+    expect(moveAllDayDates({ start: "2026-03-28", end: "2026-03-29" }, "2026-03-29")).toEqual({
+      start: "2026-03-29",
+      end: "2026-03-30",
+    });
+  });
+});
 
 describe("toDateInputValue", () => {
   it("returns YYYY-MM-DD for a given date", () => {

@@ -19,7 +19,7 @@ export function cellDomId(year: number, month: number, day: number) {
   return `year-grid-cell-${year}-${month}-${day}`;
 }
 
-export function isTypingTarget(target: EventTarget | null) {
+function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));

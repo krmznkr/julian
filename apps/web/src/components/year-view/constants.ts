@@ -1,8 +1,2 @@
-export const DAYS_IN_GRID = 31;
-
-export const YEAR_GRID_MONTH_HEADER_HEIGHT = 32;
-export const YEAR_GRID_LEGEND_HEIGHT = 20;
-export const YEAR_GRID_HEADER_HEIGHT = YEAR_GRID_MONTH_HEADER_HEIGHT + YEAR_GRID_LEGEND_HEIGHT + 1;
-
 export const MIN_YEAR = 1970;
 export const MAX_YEAR = 2100;

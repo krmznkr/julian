@@ -8,7 +8,7 @@ properties when querying Julian and leave the other apps' settings alone.
 
 ## Runtime and privacy
 
-`packages/observability` is shared by the React app and the static home, privacy
+`packages/observability` is shared by the Foldkit app and the static home, privacy
 and terms pages. It imports the SDKs only for a production build with
 `APP_CHANNEL=stable` served from `https://julian.krmznkr.com`. Development,
 nightly, PR previews, local production builds and unknown hosts send nothing.
@@ -18,7 +18,7 @@ The configuration follows the public `krmznkr/me` setup, with stricter payload
 allowlists for an app that handles personal calendar data:
 
 - Sentry disables default integrations, breadcrumbs, session tracking, replay,
-  logs, metrics and client reports. Only global errors, caught React render errors, browser API errors and browser
+  logs, metrics and client reports. Only global errors, Foldkit runtime errors, browser API errors and browser
   performance tracing are enabled. Fetch/XHR tracing is disabled and trace
   headers are never propagated to Google or the OAuth endpoints.
 - Sentry 11 replaced `sendDefaultPii` with `dataCollection`, which collects

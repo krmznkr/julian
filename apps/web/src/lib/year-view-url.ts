@@ -63,10 +63,6 @@ export function buildYearViewSearch(focus: {
   };
 }
 
-export function focusSignature(focus: { cell: KeyboardCell; detailsOpen: boolean }) {
-  return `${focus.cell.month}:${focus.cell.day}:${focus.detailsOpen ? 1 : 0}`;
-}
-
 /** A `/{yyyy}` segment within the supported range, or null. */
 export function parseYearParam(raw: string): number | null {
   if (!/^\d{4}$/.test(raw)) return null;

@@ -26,10 +26,8 @@ export default defineConfig({
         "**/node_modules/**",
         "src/test/**",
         // Entry point: mounts the router into #root; exercised only by the e2e suite.
-        "src/main.tsx",
-        // Vendored shadcn/ui primitives (see components.json), thin wrappers over
-        // Radix and cmdk that are tested upstream.
-        "src/components/ui/**",
+        "src/main.ts",
+        "src/foldkit/entry.ts",
       ],
       // Set just under the current numbers so a drop fails the build. They were
       // previously below actual coverage, which made the gate unable to detect

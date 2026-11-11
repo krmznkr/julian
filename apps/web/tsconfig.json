@@ -2,7 +2,6 @@
   "extends": "@julian/config/tsconfig.base.json",
   "compilerOptions": {
     "allowJs": true,
-    "jsx": "react-jsx",
     "paths": { "@/*": ["./src/*"] },
     "types": ["vite/client"]
   },

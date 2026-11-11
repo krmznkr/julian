@@ -2,7 +2,6 @@ import { cpSync, existsSync } from "node:fs";
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type Plugin } from "vite";
-import react from "@vitejs/plugin-react";
 import { currentBuildInfo } from "@julian/release/node";
 import { siteOrigin, withShareMeta, withTitle } from "@julian/release/share";
 import { renderHeadersFile } from "@julian/security";
@@ -73,7 +72,6 @@ const marketingPages = (): Plugin => ({
 
 export default defineConfig({
   plugins: [
-    react(),
     tailwindcss(),
     bundlerOnlyAssetDirs(),
     securityHeadersFile(),
@@ -81,6 +79,11 @@ export default defineConfig({
     marketingPages(),
   ],
   define: buildDefines,
+  // Foldkit's hot-reload bridge serializes the Model to the dev server.
+  // Calendar state must stay in the browser, including during development.
+  optimizeDeps: {
+    rolldownOptions: { transform: { define: { "import.meta.hot": "undefined" } } },
+  },
   envDir: resolvePath("../.."),
   envPrefix: ["VITE_"],
   resolve: {
@@ -94,11 +97,10 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
+          // Keep the Effect services and Foldkit renderer in separate chunks.
+          if (id.match(/[\\/]effect[\\/]/) || id.includes("@effect/")) return "effect";
+          if (id.includes("foldkit")) return "foldkit";
           if (id.includes("@sentry") || id.includes("posthog")) return "observability";
-          if (id.includes("react-dom") || id.match(/[\\/]react[\\/]/)) return "react";
-          if (id.includes("@tanstack")) return "tanstack";
-          if (id.includes("radix-ui") || id.includes("@radix-ui")) return "radix";
-          if (id.includes("lucide-react")) return "icons";
           return "vendor";
         },
       },

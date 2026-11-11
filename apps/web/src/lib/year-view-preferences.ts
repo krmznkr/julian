@@ -1,7 +1,7 @@
 // Sidebar collapsed preference, persisted through the app's storage service.
 //
-// The React call sites read this during render, so a synchronous wrapper runs
-// the effect on a locally provided storage layer.
+// The browser service reads this at startup and writes it from Commands.
+// A synchronous adapter keeps the existing storage port usable by both.
 import { Effect, Option } from "effect";
 import { KeyValueStore, keyValueStoreLayer } from "@julian/google/key-value-store";
 

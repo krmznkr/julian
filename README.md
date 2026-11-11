@@ -11,6 +11,9 @@ single landscape page.
 **[Try the live demo](https://julian.krmznkr.com/demo)**: no sign-in, sample
 data, changes stay in your browser.
 
+The frontend uses [Foldkit and Effect](docs/development.md#foldkit-frontend).
+The signed-in calendar and demo share one Model, update function and view.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/year-dark.png">
   <img alt="Julian's year view: one column per month, events as colored blocks" src="docs/assets/year-light.png">
@@ -37,10 +40,10 @@ data, changes stay in your browser.
 
 | Area              | What to look at                                                                                                                                                                                                                                                        |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Effect end to end | Google services as `Context.Service`s with live and test layers, tagged errors, retry `Schedule`s ([`packages/google`](packages/google)); UI loads run as fibers that cancel in-flight requests ([`use-latest-fiber.ts`](apps/web/src/lib/effect/use-latest-fiber.ts)) |
+| Effect end to end | Google services as `Context.Service`s with live and test layers, tagged errors, retry `Schedule`s ([`packages/google`](packages/google)); UI loads run as fibers that cancel in-flight requests ([`commands.ts`](apps/web/src/foldkit/commands.ts)) |
 | Edge Worker       | One Effect pipeline: bot filter, rate limits, OAuth proxy with an origin lock, streamed body cap, `Schema`-validated grants, and a `Redacted` client secret ([`apps/edge`](apps/edge/src))                                                                             |
-| Hexagonal UI      | The year view talks to ports; the live app plugs in Google, the demo plugs in an in-memory store, so the demo runs the real component ([`year-view-ports.ts`](apps/web/src/components/year-view/year-view-ports.ts))                                                   |
-| Pure domain       | Date math and lane layout with no React or I/O, tested across five time zones ([`packages/domain`](packages/domain))                                                                                                                                                   |
+| Hexagonal UI      | The year view talks to ports; the live app plugs in Google, the demo plugs in an in-memory store, so the demo runs the real view ([`year-view-ports.ts`](apps/web/src/components/year-view/year-view-ports.ts))                                                   |
+| Pure domain       | Date math and lane layout with no UI or I/O, tested across five time zones ([`packages/domain`](packages/domain))                                                                                                                                                   |
 | Security          | The client secret never reaches the browser; CSP and hardening headers defined once ([`packages/security`](packages/security)); threat model in [`docs/security.md`](docs/security.md)                                                                                 |
 | Releases          | Semver from Conventional Commits, preview per PR, nightly channel, gradual stable rollout with automatic rollback ([`docs/releasing.md`](docs/releasing.md))                                                                                                           |
 
@@ -72,7 +75,7 @@ Details: [`docs/architecture.md`](docs/architecture.md).
 
 | Path                     | Purpose                                                   |
 | ------------------------ | --------------------------------------------------------- |
-| `apps/web`               | The calendar app: Vite, React 19, TanStack Router, Effect |
+| `apps/web`               | The calendar app: Vite, Foldkit, Effect |
 | `apps/marketing`         | Static home, privacy, and terms pages                     |
 | `apps/edge`              | Cloudflare Worker: routing, OAuth proxy, protections      |
 | `apps/e2e`               | Playwright, axe accessibility scans, Lighthouse CI        |

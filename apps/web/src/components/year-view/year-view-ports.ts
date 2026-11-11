@@ -1,18 +1,10 @@
-// The four seams that separate the year view from the outside world.
+// The seams that separate the year view from the outside world.
 //
-// The live app plugs in the TanStack router, the Google Calendar API and the
-// stored calendar-selection preference. The landing page plugs in local state,
-// a fixture year and an in-memory event store, which is what lets the marketing
-// site run the *real* year view instead of a lookalike.
+// Foldkit owns routing and UI preferences. The live app plugs in the Google
+// Calendar API and stored selection; the demo plugs in fixture years and an
+// in-memory store. Both render the same view and run the same update function.
 import type { Effect } from "effect";
 import type { CalendarEvent, CalendarSummary } from "@julian/domain";
-import type { YearViewSearch } from "@/lib/year-view-url";
-
-/** Where the year view reads and writes its focus (month / day / details open). */
-export type YearViewRouterPort = {
-  readonly search: YearViewSearch;
-  readonly navigate: (target: { year: number; search: YearViewSearch; replace: boolean }) => void;
-};
 
 /**
  * Why a load or a write failed. Every adapter's typed errors carry a tag and a
@@ -75,14 +67,4 @@ export type YearViewEventApi = {
     calendarId: string,
     eventId: string,
   ) => Effect.Effect<void, YearViewFailure>;
-};
-
-/**
- * Where the collapsed-sidebar preference is remembered. The landing page keeps
- * it in memory: the scripted tour toggles the sidebar, and that must not leak
- * into the visitor's signed-in app.
- */
-export type YearViewPreferences = {
-  readonly getSidebarCollapsed: () => boolean;
-  readonly setSidebarCollapsed: (collapsed: boolean) => void;
 };
