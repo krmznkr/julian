@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/krmznkr/julian/compare/v0.6.1...v0.7.0) (2026-11-12)
+
+
+### Features
+
+* **web:** switch the app to Foldkit ([#123](https://github.com/krmznkr/julian/issues/123)) ([4ca6d2c](https://github.com/krmznkr/julian/commit/4ca6d2c2e9b11b6324df984b52674a33b4e2f6ba))
+
 ## [0.6.1](https://github.com/krmznkr/julian/compare/v0.6.0...v0.6.1) (2026-11-09)
 
 
