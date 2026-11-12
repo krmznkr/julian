@@ -264,6 +264,14 @@ const action = (model: Model, name: string): Result => {
   switch (name) {
     case "today":
       return navigateTo(model, model.today, false, false);
+    case "toggle-mode":
+      return navigateTo(
+        model,
+        model.date,
+        false,
+        true,
+        model.mode === "grid" ? "timeline" : "grid",
+      );
     case "previous-year":
     case "next-year": {
       const year = model.year + (name === "next-year" ? 1 : -1);
@@ -612,7 +620,20 @@ export const update = (model: Model, message: Message): Result =>
         : { model },
     ClickedAction: ({ action: name }) => {
       const base = name === "tour" ? model : { ...model, tourRunning: false };
-      if (model.dialog === "commands" && ["today", "refresh", "sidebar"].includes(name)) {
+      if (
+        model.dialog === "commands" &&
+        [
+          "today",
+          "refresh",
+          "sidebar",
+          "theme",
+          "toggle-mode",
+          "previous-year",
+          "next-year",
+          "connect",
+          "logout",
+        ].includes(name)
+      ) {
         const closed = overlay(base, "none");
         const result = action(closed.model, name);
         return { ...result, commands: [...(closed.commands ?? []), ...(result.commands ?? [])] };
@@ -655,6 +676,8 @@ export const update = (model: Model, message: Message): Result =>
       };
     },
     ChangedMode: ({ mode }) => navigateTo(model, model.date, false, true, mode),
+    SelectedMonth: ({ month }) =>
+      navigateTo(model, `${model.year}-${String(month + 1).padStart(2, "0")}-01`, false),
     ChangedZoom: ({ zoom }) => ({
       model: {
         ...model,

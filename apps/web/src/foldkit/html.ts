@@ -4,13 +4,6 @@ import { Message, type Model } from "./model";
 export type Builder = HtmlBuilder<Message>;
 export const act = (action: Parameters<typeof Message.ClickedAction>[0]["action"]) =>
   Message.ClickedAction({ action });
-export const button = (
-  h: Builder,
-  label: string,
-  action: Parameters<typeof act>[0],
-  className = "",
-) =>
-  h.button([h.Type("button"), h.Class(`ui-button ${className}`), h.OnClick(act(action))], [label]);
 const longMonth = new Intl.DateTimeFormat("en", { month: "long" });
 const shortMonth = new Intl.DateTimeFormat("en", { month: "short" });
 const dayFormat = new Intl.DateTimeFormat("en", { month: "long", day: "numeric" });

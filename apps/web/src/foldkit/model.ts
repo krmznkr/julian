@@ -140,6 +140,7 @@ const Action = Schema.Literals([
   "open-event",
   "open-day",
   "dismiss-error",
+  "toggle-mode",
 ]);
 export const Message = defineMessageUnion({
   Booted: {
@@ -175,6 +176,7 @@ export const Message = defineMessageUnion({
   SelectedEvent: { key: Schema.String },
   ClickedCalendar: { id: Schema.String },
   ChangedMode: { mode: Mode },
+  SelectedMonth: { month: Schema.Number },
   ChangedZoom: { zoom: Zoom },
   ChangedSetting: { field: Schema.Literals(["fontSize", "density"]), value: Schema.String },
   PressedKey: {

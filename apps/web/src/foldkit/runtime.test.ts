@@ -94,10 +94,11 @@ describe("the mounted Foldkit application", () => {
     await press("n");
     await input("#event-title", "Dentist");
     await submit();
-    const dentist = () =>
+    const chip = (title: string) =>
       Array.from(document.querySelectorAll<HTMLButtonElement>(".calendar-event")).find(
-        (element) => element.getAttribute("aria-label") === "Dentist",
+        (element) => element.textContent === title,
       );
+    const dentist = () => chip("Dentist");
     expect(dentist()).toBeDefined();
     dentist()!.click();
     await frames();
@@ -108,12 +109,10 @@ describe("the mounted Foldkit application", () => {
     await press("m");
     await input("#move-date", "2026-03-12");
     await submit();
-    expect(
-      document.querySelector('[aria-label="Dentist check-up"]')?.getAttribute("title"),
-    ).toContain("Mar 12");
+    expect(chip("Dentist check-up")?.getAttribute("title")).toContain("Mar 12");
     await press("Backspace", { ctrlKey: true });
     await click("#confirm-delete");
-    expect(document.querySelector('[aria-label="Dentist check-up"]')).toBeNull();
+    expect(chip("Dentist check-up")).toBeUndefined();
   });
 
   it("filters, searches, navigates and releases the mobile drawer", async () => {
@@ -144,16 +143,19 @@ describe("the mounted Foldkit application", () => {
     window.dispatchEvent(new Event("resize"));
     await frames();
     await click('[aria-label="Collapse sidebar"]');
-    expect(document.querySelector(".desktop-sidebar")).toBeNull();
+    expect(
+      document.querySelector('aside[aria-label="Calendars"]')?.getAttribute("aria-hidden"),
+    ).toBe("true");
     await click('[aria-label="Expand sidebar"]');
     await click('[aria-label="Next year"]');
     expect((document.querySelector('[aria-label="Year"]') as HTMLInputElement).value).toBe("2027");
     await input('[aria-label="Year"]', "2026");
     document
-      .querySelector(".year-form")!
+      .querySelector('[aria-label="Year"]')!
+      .closest("form")!
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await frames();
-    await click('[aria-label="Go to today"]');
+    await click('[aria-label^="Go to today"]');
     expect(window.location.search).toContain("month=3&day=10");
   });
 

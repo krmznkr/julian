@@ -7,7 +7,6 @@ import { browserPortsLayer } from "./services";
 import { subscriptions } from "./subscriptions";
 import { view } from "./view";
 import "@/styles/globals.css";
-import "./app.css";
 
 const telemetryBuild = {
   production: import.meta.env.PROD,

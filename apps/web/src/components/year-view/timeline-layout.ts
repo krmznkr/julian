@@ -43,7 +43,7 @@ export function stepZoom(
 }
 
 /** Rough rendered width of a bar title at 12px, capped like the CSS cap on outside labels. */
-function timelineLabelPx(title: string): number {
+export function timelineLabelPx(title: string): number {
   return Math.min(180, Math.ceil(title.length * 7) + 14);
 }
 
