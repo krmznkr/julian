@@ -58,6 +58,7 @@ import {
   type Model,
 } from "./model";
 import { calendarHref, resolveRoute } from "./routing";
+import { commandMatches } from "./command-palette";
 
 export type Result = Update.Return<Model, Message, CalendarPorts>;
 const cellFor = (date: string) => ({
@@ -618,6 +619,10 @@ export const update = (model: Model, message: Message): Result =>
       id === model.loadId && year === model.year
         ? { model: { ...model, loading: false, hydrated: true, error } }
         : { model },
+    SubmittedCommand: () => {
+      const match = commandMatches(model)[0];
+      return match ? update(model, Message.ClickedAction({ action: match.action })) : { model };
+    },
     ClickedAction: ({ action: name }) => {
       const base = name === "tour" ? model : { ...model, tourRunning: false };
       if (

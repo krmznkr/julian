@@ -26,6 +26,7 @@ import {
 } from "./model";
 import { act, dateLabel, type Builder } from "./html";
 import { calendars } from "./sidebar-view";
+import { commandMatches } from "./command-palette";
 
 const linkButton = (h: Builder, label: string, action: Parameters<typeof act>[0], extra = "") =>
   h.button(
@@ -128,6 +129,21 @@ const eventDetail = (model: Model, event: Event | undefined, h: Builder) => {
   );
 };
 
+export const placeDayPanel = (cell: Element, element: HTMLElement) =>
+  computePosition(cell, element, {
+    strategy: "fixed",
+    placement: "right-start",
+    middleware: [
+      offset(6),
+      flip({ padding: 8, crossAxis: false }),
+      shift({ padding: 8, crossAxis: true }),
+    ],
+  }).then(({ x, y }) => {
+    element.style.setProperty("left", `${x}px`);
+    element.style.setProperty("top", `${y}px`);
+    element.style.setProperty("visibility", "visible");
+  });
+
 // Beside the selected day like the React app's panel: to its right, or its
 // left when the right has no room, sliding over the grid when neither fits.
 const AnchorDayPanel = Mount.define("AnchorDayPanel", {
@@ -139,21 +155,7 @@ const AnchorDayPanel = Mount.define("AnchorDayPanel", {
         Effect.sync(() => {
           const cell = document.getElementById(cellId);
           if (!cell || !(element instanceof HTMLElement)) return () => undefined;
-          return autoUpdate(cell, element, () => {
-            void computePosition(cell, element, {
-              strategy: "fixed",
-              placement: "right-start",
-              middleware: [
-                offset(6),
-                flip({ padding: 8, crossAxis: false }),
-                shift({ padding: 8, crossAxis: true }),
-              ],
-            }).then(({ x, y }) => {
-              element.style.setProperty("left", `${x}px`);
-              element.style.setProperty("top", `${y}px`);
-              element.style.setProperty("visibility", "visible");
-            });
-          });
+          return autoUpdate(cell, element, () => void placeDayPanel(cell, element));
         }),
         (cleanup) => Effect.sync(cleanup),
       );
@@ -294,28 +296,6 @@ export const dayDetails = (model: Model, h: Builder) => {
     ],
   );
 };
-
-type Choice = Readonly<{ name: string; hint?: string; action: Parameters<typeof act>[0] }>;
-
-const commandChoices = (model: Model): readonly Choice[] => [
-  { name: "Jump to today", hint: "T", action: "today" },
-  { name: "New event", hint: "N", action: "create" },
-  {
-    name: model.mode === "grid" ? "Switch to timeline" : "Switch to year grid",
-    hint: "V",
-    action: "toggle-mode",
-  },
-  { name: "Refresh events", hint: "R", action: "refresh" },
-  { name: "Show keyboard shortcuts", hint: "?", action: "help" },
-  { name: "Toggle theme", hint: "Shift T", action: "theme" },
-  { name: "Toggle sidebar", hint: "S", action: "sidebar" },
-  { name: "Appearance settings", action: "settings" },
-  { name: "Previous year", action: "previous-year" },
-  { name: "Next year", action: "next-year" },
-  model.page === "calendar"
-    ? { name: "Disconnect Google Calendar", action: "logout" }
-    : { name: "Connect Google Calendar", action: "connect" },
-];
 
 const dialogTitle = (h: Builder, text: string, extra = "") =>
   h.h2([h.Class(cn("text-lg leading-none font-semibold", extra))], [text]);
@@ -493,9 +473,7 @@ const helpBody = (model: Model, h: Builder) => [
 ];
 
 const commandsBody = (model: Model, h: Builder) => {
-  const matches = commandChoices(model).filter((choice) =>
-    choice.name.toLowerCase().includes(model.commandQuery.trim().toLowerCase()),
-  );
+  const matches = commandMatches(model);
   return [
     h.h2([h.Class("sr-only")], ["Commands"]),
     h.p([h.Class("sr-only")], ["Search for a command to run"]),
@@ -525,7 +503,7 @@ const commandsBody = (model: Model, h: Builder) => {
               ),
               h.OnInput((value) => Message.ChangedField({ field: "commandQuery", value })),
               h.OnKeyDownPreventDefault((key) =>
-                key === "Enter" && matches[0] ? Option.some(act(matches[0].action)) : Option.none(),
+                key === "Enter" ? Option.some(Message.SubmittedCommand()) : Option.none(),
               ),
             ]),
           ],

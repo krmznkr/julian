@@ -177,6 +177,7 @@ export const Message = defineMessageUnion({
   ClickedCalendar: { id: Schema.String },
   ChangedMode: { mode: Mode },
   SelectedMonth: { month: Schema.Number },
+  SubmittedCommand: {},
   ChangedZoom: { zoom: Zoom },
   ChangedSetting: { field: Schema.Literals(["fontSize", "density"]), value: Schema.String },
   PressedKey: {
