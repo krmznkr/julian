@@ -10,10 +10,6 @@ import {
   type TimelineZoom,
 } from "@julian/domain";
 
-export const TIMELINE_LANE_HEIGHT = 28;
-export const TIMELINE_ROW_PADDING = 8;
-/** Before the first measurement (and in jsdom), assume a laptop-width viewport. */
-export const TIMELINE_FALLBACK_WIDTH = 1024;
 /**
  * Narrowest a day may get at each zoom. On a phone the window no longer fits
  * and the track scrolls instead of squashing days into slivers.
@@ -23,13 +19,6 @@ const MIN_DAY_WIDTH: Readonly<Record<TimelineZoom, number>> = {
   month: 12,
   quarter: 6,
   year: 2,
-};
-
-export const TIMELINE_ZOOM_LABELS: Readonly<Record<TimelineZoom, string>> = {
-  week: "Week",
-  month: "Month",
-  quarter: "Quarter",
-  year: "Year",
 };
 
 /** Width of the sticky calendar-name column; phones have none. */
@@ -78,7 +67,7 @@ export function timelineReserveDays(title: string, spanDays: number, dayWidth: n
   return spanDays + Math.ceil((timelineLabelPx(title) + 6) / dayWidth);
 }
 
-export function clampDayIndex(index: number, year: number): number {
+function clampDayIndex(index: number, year: number): number {
   return Math.min(daysInYear(year) - 1, Math.max(0, index));
 }
 

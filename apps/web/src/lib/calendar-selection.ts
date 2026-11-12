@@ -4,9 +4,8 @@
 // it, while still remembering every deselection across refreshes.
 //
 // The Effect-returning functions are the real API and compose inside the app's
-// service graph. The `*Sync` wrappers exist only for React call sites that run
-// during render or initialization and cannot await; they run on a locally
-// provided storage layer, which is safe because that layer is synchronous.
+// service graph. The synchronous adapter implements the existing selection
+// port for Foldkit Commands using a locally provided synchronous storage layer.
 import { Effect, Option } from "effect";
 import { KeyValueStore, keyValueStoreLayer } from "@julian/google/key-value-store";
 

@@ -1,5 +1,8 @@
 # Roadmap
 
+This records the original Effect adoption plan. The frontend has since moved
+to Foldkit; see [the current architecture](architecture.md#frontend-composition).
+
 Goal: make Julian a showcase of product, infrastructure, and code quality in one
 repository, with Effect as the backbone everywhere.
 

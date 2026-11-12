@@ -5,8 +5,8 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "apps/web/public/bootstrap.js",
-    "apps/web/src/routes/*.tsx",
     "apps/web/src/test/setup-dom.ts",
+    "apps/web/src/foldkit/entry.ts",
     "apps/web/vite.config.ts",
     "apps/web/vitest.config.ts",
     "apps/edge/src/index.ts",
@@ -23,7 +23,8 @@
   ],
   "ignorePatterns": [
     "apps/web/index.html",
-    ".github/**"
+    ".github/**",
+    "repos/**"
   ],
   "ignoreDependencies": [
     "pino-pretty",

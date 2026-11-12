@@ -23,7 +23,3 @@ export function visibleYearEventLaneMap(segments: ReadonlyArray<EventSegment>) {
 
   return { lanes, laneCount: laneEnds.length };
 }
-
-export function monthColumnTemplateColumns(lanes: number): string {
-  return `repeat(${Math.max(1, lanes)}, minmax(0, 1fr))`;
-}

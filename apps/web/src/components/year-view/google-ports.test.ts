@@ -1,9 +1,11 @@
-import { describe, expect } from "vitest";
+import { afterEach, describe, expect, vi } from "vitest";
 import { it } from "@effect/vitest";
 import { Effect, Exit, Ref } from "effect";
 import * as TestEnv from "@julian/google/testing";
 import { makeGoogleDataSource, makeGoogleEventApi } from "@/components/year-view/google-ports";
 import type { AppServices } from "@/lib/effect/runtime";
+
+afterEach(() => vi.restoreAllMocks());
 
 const ports = (env: { readonly layer: ReturnType<typeof TestEnv.layer> }) => {
   const provide = <A, E>(effect: Effect.Effect<A, E, AppServices>): Effect.Effect<A, E> =>
@@ -25,6 +27,7 @@ describe("Google year-view ports", () => {
 
   it.effect("loads the signed-in user's calendars, keeping hidden ones deselected", () =>
     Effect.gen(function* () {
+      const hint = vi.spyOn(document, "cookie", "set");
       const env = yield* TestEnv.makeTestEnv({
         storage: { ...TestEnv.validTokenStorage(), "julian:hidden-calendar-ids": '["cal"]' },
         responses: [
@@ -37,6 +40,7 @@ describe("Google year-view ports", () => {
 
       expect(year.calendars.map((calendar) => calendar.id)).toContain("cal");
       expect(year.selectedCalendarIds).not.toContain("cal");
+      expect(hint).toHaveBeenCalledWith(expect.stringContaining("julian_session=1"));
     }),
   );
 

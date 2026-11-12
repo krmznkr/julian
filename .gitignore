@@ -92,3 +92,6 @@ next-env.d.ts
 
 # husky leftovers in clones that predate prek
 .husky/
+
+# Foldkit source for agents, pinned to the installed version (see .agents/skills/foldkit)
+/repos/

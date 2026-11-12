@@ -1,5 +1,5 @@
 (function () {
-  // Apply persisted UI preferences before React boots to avoid flicker.
+  // Apply persisted UI preferences before Foldkit boots to avoid flicker.
   try {
     var stored = localStorage.getItem("theme");
     var prefersDark =

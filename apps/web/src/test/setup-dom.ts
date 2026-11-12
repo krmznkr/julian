@@ -1,5 +1,4 @@
 /* eslint-disable functional/immutable-data, functional/no-classes */
-import "@testing-library/jest-dom/vitest";
 
 const matchMediaMock = (query: string) => ({
   matches: false,

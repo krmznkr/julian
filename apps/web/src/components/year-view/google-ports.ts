@@ -14,6 +14,7 @@ import type {
 import { saveSelectedCalendarIdsSync } from "@/lib/calendar-selection";
 import { loadCalendarYear } from "@/lib/effect/calendar-year";
 import type { AppServices } from "@/lib/effect/runtime";
+import { markSessionHint } from "@/lib/session";
 
 type Provide = <A, E>(effect: Effect.Effect<A, E, AppServices>) => Effect.Effect<A, E>;
 
@@ -33,6 +34,7 @@ export function makeGoogleDataSource(provide: Provide): YearViewDataSource {
         Effect.gen(function* () {
           const auth = yield* GoogleAuth;
           if (!(yield* auth.isAuthenticated)) return EMPTY_YEAR;
+          yield* Effect.sync(markSessionHint);
           return yield* loadCalendarYear(year);
         }),
       ),

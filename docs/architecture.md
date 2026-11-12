@@ -1,6 +1,6 @@
 # Architecture
 
-Julian is a browser-rendered React application served by a Cloudflare Worker.
+Julian is a browser-rendered Foldkit application served by a Cloudflare Worker.
 The browser talks directly to Google Calendar and Google Tasks after
 authentication; the Worker is deliberately small and exists to protect the
 static site and keep the confidential OAuth client secret out of the bundle.
@@ -157,7 +157,7 @@ resource fails. Each isolated failure is recorded in the load result's
 `failures`, carried through the data port into view state, and reported by the
 sidebar's sync badge — so a partially loaded year is visibly partial rather than
 looking like an empty one. Creating, renaming, and deleting events call the
-Calendar API directly, then update the reducer-backed view state. Google Tasks
+Calendar API directly, then update the immutable Model. Google Tasks
 are read-only in Julian.
 
 Moving an all-day event is optimistic (`year-view/use-event-move.ts`): the
@@ -179,145 +179,79 @@ rows to fit one A4 landscape page.
 
 ## Frontend composition
 
-```mermaid
-flowchart TD
-  main["main.tsx"]
-  providers["CoreProviders<br/>theme + i18n"]
-  router["TanStack Router"]
-  routes["Year · Demo · OAuth callback · Lab"]
-  live["YearView<br/>live container"]
-  demo["DemoYearView<br/>demo container"]
-  core["YearViewCore"]
-  state["useYearViewState<br/>data reducer + UI reducer"]
-  data["useYearViewData<br/>loads through the data source port"]
-  derived["derived data<br/>filtering + month segments"]
-  grid["YearGrid<br/>virtualization + keyboard model"]
-  columns["MonthColumn × 12"]
-  layers["day cells · timed tracks<br/>multi-day segments · popovers"]
+`apps/web/src/main.ts` boots one Foldkit application. The runtime renders the
+Schema-defined Model, dispatches typed Messages to the pure update function,
+and runs the returned Commands as scoped Effect fibers. Browser events enter
+through subscriptions, which the runtime releases on disposal. There are no
+React roots, hooks, component libraries or TanStack routes.
 
-  main --> providers --> router --> routes
-  routes --> live --> core
-  routes --> demo --> core
-  core --> state
-  core --> data
-  core --> derived
-  state --> grid
-  data --> state
-  derived --> grid --> columns --> layers
-```
+| Module | Responsibility |
+| --- | --- |
+| `foldkit/model.ts` | Schema state, Messages and derived event selection |
+| `foldkit/app.ts` | Pure transitions, navigation, edits and optimistic rollback |
+| `foldkit/routing.ts` | URL validation and canonical calendar links |
+| `foldkit/commands.ts` | Loads, writes, OAuth, storage, focus and scrolling |
+| `foldkit/subscriptions.ts` | Keyboard, drag/drop, resize, scroll, media and print events |
+| `foldkit/view.ts`, `grid-view.ts`, `timeline-view.ts`, `dialogs.ts` | Pure HTML rendering |
+| `foldkit/services.ts` | Browser services and the in-memory demo adapter |
 
-The domain layer in `packages/domain/src/` owns date parsing, event normalization,
-composite event keys, year clipping, month segmentation, and greedy lane
-assignment. Components consume those results rather than duplicating calendar
-math.
+The Foldkit runtime owns navigation through typed URL-request and URL-change
+Messages. The existing year and month validators preserve `/demo`,
+`/demo/{year}`, `/{year}`, month shortcuts and legacy `/year/{year}` links.
+Focus, open day details and the timeline layout round-trip through search
+parameters. Back and forward update the same Model. Marketing links perform
+a full navigation to their prerendered HTML pages.
 
-### Year-view ports
+### Data and writes
 
-`YearViewCore` holds the entire year view but no opinion about where its data
-and its focus live. Three ports in
-`apps/web/src/components/year-view/year-view-ports.ts` supply that, so the same component
-serves both the signed-in app and the demo:
+The shared data and event ports remain in
+`components/year-view/year-view-ports.ts`. `CalendarPorts` selects the Google
+adapters for signed-in routes and an Effect Ref store for the demo. Google
+requests still use the existing service graph in `lib/effect/runtime.ts`.
+Calendar content stays in the browser; no new server or storage is involved.
 
-| Port                  | Live container (`year-view/google-ports.ts`) | Demo container (`landing/demo-year-view.tsx`) |
-| --------------------- | -------------------------------------------- | --------------------------------------------- |
-| `YearViewRouterPort`  | TanStack Router search params                | local `useState`                              |
-| `YearViewDataSource`  | Google Calendar + stored calendar selection  | generated fixture year, in memory             |
-| `YearViewEventApi`    | Google create/update/move/delete             | in-memory store                               |
-| `YearViewPreferences` | `localStorage` sidebar preference            | in-memory ref                                 |
+`LoadYear` is interruptible. A newer load cancels its predecessor, and load
+IDs and years guard against stale completion. Partial source failures remain
+visible beside the calendar list. Refreshes merge outstanding optimistic
+moves instead of overwriting them with an older API response.
 
-Loads and writes are `Effect` values with no requirements and a typed failure
-(a `_tag` and a message). The live ports get the app services from the shared
-`ManagedRuntime` through `provideApp`; the demo ports are `Effect.sync`. The
-hooks fork each one through `useLatestFiber`: a newer load interrupts the older
-one, unmounting interrupts whatever is running, and the effect dispatches its
-own result, so an interrupted fiber can never write stale data. Interruption
-also aborts the in-flight `fetch` through the HTTP client's `AbortSignal`.
+Create, rename and delete keep their dialog open on failure so the visitor can
+retry. Moves update the Model immediately and retain their original dates by
+operation ID. Writes to different events run independently; another move of
+the same event waits for its pending save. A failed move rolls back only its
+dates, preserving concurrent edits and other events. Completions from another
+displayed year cannot replace the current year's data.
 
-The demo therefore demonstrates the product by running it, not by
-reimplementing it — a lookalike would drift from the real view on every change.
+### Keyboard, dialogs and display
 
-### Landing demo
+The year grid remains a focusable application with an active-descendant date.
+Keyboard navigation, typeahead, search, commands and timeline controls dispatch
+Messages. Text inputs retain their own keys, and checkbox controls keep global
+shortcuts available. The modal calendars drawer uses Foldkit's DOM helpers to
+trap focus, isolate the page and restore focus when it closes. Day details
+suspend while a modal is open and retain their selection when they resume.
 
-The marketing home links to `/demo`; it cannot frame the demo because every
-response forbids framing. The demo page is labelled "Demo · Sample data". A three-step tour opens
-today, creates a sample event, and opens commands. It runs once in under 15
-seconds. "Try it now" stops it immediately; "Add sample event" opens the same
-form as the N shortcut; "Reset demo" starts a fresh in-memory session.
+Month columns are virtualized from the scroll position with the focused month
+kept mounted. The print subscription mounts all twelve months and the print
+stylesheet fits them on one landscape page. The grid and details use the same
+domain segments, including the rule for short events crossing midnight.
+Timeline packing and date arithmetic continue to use `packages/domain`.
 
-The tour in `demo-script.ts` is an Effect program: each pause is an
-`Effect.sleep`, the player runs it as one fiber and interrupts it to hand over
-control, and its tests drive the timeline with `TestClock`. `demo-input.ts`
-dispatches keyboard events through the application's handlers.
-Any trusted input, including a login click, cancels the tour before the action
-continues. A hidden tab or scrolling away also cancels it. Touch devices,
-small screens, and reduced-motion preferences start in interactive mode.
-Events are kept per year for the visit, including edits made after navigating
-to another year. Refreshing the page or resetting the demo discards them.
+### Demo
 
-### Event dates and display
+The demo uses the same update and view with seeded sample data. Its Ref store
+supports creation, renaming, moves and deletion for each visited year. Edits
+and hidden-calendar choices survive navigation and refresh within the visit;
+Reset demo restores the fixture state. No demo state is persisted to disk.
+The tour is a sequence of interruptible timer Commands. User interaction
+stops it, and autoplay respects reduced motion and narrow screens.
 
-- All-day `date` values are calendar dates, without a timezone conversion.
-- Timed `dateTime` values are instants displayed in the browser's local timezone,
-  named in the event details. They can legitimately fall on a different date
-  than the original calendar's timezone.
-- Both kinds use an exclusive end. An event ending at midnight does not occupy
-  the next day. Calendar-day counts use date boundaries, including DST days.
-- Multi-day classification applies to the whole event. A one-day tail at a
-  month or year boundary stays a bar, with arrows marking continuation.
-- Month cells show only all-day events. Timed appointments remain available in
-  the day details dialog but do not add visual noise to the year grid. All-day
-  multi-day events use lanes; busy all-day cells show a `+N` button. Clicking an
-  event selects it in the day panel. Opening Google is an explicit action from
-  the details panel.
-- The component examples at `/lab` (dev server only) use the same date and rendering code.
+### Privacy at the runtime boundary
 
-### Route behavior
-
-One domain serves two builds. The marketing pages are static HTML from
-`apps/marketing`; everything else is the React app.
-
-| Route                         | Served by | Purpose                                                                   |
-| ----------------------------- | --------- | ------------------------------------------------------------------------- |
-| `/`                           | Worker    | Marketing home, or `302 /{yyyy}` when the `julian_session` cookie is set  |
-| `/home`, `/privacy`, `/terms` | marketing | Static pages with production-only telemetry                                               |
-| `/{yyyy}`                     | app       | Lazy-loaded year view; the current year adds today's month/day to the URL. Signed out, it offers sign-in or the demo |
-| `/{yyyy}/{mm}`                | app       | Redirects to `/{yyyy}?month=mm&day=1`                                     |
-| `/year/*`                     | Worker    | `301` to the same path without `/year`, query kept (legacy bookmarks)     |
-| `/demo`, `/demo/{yyyy}`       | app       | The real year view on sample data; `/demo` opens the current year. The Worker serves route-like `/demo/…` paths the `/demo` page, keeping the external URL and query while supplying the demo's title and canonical `og:url` `/demo`. File-like paths keep their existing handling |
-| `/demo/{yyyy}/{mm}`           | app       | Redirects to `/demo/{yyyy}?month=mm&day=1`                                |
-| `/auth/callback`              | app       | Exchanges the single-use code. The Worker first `302`s it on to a PR preview when the OAuth `state` names one |
-| `/api/oauth/*`                | Worker    | Token exchange and refresh                                                |
-| `/lab`                        | app       | Component/design experimentation; dev server only, absent from builds     |
-
-`julian_session` (`packages/security/src/session-hint.ts`) is a hint, not a
-credential: its value is `1`, it is set after a successful sign-in (and whenever
-the year view confirms a stored session), and cleared on logout. The `/`
-response varies by cookie, so it is `private, no-store`. The year view still
-performs the full authenticated check once it mounts. Under the Vite servers,
-which do not run the Worker, the app's own `/` route redirects to the year or
-the demo from `localStorage` instead, and `/year/*` redirects client-side.
-
-Search parameters hold the focused month/day so the selected date is linkable.
-The Worker serves `index.html` for unknown paths on navigations, allowing
-client-side routes to load directly. A non-navigation request for a missing file
-(`/nope.js`, `/_headers`, `/.env`) gets a plain `404` instead.
-
-`index.html` (and `demo.html`, built from it) paints the "Loading calendar..."
-screen inside `#root` before the app's entry module runs, so the first paint
-waits only for the HTML, the stylesheet and `/bootstrap.js`, not for the app's
-JavaScript.
-React replaces it on mount. It uses the same classes and text as `RouteLoading`
-(`src/features/shell/route-loading.tsx`); a unit test keeps the two in step.
-Without JavaScript the page says the calendar needs it instead.
-
-Content-hashed scripts and styles (`/assets/<name>-<hash>.js|css` and the same
-under `/_marketing/`) leave the Worker with `public, max-age=31536000,
-immutable` (`apps/edge/src/cache.ts`), so a returning visitor loads them from
-the browser cache without a request. Only a 200 or 304 answer to a GET or HEAD
-with no query string and a JavaScript or CSS type qualifies. HTML,
-`/bootstrap.js`, `/version.json`, other files, redirects and errors keep their
-revalidating or `no-store` headers. The web build fails if `public/` places
-files in either directory, so only the bundler writes there.
+Foldkit DevTools and the MCP bridge are disabled. Runtime crash reporting
+forwards only the Error to the existing allowlisted telemetry wrapper. It
+never forwards the Model or Message. OAuth callback codes are read inside the
+callback Effect and are not copied into the Model's URL field.
 
 ## Browser storage
 
@@ -357,7 +291,7 @@ flowchart LR
 into `apps/web/dist`, the Worker's single assets directory. Workers static
 assets serves `home.html` at `/home`, so no second binding or routing table is
 needed, and the client-secret scan covers both sites. The web build produces
-split chunks for React, TanStack Router, Radix, icons, and other vendors. CI runs type checks, tests, and a build. Each release channel
+separate chunks for Foldkit, Effect and observability. CI runs type checks, tests, and a build. Each release channel
 (preview, nightly, stable) builds again with the public OAuth client ID and its
 version metadata, scans the output for a Google client-secret pattern, and only
 then uploads or deploys. Channels, gradual rollout and rollback are described in
@@ -384,7 +318,7 @@ and private source-map upload. GitHub Actions and the smoke tests in
 
 | Failure                   | User-visible result                             | Recovery                                 |
 | ------------------------- | ----------------------------------------------- | ---------------------------------------- |
-| No stored Google token    | Empty calendar view with a connect action       | Start OAuth                              |
+| No stored Google token    | Sign-in screen with a demo link       | Start OAuth                              |
 | Expired access token      | Automatic refresh through Worker                | Reconnect if refresh fails               |
 | Revoked token (401)       | Load or write reports a not-authenticated error | Reconnect                                |
 | One calendar fetch fails  | Other calendars and tasks still render          | Retry/reload calendars                   |
@@ -396,19 +330,15 @@ and private source-map upload. GitHub Actions and the smoke tests in
 
 ## Where to change things
 
-| Change                                           | Primary files                                                                                               |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| OAuth scopes, token lifecycle, Google mapping    | `packages/google/src/`                                                                                      |
-| Edge routing, OAuth allowlist, security headers  | `apps/edge/src/*.ts`, `packages/security/src/index.ts`, `infra/src/config.ts`                               |
-| Route structure and URL contract                 | `apps/web/src/router.tsx`, `apps/web/src/lib/year-view-url.ts`                                              |
-| Calendar math and event segmentation             | `packages/domain/src/`                                                                                      |
-| Year-view state and orchestration                | `apps/web/src/components/year-view-reducer.ts`, `apps/web/src/components/year-view-core.tsx`                |
-| Where the year view gets data, focus, and writes | `apps/web/src/components/year-view/year-view-ports.ts`, `apps/web/src/components/year-view/google-ports.ts` |
-| Demo page and its scripted tour                  | `apps/web/src/routes/demo-page.tsx`, `apps/web/src/components/landing/`                                     |
-| Marketing, privacy, and terms pages              | `apps/marketing/*.html`, `apps/marketing/src/partials.ts`                                                   |
-| `/` routing, legacy redirects, session hint      | `apps/edge/src/site.ts`, `packages/security/src/session-hint.ts`                                            |
-| Month rendering and virtualization               | `apps/web/src/components/year-view/`                                                                        |
-| Build chunking, asset assembly, and deployment   | `apps/web/vite.config.ts`, `.github/actions/build-web`, `.github/workflows/deploy-stable.yml`               |
+| Concern | Path |
+| --- | --- |
+| State and user interactions | `apps/web/src/foldkit/model.ts`, `app.ts` |
+| Loads, writes and browser effects | `apps/web/src/foldkit/commands.ts`, `services.ts` |
+| Routing and keyboard | `apps/web/src/foldkit/routing.ts`, `subscriptions.ts` |
+| Calendar rendering and styles | `apps/web/src/foldkit/*view.ts`, `dialogs.ts`, `app.css` |
+| Pure dates and lane layout | `packages/domain` |
+| Google I/O and OAuth | `packages/google` |
+| Build, assets and deployment | `apps/web/vite.config.ts`, `.github/workflows` |
 
 ## Related documentation
 

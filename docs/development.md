@@ -1,6 +1,6 @@
 # Development
 
-Julian is a Vite/React browser app served in production by a Cloudflare Worker.
+Julian is a Vite/Foldkit browser app served in production by a Cloudflare Worker.
 The browser owns the UI and calls Google Calendar/Tasks directly; the Worker
 serves assets, applies request protections, and proxies only OAuth token
 exchange and refresh.
@@ -16,7 +16,7 @@ A Bun workspace orchestrated by Turborepo:
 
 | Path                     | Package                 | Purpose                                                 |
 | ------------------------ | ----------------------- | ------------------------------------------------------- |
-| `apps/web`               | `@julian/web`           | The Vite/React calendar app                             |
+| `apps/web`               | `@julian/web`           | The Vite/Foldkit calendar app                             |
 | `apps/marketing`         | `@julian/marketing`     | Static marketing, privacy, and terms pages              |
 | `apps/edge`              | `@julian/edge`          | Cloudflare Worker: assets, OAuth proxy, protections     |
 | `apps/e2e`               | `@julian/e2e`           | Playwright, axe, and Lighthouse checks on the web build |
@@ -46,6 +46,38 @@ caches results that did not change.
 | `bun run quality:static`  | Lint, format, dead code, functional rules, types |
 
 Run one package's script with a filter, e.g. `bun run --cwd apps/web preview`.
+
+## Foldkit frontend
+
+The main entry point boots Foldkit 0.170.0 directly. `/demo` and signed-in
+`/{year}` routes use the same Schema model, Messages, pure update and view.
+The former `/foldkit.html` experiment redirects into `/demo`.
+
+`src/foldkit/model.ts` defines state and Messages. `app.ts` handles transitions;
+`commands.ts` executes Effects, and `subscriptions.ts` scopes browser listeners
+to the runtime. Rendering lives in `view.ts`, `grid-view.ts`, `timeline-view.ts`
+and `dialogs.ts`. Modal dialogs use Foldkit's scoped DOM helpers for focus,
+scroll locking and background isolation.
+
+The existing year-view data and event ports remain in
+`src/components/year-view/year-view-ports.ts`. `CalendarPorts` supplies the
+Google adapters or an Effect Ref store for the demo. Refreshes cancel stale
+loads. Event writes run independently, and failed optimistic moves restore
+only their event's dates. Demo edits, filters and sidebar preferences stay in
+memory; signed-in preferences use browser storage.
+
+Use the existing production Playwright suite to check keyboard, touch, print,
+URLs and accessibility. The signed-in test intercepts Google requests with
+sample responses and verifies rollback after a rejected write. Unit tests
+exercise the update function, routing and mounted Foldkit runtime. The mounted
+tests use fake timers and dispose their runtime after each case.
+
+DevTools and its MCP bridge are disabled. Vite hot-model preservation is also
+disabled because it would send calendar state to the development server;
+source changes reload the app instead. Crash reporting passes only the
+Error through Julian's existing telemetry wrapper, never the Model, Message
+or OAuth callback URL. Pin reference examples to the installed
+[`foldkit@0.170.0` tag](https://github.com/foldkit/foldkit/tree/foldkit%400.170.0/examples).
 
 ## End-to-end and web-quality checks
 

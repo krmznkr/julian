@@ -170,7 +170,7 @@ ever disabled:
 ```
 default-src 'self'
 script-src 'self'                         # Vite output + /bootstrap.js, all same-origin
-style-src 'self' 'unsafe-inline'          # Tailwind/Radix inject inline styles
+style-src 'self' 'unsafe-inline'          # calendar rendering uses inline styles
 img-src 'self' data:                      # no remote images
 connect-src 'self' https://www.googleapis.com   # Calendar API + our /api/oauth
 form-action 'self' https://accounts.google.com  # Google sign-in navigation
