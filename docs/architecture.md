@@ -210,8 +210,9 @@ adapters for signed-in routes and an Effect Ref store for the demo. Google
 requests still use the existing service graph in `lib/effect/runtime.ts`.
 Calendar content stays in the browser; no new server or storage is involved.
 
-`LoadYear` is interruptible. A newer load cancels its predecessor, and load
-IDs and years guard against stale completion. Partial source failures remain
+`LoadYear` is declared interruptible, but nothing sends `LoadYear.Interrupt`
+yet, so a newer load does not cancel its predecessor. Load IDs and years
+reject stale completions. Partial source failures remain
 visible beside the calendar list. Refreshes merge outstanding optimistic
 moves instead of overwriting them with an older API response.
 
