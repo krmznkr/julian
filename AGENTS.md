@@ -30,7 +30,7 @@ These are defaults, not laws. The maintainer's instructions in a task win.
 
 | Path                     | What lives there                                               |
 | ------------------------ | -------------------------------------------------------------- |
-| `apps/web`               | The calendar app: Vite, React 19, TanStack Router, Effect      |
+| `apps/web`               | The calendar app: one Foldkit program on Vite and Effect       |
 | `apps/marketing`         | Static home, privacy and terms pages, prerendered to HTML      |
 | `apps/edge`              | Cloudflare Worker: assets, OAuth proxy, rate limits, headers   |
 | `apps/e2e`               | Playwright, axe and Lighthouse against the production build    |
@@ -85,21 +85,25 @@ handling or layout. Say which checks you ran and which you skipped.
 
 ## Code conventions
 
+- **Foldkit for the app.** `apps/web/src/foldkit` holds one program: a Schema
+  Model and typed Messages (`model.ts`), a pure update (`app.ts`), pure HTML
+  views, side effects as Commands (`commands.ts`) and browser events as
+  subscriptions (`subscriptions.ts`). The module map is in
+  `docs/architecture.md`, under "Frontend composition".
 - **Effect for I/O and concurrency.** Services are `Context.Service`s with live
-  and test layers; failures are tagged errors. UI loads run as fibers that
-  cancel stale requests (`apps/web/src/lib/effect/use-latest-fiber.ts`).
+  and test layers; failures are tagged errors. Commands run as scoped fibers.
+  Loads are declared `interrupt: true`, so a newer load cancels the stale one,
+  and load IDs drop late results.
 - **Functional core.** oxlint enforces `functional/no-let`,
   `no-loop-statements`, `no-classes` and `immutable-data` in source files.
   Classes are allowed only where Effect requires them (tagged errors and
   service keys). Prefer `map`, `reduce` and spreads over mutation.
 - **New lint suppressions say why**, after `--`:
-  `// oxlint-disable-next-line react/no-array-index-key -- parts have no identity`.
+  `// oxlint-disable-next-line functional/no-classes -- Effect tagged errors require a class.`
   Unused suppressions fail CI.
-- **React rules.** oxlint runs React Compiler's checks: no impure calls or ref
-  reads during render, no synchronous `setState` in effects, exact effect and
-  memo dependencies.
-- **Boundaries.** `packages/domain` stays pure. `apps/web/src/components/ui` is
-  vendored shadcn/ui; change it only on purpose.
+- **Boundaries.** `packages/domain` stays pure. In `apps/web`, update and views
+  stay pure too: network, storage, DOM, focus and timers belong in Commands
+  and subscriptions.
 - **Tests.** Coverage thresholds sit just under the current numbers and only go
   up. Use `TestClock` and fake timers, not real waits.
 
