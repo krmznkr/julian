@@ -87,13 +87,15 @@ handling or layout. Say which checks you ran and which you skipped.
 
 - **Foldkit for the app.** `apps/web/src/foldkit` holds one program: a Schema
   Model and typed Messages (`model.ts`), a pure update (`app.ts`), pure HTML
-  views, side effects as Commands (`commands.ts`) and browser events as
-  subscriptions (`subscriptions.ts`). The module map is in
+  views, side effects as Commands (`commands.ts`), browser events as
+  subscriptions (`subscriptions.ts`) and per-element DOM work as scoped Mount
+  effects (`dialogs.ts`). The module map is in
   `docs/architecture.md`, under "Frontend composition".
 - **Effect for I/O and concurrency.** Services are `Context.Service`s with live
   and test layers; failures are tagged errors. Commands run as scoped fibers.
-  Loads are declared `interrupt: true`, so a newer load cancels the stale one,
-  and load IDs drop late results.
+  `LoadYear` is declared interruptible; load IDs and years reject stale
+  completions. Starting another load does not currently cancel its
+  predecessor.
 - **Functional core.** oxlint enforces `functional/no-let`,
   `no-loop-statements`, `no-classes` and `immutable-data` in source files.
   Classes are allowed only where Effect requires them (tagged errors and
@@ -102,8 +104,8 @@ handling or layout. Say which checks you ran and which you skipped.
   `// oxlint-disable-next-line functional/no-classes -- Effect tagged errors require a class.`
   Unused suppressions fail CI.
 - **Boundaries.** `packages/domain` stays pure. In `apps/web`, update and views
-  stay pure too: network, storage, DOM, focus and timers belong in Commands
-  and subscriptions.
+  stay pure too: network, storage, DOM, focus and timers run through Commands,
+  subscriptions, or scoped Mount effects.
 - **Tests.** Coverage thresholds sit just under the current numbers and only go
   up. Use `TestClock` and fake timers, not real waits.
 
