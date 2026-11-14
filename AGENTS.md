@@ -18,7 +18,7 @@ These are defaults, not laws. The maintainer's instructions in a task win.
   `GOCSPX-` string. Never add the secret to a `VITE_*` variable.
 - **The demo runs the real app.** `/demo` plugs an in-memory store into the
   same year view through the ports in
-  `apps/web/src/components/year-view/year-view-ports.ts`. A feature that only
+  `apps/web/src/year-view/year-view-ports.ts`. A feature that only
   works signed in, or only in the demo, is unfinished.
 - **Keyboard, screen reader, phone and print.** Every interaction needs a key,
   an accessible name, a touch layout and a sane print style. The e2e suite runs

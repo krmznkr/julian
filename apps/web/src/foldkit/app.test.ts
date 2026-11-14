@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Option } from "effect";
 import { fromString } from "foldkit/url";
 import { UrlRequest } from "foldkit/navigation";
-import { buildDemoYear } from "@/components/landing/demo-data";
+import { buildDemoYear } from "@/demo/demo-data";
 import { init, update } from "./app";
 import { Message, eventKey, initialModel, type Model } from "./model";
 

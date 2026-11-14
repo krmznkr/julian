@@ -60,7 +60,7 @@ and `dialogs.ts`. Modal dialogs use Foldkit's scoped DOM helpers for focus,
 scroll locking and background isolation.
 
 The existing year-view data and event ports remain in
-`src/components/year-view/year-view-ports.ts`. `CalendarPorts` supplies the
+`src/year-view/year-view-ports.ts`. `CalendarPorts` supplies the
 Google adapters or an Effect Ref store for the demo. Refreshes cancel stale
 loads. Event writes run independently, and failed optimistic moves restore
 only their event's dates. Demo edits, filters and sidebar preferences stay in

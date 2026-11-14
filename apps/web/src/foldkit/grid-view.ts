@@ -4,8 +4,8 @@ import {
   toDateInputValue,
   type MonthSegments,
 } from "@julian/domain";
-import { cellDomId } from "@/components/year-view/year-grid-keyboard";
-import { visibleYearEventLaneMap } from "@/components/year-view/month-grid-layout";
+import { cellDomId } from "@/year-view/year-grid-keyboard";
+import { visibleYearEventLaneMap } from "@/year-view/month-grid-layout";
 import { cn } from "@/lib/utils";
 import { Message, eventKey, visibleEvents, type Model } from "./model";
 import { dateLabel, monthName, type Builder } from "./html";

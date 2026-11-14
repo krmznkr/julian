@@ -15,7 +15,7 @@ import {
   resolveArrowMoveStep,
   shouldHandleGridKeys,
   yearGridShortcuts,
-} from "@/components/year-view/year-grid-keyboard";
+} from "@/year-view/year-grid-keyboard";
 
 describe("year-grid keyboard helpers", () => {
   it("clamps day to month length", () => {

@@ -10,7 +10,7 @@ import type {
   YearViewDataSource,
   YearViewEventApi,
   YearViewLoadResult,
-} from "@/components/year-view/year-view-ports";
+} from "@/year-view/year-view-ports";
 import { saveSelectedCalendarIdsSync } from "@/lib/calendar-selection";
 import { loadCalendarYear } from "@/lib/effect/calendar-year";
 import type { AppServices } from "@/lib/effect/runtime";

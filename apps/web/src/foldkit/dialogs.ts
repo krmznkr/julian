@@ -1,7 +1,7 @@
 import { Effect, Option, Schema } from "effect";
 import { autoUpdate, computePosition, flip, offset, shift } from "@floating-ui/dom";
 import * as Mount from "foldkit/mount";
-import { cellDomId } from "@/components/year-view/year-grid-keyboard";
+import { cellDomId } from "@/year-view/year-grid-keyboard";
 import { BUILD_INFO, buildLabel } from "@/lib/build-info";
 import {
   DISPLAY_TIME_ZONE,
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { icon } from "./icons";
 import { buttonClass, inputClass } from "./ui";
 import { nextThemeMode } from "@/lib/theme";
-import { yearGridShortcuts } from "@/components/year-view/year-grid-keyboard";
+import { yearGridShortcuts } from "@/year-view/year-grid-keyboard";
 import {
   Message,
   canModify,

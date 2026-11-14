@@ -205,7 +205,7 @@ a full navigation to their prerendered HTML pages.
 ### Data and writes
 
 The shared data and event ports remain in
-`components/year-view/year-view-ports.ts`. `CalendarPorts` selects the Google
+`year-view/year-view-ports.ts`. `CalendarPorts` selects the Google
 adapters for signed-in routes and an Effect Ref store for the demo. Google
 requests still use the existing service graph in `lib/effect/runtime.ts`.
 Calendar content stays in the browser; no new server or storage is involved.
