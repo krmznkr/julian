@@ -10,7 +10,7 @@ import {
   timelineLabelWidth,
   timelineReserveDays,
   windowStartIndex,
-} from "@/components/year-view/timeline-layout";
+} from "@/year-view/timeline-layout";
 
 function event(id: string, calendarId: string, start: string, end: string): CalendarEvent {
   return { id, title: id, calendarId, start, end, allDay: true, isTimed: false };

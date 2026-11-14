@@ -14,7 +14,7 @@ import {
   Sun,
   X,
 } from "lucide";
-import { modKeyLabel } from "@/components/year-view/year-grid-keyboard";
+import { modKeyLabel } from "@/year-view/year-grid-keyboard";
 import { nextThemeMode } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Message, visibleEvents, type Model } from "./model";

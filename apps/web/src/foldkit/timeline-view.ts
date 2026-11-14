@@ -20,7 +20,7 @@ import {
   timelineLabelPx,
   timelineLabelWidth,
   timelineReserveDays,
-} from "@/components/year-view/timeline-layout";
+} from "@/year-view/timeline-layout";
 import { cn } from "@/lib/utils";
 import { Message, visibleEvents, type Model } from "./model";
 import { act, highlighted, monthName, type Builder } from "./html";

@@ -13,19 +13,18 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    include: ["src/**/*.test.ts"],
     setupFiles: [root("src/test/setup-dom.ts")],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
-      include: ["src/**/*.ts", "src/**/*.tsx"],
+      include: ["src/**/*.ts"],
       exclude: [
         "**/*.test.ts",
-        "**/*.test.tsx",
         "**/*.d.ts",
         "**/node_modules/**",
         "src/test/**",
-        // Entry point: mounts the router into #root; exercised only by the e2e suite.
+        // Entry point: mounts the Foldkit program into #root; exercised only by the e2e suite.
         "src/main.ts",
         "src/foldkit/entry.ts",
       ],

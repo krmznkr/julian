@@ -1,6 +1,6 @@
 import { describe, test } from "vitest";
 import { expect, given, role, scene, selector, text } from "foldkit/scene";
-import { buildDemoYear } from "@/components/landing/demo-data";
+import { buildDemoYear } from "@/demo/demo-data";
 import { update } from "./app";
 import { initialModel, type Model } from "./model";
 import { view } from "./view";

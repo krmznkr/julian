@@ -42,7 +42,7 @@ The signed-in calendar and demo share one Model, update function and view.
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Effect end to end | Google services as `Context.Service`s with live and test layers, tagged errors, retry `Schedule`s ([`packages/google`](packages/google)); UI loads run as fibers that cancel in-flight requests ([`commands.ts`](apps/web/src/foldkit/commands.ts)) |
 | Edge Worker       | One Effect pipeline: bot filter, rate limits, OAuth proxy with an origin lock, streamed body cap, `Schema`-validated grants, and a `Redacted` client secret ([`apps/edge`](apps/edge/src))                                                                             |
-| Hexagonal UI      | The year view talks to ports; the live app plugs in Google, the demo plugs in an in-memory store, so the demo runs the real view ([`year-view-ports.ts`](apps/web/src/components/year-view/year-view-ports.ts))                                                   |
+| Hexagonal UI      | The year view talks to ports; the live app plugs in Google, the demo plugs in an in-memory store, so the demo runs the real view ([`year-view-ports.ts`](apps/web/src/year-view/year-view-ports.ts))                                                              |
 | Pure domain       | Date math and lane layout with no UI or I/O, tested across five time zones ([`packages/domain`](packages/domain))                                                                                                                                                   |
 | Security          | The client secret never reaches the browser; CSP and hardening headers defined once ([`packages/security`](packages/security)); threat model in [`docs/security.md`](docs/security.md)                                                                                 |
 | Releases          | Semver from Conventional Commits, preview per PR, nightly channel, gradual stable rollout with automatic rollback ([`docs/releasing.md`](docs/releasing.md))                                                                                                           |
@@ -124,7 +124,6 @@ OAuth setup in [`docs/development.md`](docs/development.md).
 - [`docs/observability.md`](docs/observability.md): telemetry privacy and private source maps.
 - [`docs/security.md`](docs/security.md): threat model, edge hardening, smoke tests.
 - [`docs/follow-ups.md`](docs/follow-ups.md): known gaps and manual steps.
-- [`docs/roadmap.md`](docs/roadmap.md): what is done and what is next.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SUPPORT.md`](SUPPORT.md), and
 [`SECURITY.md`](SECURITY.md) for contributing, help, and private vulnerability

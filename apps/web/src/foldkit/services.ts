@@ -8,9 +8,9 @@ import {
   toDateInputValue,
   type CalendarEvent,
 } from "@julian/domain";
-import { buildDemoYear } from "@/components/landing/demo-data";
-import { makeGoogleDataSource, makeGoogleEventApi } from "@/components/year-view/google-ports";
-import type { YearViewDataSource, YearViewEventApi } from "@/components/year-view/year-view-ports";
+import { buildDemoYear } from "@/demo/demo-data";
+import { makeGoogleDataSource, makeGoogleEventApi } from "@/year-view/google-ports";
+import type { YearViewDataSource, YearViewEventApi } from "@/year-view/year-view-ports";
 import { provideApp } from "@/lib/effect/runtime";
 import { clearSessionHint, hasStoredGoogleSession, markSessionHint } from "@/lib/session";
 import {

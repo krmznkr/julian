@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDemoYear } from "@/components/landing/demo-data";
+import { buildDemoYear } from "@/demo/demo-data";
 import { buildMonthSegments } from "@julian/domain";
 
 const YEAR = 2026;

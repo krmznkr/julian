@@ -1,5 +1,5 @@
-import { clampCell, type KeyboardCell } from "@/components/year-view/year-grid-keyboard";
-import { MAX_YEAR, MIN_YEAR } from "@/components/year-view/constants";
+import { clampCell, type KeyboardCell } from "@/year-view/year-grid-keyboard";
+import { MAX_YEAR, MIN_YEAR } from "@/year-view/constants";
 
 /** The year view's two layouts: the month-column grid and the timeline. */
 export type YearViewMode = "grid" | "timeline";

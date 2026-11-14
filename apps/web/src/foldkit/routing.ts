@@ -1,5 +1,5 @@
 import { parseMonthParam, parseYearParam, parseYearViewSearch } from "@/lib/year-view-url";
-import { clampCell } from "@/components/year-view/year-grid-keyboard";
+import { clampCell } from "@/year-view/year-grid-keyboard";
 import { parseDateInput, toDateInputValue } from "@julian/domain";
 import type { Model } from "./model";
 

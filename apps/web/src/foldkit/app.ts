@@ -12,18 +12,14 @@ import {
   TIMELINE_ZOOMS,
   toDateInputValue,
 } from "@julian/domain";
-import {
-  adjacentTimelineBar,
-  stepZoom,
-  windowStartIndex,
-} from "@/components/year-view/timeline-layout";
+import { adjacentTimelineBar, stepZoom, windowStartIndex } from "@/year-view/timeline-layout";
 import {
   clampCell,
   daysInMonth,
   digitFromKeyboardCode,
   resolveArrowMoveStep,
   resolveDayTypeaheadInput,
-} from "@/components/year-view/year-grid-keyboard";
+} from "@/year-view/year-grid-keyboard";
 import { parseYearParam } from "@/lib/year-view-url";
 import { nextThemeMode } from "@/lib/theme";
 import {

@@ -6,9 +6,9 @@ repos:
         name: oxfmt
         entry: node_modules/.bin/oxfmt
         language: system
-        types_or: [javascript, jsx, ts, tsx]
+        types_or: [javascript, ts]
       - id: oxlint
         name: oxlint
         entry: node_modules/.bin/oxlint --deny-warnings
         language: system
-        types_or: [javascript, jsx, ts, tsx]
+        types_or: [javascript, ts]

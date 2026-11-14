@@ -2,7 +2,7 @@ import { afterEach, describe, expect, vi } from "vitest";
 import { it } from "@effect/vitest";
 import { Effect, Exit, Ref } from "effect";
 import * as TestEnv from "@julian/google/testing";
-import { makeGoogleDataSource, makeGoogleEventApi } from "@/components/year-view/google-ports";
+import { makeGoogleDataSource, makeGoogleEventApi } from "@/year-view/google-ports";
 import type { AppServices } from "@/lib/effect/runtime";
 
 afterEach(() => vi.restoreAllMocks());
