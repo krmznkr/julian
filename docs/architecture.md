@@ -160,17 +160,17 @@ looking like an empty one. Creating, renaming, and deleting events call the
 Calendar API directly, then update the immutable Model. Google Tasks
 are read-only in Julian.
 
-Moving an all-day event is optimistic (`year-view/use-event-move.ts`): the
-reducer moves it at once, `YearViewEventApi.moveEvent` PATCHes its dates as a
-fiber, and a failed or interrupted write moves it back and shows an alert.
+Moving an all-day event is optimistic: `update` in `foldkit/app.ts` moves it
+at once, the `MoveEvent` Command PATCHes its dates through
+`YearViewEventApi.moveEvent` as a fiber, and a failed or interrupted write moves it back and shows an alert.
 Moves run independently, so a second drag never cancels the first one's write.
 The grid root handles HTML drag-and-drop for writable all-day chips; `M` in day
 details, or "Move to another day" in the details pane on touch, opens a dialog
 with a date field instead.
 
-Search (`year-view/event-search.tsx`) filters the visible events by title and
-description before month segmentation, and a context hands the query to the
-chips, which wrap matches in `<mark>`. `/` focuses the field; Escape clears it
+Search filters the visible events by title, description and calendar name
+before month segmentation (`visibleEvents` in `foldkit/model.ts`), and the
+chips wrap matches in `<mark>`. `/` focuses the field; Escape clears it
 and returns focus to the grid.
 
 Printing renders every month (virtualization stands down between
@@ -327,7 +327,7 @@ and private source-map upload. GitHub Actions and the smoke tests in
 | OAuth proxy misconfigured | Callback or refresh reports failure             | Restore Worker secret/config             |
 | Mutation fails            | Existing state remains and an error is surfaced | Retry after checking access role/network |
 | Move fails                | Event returns to its old day; alert explains    | Retry after checking access role/network |
-| Render failure            | Route/year error boundary                       | Retry or reload                          |
+| Render failure            | Foldkit crash view; Sentry gets the error       | Reload                                   |
 
 ## Where to change things
 
@@ -336,7 +336,7 @@ and private source-map upload. GitHub Actions and the smoke tests in
 | State and user interactions | `apps/web/src/foldkit/model.ts`, `app.ts` |
 | Loads, writes and browser effects | `apps/web/src/foldkit/commands.ts`, `services.ts` |
 | Routing and keyboard | `apps/web/src/foldkit/routing.ts`, `subscriptions.ts` |
-| Calendar rendering and styles | `apps/web/src/foldkit/*view.ts`, `dialogs.ts`, `app.css` |
+| Calendar rendering and styles | `apps/web/src/foldkit/*view.ts`, `dialogs.ts`, `src/styles/globals.css` |
 | Pure dates and lane layout | `packages/domain` |
 | Google I/O and OAuth | `packages/google` |
 | Build, assets and deployment | `apps/web/vite.config.ts`, `.github/workflows` |

@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["eslint", "react", "unicorn", "typescript", "oxc", "vitest", "jsx-a11y"],
+  "plugins": ["eslint", "unicorn", "typescript", "oxc", "vitest"],
   "categories": {
     "correctness": "warn",
     "suspicious": "warn",
@@ -19,22 +19,6 @@
     "**/.turbo/**"
   ],
   "rules": {
-    "react/react-in-jsx-scope": "off",
-
-    // React Compiler's checks, run as lint rules. The app does not use the
-    // compiler; the rules still catch impure renders and effect misuse.
-    "react/purity": "error",
-    "react/refs": "error",
-    "react/set-state-in-effect": "error",
-    "react/set-state-in-render": "error",
-    "react/immutability": "error",
-    "react/globals": "error",
-    "react/static-components": "error",
-    "react/unsupported-syntax": "error",
-    "react/exhaustive-effect-dependencies": "error",
-    "react/no-unstable-nested-components": "error",
-    "react/no-array-index-key": "error",
-
     // Sequential awaits are deliberate in the e2e specs and the Effect code.
     "eslint/no-await-in-loop": "off",
     "eslint/no-underscore-dangle": "off",
@@ -43,26 +27,6 @@
     "unicorn/no-array-sort": "off",
     "unicorn/no-array-reverse": "off",
     "oxc/no-map-spread": "off",
-    // A default prop in a test fixture, not a component that re-renders.
-    "react/no-object-type-as-default-prop": "off",
-    "jsx-a11y/click-events-have-key-events": "off",
-    "jsx-a11y/label-has-associated-control": "off",
-    "jsx-a11y/no-autofocus": "off",
-
-    // The year grid, the day panel and the mobile drawer are composite widgets
-    // built on divs. The suggested native tags (<dialog>, <select>, <option>,
-    // <section>, <output>) are not drop-in replacements: they bring their own
-    // focus and interaction behaviour that these widgets deliberately own.
-    "jsx-a11y/prefer-tag-over-role": "off",
-    // Those same widgets manage a roving tabindex themselves, so being
-    // programmatically focusable is the point rather than a mistake.
-    "jsx-a11y/no-noninteractive-tabindex": "off",
-    // ul + role="listbox" with li + role="option" is the standard ARIA pattern.
-    "jsx-a11y/no-noninteractive-element-to-interactive-role": "off",
-    // The grid is role="application": it owns the keyboard outright and
-    // delegates clicks by hit-testing data attributes on its descendants.
-    "jsx-a11y/no-noninteractive-element-interactions": "off",
-
     "vitest/no-standalone-expect": [
       "warn",
       {
@@ -73,7 +37,7 @@
   "overrides": [
     {
       "files": [
-        "apps/web/src/**/*.{ts,tsx}",
+        "apps/web/src/**/*.ts",
         "apps/edge/src/**/*.ts",
         "apps/marketing/src/**/*.ts",
         "packages/domain/src/**/*.ts",
@@ -86,15 +50,11 @@
         "functional/no-let": "error",
         "functional/no-loop-statements": "error",
         "functional/no-classes": "error",
-        // Writing `ref.current` is the only way React exposes a mutable box, so
-        // flagging it produced suppressions rather than better code — 18 of them,
-        // which drowned out the cases where the rule was saying something real.
-        // Everything else, including object and array mutation, stays an error.
-        "functional/immutable-data": ["error", { "ignoreAccessorPattern": ["**.current"] }]
+        "functional/immutable-data": "error"
       }
     },
     {
-      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "files": ["**/*.test.ts"],
       "rules": {
         "functional/no-let": "off",
         "functional/no-loop-statements": "off",
