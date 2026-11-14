@@ -61,9 +61,13 @@ const cellFor = (date: string) => ({
   month: Number(date.slice(5, 7)) - 1,
   day: Number(date.slice(8, 10)),
 });
+// A load still in flight is superseded: stop it so it does not keep calling
+// Google for a year nobody is looking at. Its result would be dropped anyway by
+// the id check in SucceededLoad and FailedLoad.
 const loadYear = (model: Model, reset = false): Result => ({
   model: { ...model, loading: true, error: null, loadId: model.loadId + 1 },
   commands: [
+    ...(model.loading ? [LoadYear.Interrupt({ id: model.loadId }, () => Message.Completed())] : []),
     LoadYear({ year: model.year, id: model.loadId + 1, demo: model.page === "demo", reset }),
   ],
 });

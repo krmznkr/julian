@@ -19,7 +19,10 @@ export const Navigate = Command.define("Navigate", {
 });
 export const LoadYear = Command.define("LoadYear", {
   args: { year: Schema.Number, id: Schema.Number, demo: Schema.Boolean, reset: Schema.Boolean },
-  interrupt: true,
+  // Keyed by load id, so a newer load can stop the one it supersedes without
+  // touching itself. A key only addresses fibers; nothing stops until update
+  // returns LoadYear.Interrupt.
+  interrupt: { keyFields: ["id"], toKey: ({ id }) => String(id) },
   messages: [Message.SucceededLoad, Message.FailedLoad],
   execute: ({ year, id, demo, reset }) =>
     Effect.gen(function* () {
