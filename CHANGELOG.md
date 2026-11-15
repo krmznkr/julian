@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/krmznkr/julian/compare/v0.7.0...v0.7.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **web:** interrupt superseded year loads ([#128](https://github.com/krmznkr/julian/issues/128)) ([bd0dfaf](https://github.com/krmznkr/julian/commit/bd0dfaf29fdec9184d19656f773c3c25b8103c56))
+
 ## [0.7.0](https://github.com/krmznkr/julian/compare/v0.6.1...v0.7.0) (2026-11-12)
 
 
