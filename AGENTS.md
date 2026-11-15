@@ -93,9 +93,9 @@ handling or layout. Say which checks you ran and which you skipped.
   `docs/architecture.md`, under "Frontend composition".
 - **Effect for I/O and concurrency.** Services are `Context.Service`s with live
   and test layers; failures are tagged errors. Commands run as scoped fibers.
-  `LoadYear` is declared interruptible; load IDs and years reject stale
-  completions. Starting another load does not currently cancel its
-  predecessor.
+  `LoadYear` is interruptible per load ID: a load started while another is
+  in flight (`model.loading`) interrupts it, and load IDs and years still
+  reject stale completions.
 - **Functional core.** oxlint enforces `functional/no-let`,
   `no-loop-statements`, `no-classes` and `immutable-data` in source files.
   Classes are allowed only where Effect requires them (tagged errors and

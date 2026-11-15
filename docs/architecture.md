@@ -211,7 +211,7 @@ requests still use the existing service graph in `lib/effect/runtime.ts`.
 Calendar content stays in the browser; no new server or storage is involved.
 
 `LoadYear` is interruptible per load ID. Starting a load while another is in
-flight also sends `LoadYear.Interrupt` for the previous ID, so a superseded
+flight (`model.loading`) also sends `LoadYear.Interrupt` for the previous ID, so a superseded
 year stops calling Google. Load IDs and years still reject any completion that
 arrives late. Partial source failures remain
 visible beside the calendar list. Refreshes merge outstanding optimistic
