@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/krmznkr/julian/compare/v0.7.1...v0.7.2) (2026-11-15)
+
+
+### Bug Fixes
+
+* **web:** keep top bar controls from overlapping at laptop widths ([#130](https://github.com/krmznkr/julian/issues/130)) ([d957318](https://github.com/krmznkr/julian/commit/d957318a9f77621ffae3e17c20332b82cc72bb90))
+
 ## [0.7.1](https://github.com/krmznkr/julian/compare/v0.7.0...v0.7.1) (2026-11-15)
 
 
