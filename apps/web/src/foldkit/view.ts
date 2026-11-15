@@ -125,7 +125,7 @@ const logo = (h: Builder) =>
       h.span(
         [
           h.Class(
-            "font-sans text-[18px] leading-none font-semibold tracking-[-0.012em] text-foreground/90",
+            "font-sans text-[18px] leading-none font-semibold tracking-[-0.012em] text-foreground/90 md:max-lg:hidden",
           ),
         ],
         ["Julian"],
@@ -150,7 +150,7 @@ const yearNavigator = (model: Model, h: Builder) =>
         [
           h.OnSubmit(Message.SubmittedYear()),
           h.Class(
-            "flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2 py-2 md:px-3.5",
+            "flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2 py-2 lg:px-3.5",
           ),
         ],
         [
@@ -166,7 +166,7 @@ const yearNavigator = (model: Model, h: Builder) =>
             h.OnBlur(Message.SubmittedYear()),
             h.Class(
               inputClass(
-                "h-7 w-14 border-0 bg-transparent px-0 text-center text-lg font-semibold tabular-nums [appearance:textfield] focus-visible:ring-0 md:w-20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+                "h-7 w-14 border-0 bg-transparent px-0 text-center text-lg font-semibold tabular-nums [appearance:textfield] focus-visible:ring-0 lg:w-20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
               ),
             ),
           ]),
@@ -224,7 +224,7 @@ const viewModeToggle = (model: Model, h: Builder) => {
               ),
             ),
           ],
-          [icon(glyph), h.span([h.Class("hidden lg:inline")], [label])],
+          [icon(glyph), h.span([h.Class("hidden xl:inline")], [label])],
         ),
       ),
     ),
@@ -236,11 +236,11 @@ const topBarActions = (model: Model, h: Builder) => [
   h.button(
     [
       h.Type("button"),
-      h.Class(buttonClass("outline", "sm", "hidden gap-2.5 px-3.5 md:inline-flex")),
+      h.Class(buttonClass("outline", "sm", "hidden gap-2.5 px-2.5 md:inline-flex lg:px-3.5")),
       h.AriaLabel(`Go to today, ${todayLabel.format(new Date(`${model.today}T00:00:00`))}`),
       h.OnClick(act("today")),
     ],
-    [icon(CalendarDays), "Today"],
+    [icon(CalendarDays), h.span([h.Class("hidden lg:inline")], ["Today"])],
   ),
   h.div([h.Class("hidden md:block")], [syncBadgeView(model, h)]),
   ...(model.mode === "grid"
@@ -286,11 +286,14 @@ const search = (model: Model, h: Builder) => {
         h.Type("search"),
         h.AriaLabel("Search events"),
         h.AriaKeyshortcuts("/"),
-        h.Placeholder(model.width < 768 ? "Search" : "Search  /"),
+        h.Placeholder(model.width < 1280 ? "Search" : "Search  /"),
         h.Value(model.query),
         h.OnInput((value) => Message.ChangedField({ field: "query", value })),
         h.Class(
-          "h-8 w-28 rounded-lg border border-border/60 bg-muted/30 pr-7 pl-7 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none sm:w-40 [&::-webkit-search-cancel-button]:hidden",
+          cn(
+            model.query ? "pr-7" : "pr-2",
+            "h-8 w-28 rounded-lg border border-border/60 bg-muted/30 pl-7 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none sm:w-40 md:w-24 xl:w-40 [&::-webkit-search-cancel-button]:hidden",
+          ),
         ),
       ]),
       ...(model.query
@@ -345,11 +348,11 @@ const topBarTrailing = (model: Model, h: Builder) =>
           h.AriaExpanded(model.dialog === "commands"),
           h.OnClick(act("commands")),
           h.Class(
-            "hidden h-8 min-w-[9.5rem] items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none md:inline-flex",
+            "hidden h-8 items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none md:inline-flex 2xl:min-w-[9.5rem]",
           ),
         ],
         [
-          h.span([h.Class("truncate")], ["Commands"]),
+          h.span([h.Class("sr-only 2xl:not-sr-only 2xl:truncate")], ["Commands"]),
           h.kbd(
             [
               h.Class(
@@ -403,7 +406,7 @@ const topbar = (model: Model, h: Builder) =>
       h.div(
         [
           h.Class(
-            "flex w-full flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 md:grid md:h-16 md:grid-cols-[minmax(200px,260px)_1fr_minmax(240px,320px)] md:gap-4 md:px-7 md:py-0",
+            "flex w-full flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 md:grid md:h-16 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-2 md:px-3 md:py-0 lg:gap-3 lg:px-4 xl:grid-cols-[minmax(200px,260px)_minmax(0,1fr)_auto] xl:gap-4 xl:px-7",
           ),
         ],
         [
