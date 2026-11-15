@@ -188,6 +188,23 @@ describe("Foldkit application lifecycle", () => {
         .model.error,
     ).toBe("Offline");
   });
+  it("interrupts only the load a newer load supersedes", () => {
+    const first = action(seed, "refresh");
+    expect(first.commands?.map((command) => command.name)).toEqual(["LoadYear"]);
+    const second = action(first.model, "refresh");
+    expect(second.commands?.map((command) => [command.name, command.args?.id])).toEqual([
+      ["LoadYear.Interrupt", first.model.loadId],
+      ["LoadYear", second.model.loadId],
+    ]);
+    expect(second.model.loadId).toBe(first.model.loadId + 1);
+    const settled = update(
+      second.model,
+      Message.FailedLoad({ id: second.model.loadId, year: 2026, error: "Offline" }),
+    ).model;
+    expect(action(settled, "refresh").commands?.map((command) => command.name)).toEqual([
+      "LoadYear",
+    ]);
+  });
   it("follows copied URLs and browser back/forward", () => {
     const changed = update(
       seed,
