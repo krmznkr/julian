@@ -5,13 +5,14 @@ import { expect, test } from "./fixtures";
 // wider than its track they spilled left over Today and the sync badge, which
 // happened at common laptop widths (1100, 1280 and 1366px).
 
-const widths = [768, 900, 1023, 1024, 1100, 1279, 1280, 1366, 1440, 1535, 1536, 1920] as const;
+const widths = [600, 768, 900, 1023, 1024, 1100, 1279, 1280, 1366, 1440, 1535, 1536, 1920] as const;
 
 // The longest label the badge can show: one failed source named by its raw id.
 const LONG_BADGE = "Could not load calendar:c_0123456789abcdef@group.calendar.google.com";
 
 const layoutProblems = (page: Page) =>
   page.locator("header").evaluate((header) => {
+    const bar = header.getBoundingClientRect();
     const boxes = [
       ...header.querySelectorAll<HTMLElement>("button, input, select, a, [role=status]"),
     ]
@@ -23,7 +24,12 @@ const layoutProblems = (page: Page) =>
       .filter(({ box }) => box.width > 1 && box.height > 1);
     const problems: string[] = [];
     for (const { name, box } of boxes)
-      if (box.left < -0.5 || box.right > window.innerWidth + 0.5 || box.bottom > 64.5)
+      if (
+        box.left < -0.5 ||
+        box.right > window.innerWidth + 0.5 ||
+        box.top < -0.5 ||
+        box.bottom > bar.bottom + 0.5
+      )
         problems.push(`${name} outside the bar`);
     for (const [index, a] of boxes.entries())
       for (const b of boxes.slice(index + 1))

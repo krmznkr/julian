@@ -56,9 +56,8 @@ const syncBadgeView = (model: Model, h: Builder) => {
   return h.span(
     [
       h.Class(
-        "inline-flex max-w-full min-w-0 items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium whitespace-nowrap text-foreground md:max-w-[5.5rem] lg:max-w-[9rem] 2xl:max-w-[14rem]",
+        "inline-flex min-w-0 items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium whitespace-nowrap text-foreground max-w-[9rem] md:max-w-[5.5rem] lg:max-w-[9rem] 2xl:max-w-[14rem]",
       ),
-      h.Title(badge.label),
       h.Role("status"),
       h.AriaLive("polite"),
       h.AriaAtomic(true),
@@ -80,7 +79,7 @@ const syncBadgeView = (model: Model, h: Builder) => {
         ],
         [],
       ),
-      h.span([h.Class("min-w-0 truncate")], [badge.label]),
+      h.span([h.Class("min-w-0 truncate"), h.Title(badge.label)], [badge.label]),
     ],
   );
 };
