@@ -56,8 +56,9 @@ const syncBadgeView = (model: Model, h: Builder) => {
   return h.span(
     [
       h.Class(
-        "inline-flex items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-foreground",
+        "inline-flex max-w-full min-w-0 items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs font-medium whitespace-nowrap text-foreground md:max-w-[5.5rem] lg:max-w-[9rem] 2xl:max-w-[14rem]",
       ),
+      h.Title(badge.label),
       h.Role("status"),
       h.AriaLive("polite"),
       h.AriaAtomic(true),
@@ -67,7 +68,7 @@ const syncBadgeView = (model: Model, h: Builder) => {
         [
           h.Class(
             cn(
-              "size-1.5 rounded-full",
+              "size-1.5 shrink-0 rounded-full",
               badge.kind === "issues"
                 ? "bg-destructive/70"
                 : badge.kind === "syncing"
@@ -79,7 +80,7 @@ const syncBadgeView = (model: Model, h: Builder) => {
         ],
         [],
       ),
-      badge.label,
+      h.span([h.Class("min-w-0 truncate")], [badge.label]),
     ],
   );
 };
@@ -236,8 +237,9 @@ const topBarActions = (model: Model, h: Builder) => [
   h.button(
     [
       h.Type("button"),
-      h.Class(buttonClass("outline", "sm", "hidden gap-2.5 px-2.5 md:inline-flex lg:px-3.5")),
+      h.Class(buttonClass("outline", "sm", "hidden gap-2.5 md:inline-flex")),
       h.AriaLabel(`Go to today, ${todayLabel.format(new Date(`${model.today}T00:00:00`))}`),
+      h.Title("Go to today"),
       h.OnClick(act("today")),
     ],
     [icon(CalendarDays), h.span([h.Class("hidden lg:inline")], ["Today"])],
@@ -292,7 +294,7 @@ const search = (model: Model, h: Builder) => {
         h.Class(
           cn(
             model.query ? "pr-7" : "pr-2",
-            "h-8 w-28 rounded-lg border border-border/60 bg-muted/30 pl-7 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none sm:w-40 md:w-24 xl:w-40 [&::-webkit-search-cancel-button]:hidden",
+            "h-8 w-28 rounded-lg border border-border/60 bg-muted/30 pl-7 text-xs text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none sm:w-40 md:w-24 lg:w-32 xl:w-40 [&::-webkit-search-cancel-button]:hidden",
           ),
         ),
       ]),
@@ -346,6 +348,7 @@ const topBarTrailing = (model: Model, h: Builder) =>
           h.Type("button"),
           h.AriaHasPopup("dialog"),
           h.AriaExpanded(model.dialog === "commands"),
+          h.Title(`Commands (${modKeyLabel(model.platform)}K)`),
           h.OnClick(act("commands")),
           h.Class(
             "hidden h-8 items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none md:inline-flex 2xl:min-w-[9.5rem]",
